@@ -1,0 +1,68 @@
+{
+  "project_info": {
+    "project_number": "804911630526",
+    "firebase_url": "https://adminchat-96c44-default-rtdb.firebaseio.com",
+    "project_id": "adminchat-96c44",
+    "storage_bucket": "adminchat-96c44.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:804911630526:android:a27a3afee91e7cf79c76ef",
+        "android_client_info": {
+          "package_name": "com.adminappnative"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCzVTY3ADLGT_xdas8YJVs4gvQ7SIRmsy8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:804911630526:android:2a997cd218982c889c76ef",
+        "android_client_info": {
+          "package_name": "com.awesomeproject"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCzVTY3ADLGT_xdas8YJVs4gvQ7SIRmsy8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:804911630526:android:63d53f65569f6b699c76ef",
+        "android_client_info": {
+          "package_name": "com.ordermobapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCzVTY3ADLGT_xdas8YJVs4gvQ7SIRmsy8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
