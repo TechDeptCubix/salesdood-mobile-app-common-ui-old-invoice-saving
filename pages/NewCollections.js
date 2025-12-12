@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, Dimensions, Image, TouchableOpacity, TextInput, ScrollView, ActivityIndicator, Button, FlatList, KeyboardAvoidingView, PermissionsAndroid } from 'react-native'
+import { View, Text, StyleSheet, Dimensions, Image, TouchableOpacity, TextInput, ScrollView, ActivityIndicator, Button, FlatList, KeyboardAvoidingView, PermissionsAndroid, Alert } from 'react-native'
 import React, { useEffect, useMemo, useState } from 'react'
 import Header from './Header'
 import axios from 'axios'
@@ -14,10 +14,14 @@ import ToastManager, { Toast } from 'toastify-react-native'
 import RNHTMLtoPDF from 'react-native-html-to-pdf';
 import Share from 'react-native-share';
 import { getReadableDateYYYYMMDD } from './datesFunctions'
-
+import RNFS from 'react-native-fs';
 
 const NewCollections = () => {
 
+
+    const [accessGrp, setAccessGrp] = useState('')
+
+    const [salesManKey, setSalesManKey] = useState("")
     const navigation = useNavigation()
 
     // const searchUrl = 'https://cubixweberp.com:203/api/Search_Customer/Cust/'
@@ -92,7 +96,7 @@ const NewCollections = () => {
 
     const currentDate = new Date();
     const dnsDate = format(currentDate, 'yyyy-MM-dd');
-    
+
     console.log('dnsDate', dnsDate)
 
     const formattedDateTime = getReadableDateYYYYMMDD(currentDate)
@@ -255,13 +259,13 @@ const NewCollections = () => {
             <div class="CustomerDetailsTab">
                 <div class="NameTag">Customer Name</div>
                 <div>:</div>
-                <div class="ValueTag">${selectedStock.Custname}</div>
+                <div class="ValueTag">${selectedStock?.Custname}</div>
             </div>
             <div class="CustomerDetailsTab">
                 <div class="NameTag">Address</div>
                 <div>:</div>
                 <div class="ValueTag">
-                    ${selectedStock.address1} ${selectedStock.address2} ${selectedStock.address3}
+                    ${selectedStock?.address1} ${selectedStock?.address2} ${selectedStock?.address3}
                 </div>
             </div>
         </div>
@@ -279,7 +283,7 @@ const NewCollections = () => {
             <tbody>
             <tr class="table-row">
                 <td class="data-cell">${formattedDateTime}</td>
-                <td class="data-cell">${selectedStock.Custname}</td>
+                <td class="data-cell">${selectedStock?.Custname}</td>
                 <td class="data-cell">${rvAmnt}</td>
                 <td class="data-cell">${selectedId === 'cash-collection' ? 'CASH' : selectedId === 'cheque-collection' ? 'CHEQUE' : ""}</td>
             </tr>
@@ -297,251 +301,296 @@ const NewCollections = () => {
 </html>
 `;
 
+        const getLetterheadBase64 = async () => new Promise((resolve, reject) => {
+
+            RNFS.readFileAssets('soca_letterhead_text.txt').then(result => {
+                console.log(result);
+                resolve(result)
+            }).catch(err => {
+                console.log(err);
+            })
+
+
+        })
+
+
+        const logoUri = await getLetterheadBase64()
+
         const htmlNew = `
-<!DOCTYPE html>
-<html lang="en">
+        <!DOCTYPE html>
+        <html lang="en">
+        
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Table Example</title>
+            <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;700&display=swap" rel="stylesheet">
+            <style>
+                body {
+                    font-family: 'Lexend', sans-serif;
+                    margin: 0;
+                    padding: 0;
+                }
+        
+                .statementHead {
+                    display: flex;
+                    flex-direction: row;
+                    justify-content: center;
+                    align-items: center;
+                }
+        
+                .dateText {
+                    margin-left: 8px;
+                }
+        
+                .CustomerDetails {
+                    display: flex;
+                    flex-direction: column;
+                    width: 100%;
+                    padding: 4px 12px;
+                }
+        
+                .CustomerDetailsTab {
+                    display: flex;
+                    flex-direction: row;
+                    padding: 4px 12px;
+                }
+        
+                .NameTag {
+                    width: 130px;
+                }
+        
+                .ValueTag {
+                    margin-left: 12px;
+                }
+        
+                .table-container {
+                    width: 100%;
+                    margin-top: 8px;
+                    align-items: center;
+                    flex: 1;
+                    display: flex;
+                    flex-direction: column;
+                    /* padding: 12px; */
+                }
+        
+                .table {
+                    width: 100%;
+                    overflow-x: auto;
+                    border-collapse: collapse;
+                }
+        
+                .table-row {
+                    display: table-row;
+                }
+        
+                .header-row {
+                    background-color: #5A55CA;
+                    color: white;
+                    font-weight: bold;
+                }
+        
+                .header-cell,
+                .data-cell {
+                    padding: 10px;
+                    text-align: center;
+                    border: 1px solid #dbdbdb;
+                    width: 100px;
+                }
+        
+                .total-values-wrap {
+                    width: 100%;
+                    display: flex;
+                    flex-direction: column;
+                }
+        
+                .total-cont {
+                    display: flex;
+                    flex-direction: row;
+                    align-items: center;
+                    border: 1px solid #dbdbdb;
+                    padding-right: 12px;
+                }
+        
+                .total-label {
+                    background-color: #5A55CA;
+                    color: white;
+                    font-weight: bold;
+                    text-align: center;
+                    width: 150px;
+                    padding: 10px;
+                }
+        
+                .total-value-text {
+                    font-size: 16px;
+                    color: #1A6CF6;
+                    font-weight: bold;
+                    margin-left: 24px;
+                }
+        
+                .RcptVouch {
+                    display: flex;
+                    width: 100%;
+                    flex-direction: row;
+                    justify-content: flex-end;
+                }
+        
+                .TextAlignRight {
+                    text-align: right;
+                    margin: 6px;
+                }
+        
+                .RcptVouchDate {
+                    display: flex;
+                    width: 100%;
+                    flex-direction: row;
+                    justify-content: space-between;
+                }
+        
+                .RxcWithThanks {
+                    display: flex;
+                    justify-content: flex-start;
+                    width: 100%;
+                }
+        
+                .margin8 {
+                    margin: 8px;
+                }
+        
+                .CollAmnt {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    width: 100%;
+                }
+        
+                .AmntBox {
+                    display: flex;
+                    justify-content: center;
+                    width: 20%;
+                }
+        
+                .AmntBorder {
+                    border: 1px solid grey;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    padding: 0 4px;
+                }
+        
+                .SignatureBox {
+                    width: 100%;
+                    display: flex;
+                    justify-content: flex-end;
+                    margin-top: 200px;
+                    margin-right: 40px;
+                }
+        
+                .SignCont {
+                    display: flex;
+                    flex-direction: column;
+                }
+        
+                  .TopBottBorder {
+                    border-top: 1px solid black;
+                    border-bottom: 1px solid black;
+                    width: 100%;
+                    padding: 24px 0PX;
+                }
+                .footer-received-panel {
+                    display: flex;
+                    justify-content: end;
+                    padding-right: 12px;
+                }
+        
+                .textAlignRight{
+                    text-align: end;
+                }
+        
+                .footer {
+                    width: 100%;
+                    display: flex;
+                    flex-direction: column;
+                    margin-top: 18px;
+                    padding: 0px 8px;
+                }
+            </style>
+        </head>
+        
+        <body>
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Table Example</title>
-    <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;700&display=swap" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Lexend', sans-serif;
-            margin: 0;
-            padding: 0;
-        }
+        ${cmpcode.toLowerCase().trim() == 'soca' ? `<div>
+    <img class="image_letterhead" src=${logoUri}
+    </div>` : ""}
 
-        .statementHead {
-            display: flex;
-            flex-direction: row;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .dateText {
-            margin-left: 8px;
-        }
-
-        .CustomerDetails {
-            display: flex;
-            flex-direction: column;
-            width: 100%;
-            padding: 4px 12px;
-        }
-
-        .CustomerDetailsTab {
-            display: flex;
-            flex-direction: row;
-            padding: 4px 12px;
-        }
-
-        .NameTag {
-            width: 130px;
-        }
-
-        .ValueTag {
-            margin-left: 12px;
-        }
-
-        .table-container {
-            width: 100%;
-            margin-top: 8px;
-            align-items: center;
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            /* padding: 12px; */
-        }
-
-        .table {
-            width: 100%;
-            overflow-x: auto;
-            border-collapse: collapse;
-        }
-
-        .table-row {
-            display: table-row;
-        }
-
-        .header-row {
-            background-color: #5A55CA;
-            color: white;
-            font-weight: bold;
-        }
-
-        .header-cell,
-        .data-cell {
-            padding: 10px;
-            text-align: center;
-            border: 1px solid #dbdbdb;
-            width: 100px;
-        }
-
-        .total-values-wrap {
-            width: 100%;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .total-cont {
-            display: flex;
-            flex-direction: row;
-            align-items: center;
-            border: 1px solid #dbdbdb;
-            padding-right: 12px;
-        }
-
-        .total-label {
-            background-color: #5A55CA;
-            color: white;
-            font-weight: bold;
-            text-align: center;
-            width: 150px;
-            padding: 10px;
-        }
-
-        .total-value-text {
-            font-size: 16px;
-            color: #1A6CF6;
-            font-weight: bold;
-            margin-left: 24px;
-        }
-
-        .RcptVouch {
-            display: flex;
-            width: 100%;
-            flex-direction: row;
-            justify-content: flex-end;
-        }
-
-        .TextAlignRight {
-            text-align: right;
-            margin: 6px;
-        }
-
-        .RcptVouchDate {
-            display: flex;
-            width: 100%;
-            flex-direction: row;
-            justify-content: space-between;
-        }
-
-        .RxcWithThanks {
-            display: flex;
-            justify-content: flex-start;
-            width: 100%;
-        }
-
-        .margin8 {
-            margin: 8px;
-        }
-
-        .CollAmnt {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            width: 100%;
-        }
-
-        .AmntBox {
-            display: flex;
-            justify-content: center;
-            width: 20%;
-        }
-
-        .AmntBorder {
-            border: 1px solid grey;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 0 4px;
-        }
-
-        .SignatureBox {
-            width: 100%;
-            display: flex;
-            justify-content: flex-end;
-            margin-top: 200px;
-            margin-right: 40px;
-        }
-
-        .SignCont {
-            display: flex;
-            flex-direction: column;
-        }
-
-          .TopBottBorder {
-            border-top: 1px solid black;
-            border-bottom: 1px solid black;
-            width: 100%;
-            padding: 24px 0PX;
-        }
-    </style>
-</head>
-
-<body>
-    <div class="table-container">
-
-       <div class="statementHead">
-            <div>
-                <h4 class="margin8">${cmpName}</h4>
-            </div>
-        </div>
-       <div class="statementHead">
-            <div>
-                <h4 class="margin8">Receipt</h4>
-            </div>
-        </div>
-
-
-      <div class="TopBottBorder">
-            <div class="RcptVouch">
-    
-                <span>
-                    <h4 class="TextAlignRight"> Receipt Voucher</h4>
-                </span>
-    
-            </div>
-    
-            <div class="RcptVouch">
-    
-                <span class="TextAlignRight">Date: </span>
-                <span class="TextAlignRight">${formattedDateTime}</span>
-    
-            </div>
-    
-            <div class="RxcWithThanks">
-                <span class="margin8">Received with Thanks from : ${selectedStock.Custname}</span>
-            </div>
-            <div class="RxcWithThanks">
-                <span class="margin8">AccountNo : ${accountNo}</span>
-            </div>
-            <div class="CollAmnt">
-                <span class="margin8">Collection Type : ${selectedId === 'cash-collection' ? 'CASH' : selectedId === 'cheque-collection' ? 'CHEQUE' : ""}</span>
-    
-                <div class="AmntBox">
-                    <span class="margin8 ">Amount:</span>
-                    <span class="AmntBorder">${rvAmnt}</span>
+            <div class="table-container">
+        
+               <div class="statementHead">
+                    <div>
+                        <h4 class="margin8">${cmpName}</h4>
+                    </div>
                 </div>
+               <div class="statementHead">
+                    <div>
+                        <h4 class="margin8">Collection Voucher</h4>
+                    </div>
+                </div>
+        
+        
+              <div class="TopBottBorder">
+                    
+            
+                    <div class="RcptVouch">
+            
+                        <span class="TextAlignRight">Date: </span>
+                        <span class="TextAlignRight">${formattedDateTime}</span>
+            
+                    </div>
+            
+                    <div class="RxcWithThanks">
+                        <span class="margin8">Received with Thanks from : ${selectedStock?.Custname}</span>
+                    </div>
+                    <div class="RxcWithThanks">
+                        <span class="margin8">AccountNo : ${accountNo}</span>
+                    </div>
+                    <div class="RxcWithThanks">
+                    <span class="margin8">Invoices: ${selectedtInv.join(', ')}</span>
+                    </div>
+        
+                    <div class="CollAmnt">
+                        <span class="margin8">Collection Type : ${selectedId === 'cash-collection' ? 'CASH' : selectedId === 'cheque-collection' ? 'CHEQUE' : ""}</span>
+            
+                        <div class="AmntBox">
+                            <span class="margin8 ">Amount:</span>
+                            <span class="AmntBorder">${rvAmnt}</span>
+                        </div>
+                    </div>
+              </div>
+        
+                <div class="SignatureBox">
+        
+                    <div class="SignCont">
+                        <span style="margin:12px 0px;">Signature</span>
+        
+                        <span>${salesManName}</span>
+                    </div>
+                </div>
+        
+               
+        
+                <div class="footer">
+        
+                <div class="footer-received-panel">
+                    <h4 class="textAlignRight">${cmpcode?.trim()?.toUpperCase() == "SOCA" ? "SOCA TOOLS INTERNATIONAL TRADING LLC <br> Al Khabeesi bldg. Al Khabeesi Area <br> Near GMC Car Showroom Ittihad Road <br> Dubai - United Arab Emirates <br> +971 54 247 9690 <br> sales@socatools.com <br> www.socatools.com" : cmpName}</h4>
+                </div>
+        
             </div>
-      </div>
-
-        <div class="SignatureBox">
-
-            <div class="SignCont">
-                <span style="margin:12px 0px;">Signature</span>
-
-                <span>${salesManName}</span>
+            
+        
             </div>
-        </div>
-
-
-    </div>
-</body>
-
-</html>
+        </body>
+        
+        </html>
 
 `
 
@@ -601,7 +650,11 @@ const NewCollections = () => {
 
             const salesMan = await AsyncStorage.getItem('sales_man')
 
+            const accessgrp = await AsyncStorage.getItem('accessgrp')
+
             const salesManName = await AsyncStorage.getItem('salesman_name')
+
+            const salesMankey = await AsyncStorage.getItem('Smankey')
 
             const appUrl = await AsyncStorage.getItem('appUrl')
 
@@ -611,6 +664,11 @@ const NewCollections = () => {
             const portNoData = await AsyncStorage.getItem('portNoData')
 
             console.log('parsedUserDataArray', parsedUserDataArray)
+
+            if (accessgrp) {
+
+                setAccessGrp(accessgrp)
+            }
 
             if (portNoData) {
                 // setCmpName(portNoData[0].COMPNAME)
@@ -626,6 +684,10 @@ const NewCollections = () => {
                 setSalesManName(salesManName)
             }
 
+            if (salesMankey) {
+                setSalesManKey(salesMankey)
+            }
+
             if (parsedUserDataArray) {
                 setCmpCode(parsedUserDataArray[0].cmpcode.trim())
             }
@@ -639,6 +701,10 @@ const NewCollections = () => {
             }
             if (van) {
                 setVan(van)
+            } else {
+                console.log("van falsy value sales man", van, salesMan)
+
+                setVan(salesMan?.trim())
             }
             if (salesMan === '----') {
                 const salesManDrop = await AsyncStorage.getItem('sales_man_drop')
@@ -662,6 +728,11 @@ const NewCollections = () => {
 
     const postData = async () => {
 
+        console.log("if (!accountNo || !deptno || !salesMan || !rvAmnt || !selectedId || !selectedtInv || !van)", !accountNo, !deptno, !salesMan, !rvAmnt, !selectedId, !selectedtInv, !van)
+
+
+
+
         if (!accountNo || !deptno || !salesMan || !rvAmnt || !selectedId || !selectedtInv || !van) {
             return showCollectionErrorToast()
         }
@@ -672,7 +743,7 @@ const NewCollections = () => {
         const data = [
             {
                 cmpcode: cmpcode,
-                rv_no: '',
+                rv_no: '0',
                 rv_date: formattedDateTime,
                 account: accountNo,
                 accdesc: selectedStock.Custname,
@@ -702,9 +773,11 @@ const NewCollections = () => {
 
             setLoading(false);
 
-            if (response.status === 200) {
+            console.log("response >>> ", response)
+
+            if (response.data.result === "Saved") {
                 // Alert.alert('Success', 'Data posted successfully');
-                console.log(response.data);
+                console.log("response.data.result ", response.data.result);
 
                 setResult(true)
                 // setSelectedStock(null)
@@ -715,13 +788,13 @@ const NewCollections = () => {
                 // showCollectionSuccessToast()
             } else {
                 // Alert.alert('Error', 'Failed to post data');
-                console.error(response.data);
+                console.log("collection error >>>", response.data);
             }
         } catch (error) {
             setLoading(false);
             showCollectionAPIErrorToast()
             // Alert.alert('Error', 'An error occurred while posting data');
-            console.error(error);
+            console.log("collection error >>> +++", error);
         }
     };
 
@@ -800,9 +873,43 @@ const NewCollections = () => {
     const searchStock = async (value) => {
         setShowActivity(true)
         try {
-            await axios.get(`${appUrl}Search_Customer/${cmpcode}/Cust/${value}/${deptno}`)
+
+            let apiUrlCustomerSearch = `${appUrl}Search_Customer/${cmpcode}/Cust/${value}/${deptno}`
+            console.log("apiUrlCustomerSearch ", apiUrlCustomerSearch)
+            await axios.get(apiUrlCustomerSearch)
                 .then((res) => {
-                    setStockData(res.data)
+
+
+                    if (cmpcode?.trim().toUpperCase() == "SOCA") {
+
+                        // if accegrp that is role is Driver show all customers else show only their customers
+                        if (accessGrp?.trim()?.toUpperCase() == "DRIVER") {
+                            setStockData(res.data)
+                        } else {
+                            let filteredArrayBasedOnSalesman = res.data.filter((item) => {
+                                return item.sale_man?.trim().toUpperCase() == salesMan.trim().toUpperCase()
+                            })
+
+                            setStockData(filteredArrayBasedOnSalesman)
+
+                            console.log("filteredArrayBasedOnSalesman>> NewC", filteredArrayBasedOnSalesman, salesMan.trim().toUpperCase())
+                        }
+
+
+
+                    } else if (cmpcode?.trim().toUpperCase() == "TAMMDOOD") {
+                        let filteredArrayBasedOnSalesman = res.data.filter((item) => {
+                            return item.sale_man?.trim().toUpperCase() == salesManKey.trim().toUpperCase()
+                        })
+
+                        setStockData(filteredArrayBasedOnSalesman)
+
+                        console.log("filteredArrayBasedOnSalesman>> NewC", filteredArrayBasedOnSalesman, salesMan.trim().toUpperCase())
+                    } else {
+                        setStockData(res.data)
+                    }
+
+
                 })
             setShowActivity(false)
         } catch (error) {
@@ -814,10 +921,38 @@ const NewCollections = () => {
     const fetchTop50Customers = async () => {
         setShowActivity(true)
         try {
-            console.log('fetchTop50Customers', `${appUrl}Search_Customer/${cmpcode}/Cust50/a/${deptno}`)
+            console.log('fetchTop50Customers---++', `${appUrl}Search_Customer/${cmpcode}/Cust50/a/${deptno}`)
             const response = await axios.get(`${appUrl}Search_Customer/${cmpcode}/Cust50/a/${deptno}`);
             // console.log('fetchTop50Customers', response.data);
-            setTop50Customers(response.data)
+
+
+            if (cmpcode?.trim().toUpperCase() == "SOCA") {
+
+                if (accessGrp?.trim()?.toUpperCase() == "DRIVER") {
+
+                    setTop50Customers(response.data)
+
+                } else {
+
+                    let filteredArrayBasedOnSalesman = response.data.filter((item) => {
+                        return item.sale_man?.trim().toUpperCase() == salesMan.trim().toUpperCase()
+                    })
+                    setTop50Customers(filteredArrayBasedOnSalesman)
+
+                    console.log("filteredArrayBasedOnSalesman>> NewC", filteredArrayBasedOnSalesman, salesMan.trim().toUpperCase())
+                }
+            } else if (cmpcode?.trim().toUpperCase() == "TAMMDOOD") {
+                let filteredArrayBasedOnSalesman = response.data.filter((item) => {
+                    return item.sale_man?.trim().toUpperCase() == salesManKey.trim().toUpperCase()
+                })
+                setTop50Customers(filteredArrayBasedOnSalesman)
+
+                console.log("filteredArrayBasedOnSalesman>> NewC", filteredArrayBasedOnSalesman, salesMan.trim().toUpperCase())
+            }
+            else {
+                setTop50Customers(response.data)
+            }
+
             setShowActivity(false)
         } catch (error) {
             console.log('fetchTop50CustomersError', error);
@@ -906,10 +1041,10 @@ const NewCollections = () => {
 
 
     useEffect(() => {
-        if (appUrl && cmpcode && deptno) {
+        if (appUrl && cmpcode && deptno && salesMan) {
             fetchTop50Customers()
         }
-    }, [appUrl, cmpcode, deptno])
+    }, [appUrl, cmpcode, deptno, salesMan])
 
     useEffect(() => {
         if (searchItem !== '') {
@@ -1016,126 +1151,136 @@ const NewCollections = () => {
                     }
 
                     {
-                        stockData && !selectedStock && searchItem !== '' &&
-                        // <View style={styles.TableContainer}>
-                        //     <View style={styles.tableRow}>
-                        //         <Text
-                        //             style={[styles.headerCell, {
-                        //                 borderTopLeftRadius: 4
-                        //             }]}
-                        //         >
-                        //             Name
-                        //         </Text>
-                        //         <Text style={styles.headerCell}>
-                        //             Account Number
-                        //         </Text>
-                        //         <Text
-                        //             style={[styles.headerCell, {
-                        //                 borderTopRightRadius: 4
-                        //             }]}
-                        //         >
-                        //             OpenBalance
-                        //         </Text>
-                        //     </View>
+                        stockData?.length > 0 ?
 
-                        //     {/* <ScrollView style={styles.ScrollView} horizontal={true} nestedScrollEnabled={true}> */}
-                        //     <ScrollView style={styles.ScrollView}>
-                        //         {
-                        //             stockData && stockData.length > 0 && stockData.slice(0, 25).map((item, index) => (
-                        //                 <TouchableOpacity style={styles.tableRow} key={index} onPress={() => setSelectedStock(item)}>
-                        //                     <Text style={styles.dataCell}>{item.Custname}</Text>
-                        //                     <Text style={styles.dataCell}>{item.account}</Text>
-                        //                     <Text style={styles.dataCell}>{item.openbal}</Text>
-                        //                 </TouchableOpacity>
+                            <>
+                                {
+                                    stockData && !selectedStock && searchItem !== '' &&
+                                    // <View style={styles.TableContainer}>
+                                    //     <View style={styles.tableRow}>
+                                    //         <Text
+                                    //             style={[styles.headerCell, {
+                                    //                 borderTopLeftRadius: 4
+                                    //             }]}
+                                    //         >
+                                    //             Name
+                                    //         </Text>
+                                    //         <Text style={styles.headerCell}>
+                                    //             Account Number
+                                    //         </Text>
+                                    //         <Text
+                                    //             style={[styles.headerCell, {
+                                    //                 borderTopRightRadius: 4
+                                    //             }]}
+                                    //         >
+                                    //             OpenBalance
+                                    //         </Text>
+                                    //     </View>
 
-                        //             ))
-                        //         }
-                        //     </ScrollView>
+                                    //     {/* <ScrollView style={styles.ScrollView} horizontal={true} nestedScrollEnabled={true}> */}
+                                    //     <ScrollView style={styles.ScrollView}>
+                                    //         {
+                                    //             stockData && stockData.length > 0 && stockData.slice(0, 25).map((item, index) => (
+                                    //                 <TouchableOpacity style={styles.tableRow} key={index} onPress={() => setSelectedStock(item)}>
+                                    //                     <Text style={styles.dataCell}>{item.Custname}</Text>
+                                    //                     <Text style={styles.dataCell}>{item.account}</Text>
+                                    //                     <Text style={styles.dataCell}>{item.openbal}</Text>
+                                    //                 </TouchableOpacity>
+
+                                    //             ))
+                                    //         }
+                                    //     </ScrollView>
 
 
 
-                        //     {
-                        //         stockData && stockData.length === 0 &&
-                        //         <View>
-                        //             <Text style={{
-                        //                 color: 'red'
-                        //             }}>No data available</Text>
-                        //         </View>
-                        //     }
+                                    //     {
+                                    //         stockData && stockData.length === 0 &&
+                                    //         <View>
+                                    //             <Text style={{
+                                    //                 color: 'red'
+                                    //             }}>No data available</Text>
+                                    //         </View>
+                                    //     }
 
-                        // </View>
+                                    // </View>
 
-                        <ScrollView contentContainerStyle={[styles.CheckStockListView]} keyboardShouldPersistTaps="always">
 
-                            {
-                                stockData && stockData.length > 0 && stockData.map((item, index) => (
-                                    <View style={styles.StockListItem} key={index}>
-                                        <View style={styles.CustomerListCont}>
 
-                                            <View style={styles.CustomerImgWrap}>
-                                                <Image style={styles.CustomerImage} source={require('../images/customerList.png')} />
-                                            </View>
-
-                                            <View style={styles.CustomerListMid}>
-                                                <View style={{
-                                                    flexDirection: 'row',
-                                                    justifyContent: 'space-between',
-                                                    width: '100%'
-                                                }}>
-                                                    <TouchableOpacity style={[styles.StockListDescText, { width: '75%' }]} onPress={() => setSelectedStock(item)}>
-                                                        <Text style={[styles.StockListDescText]}>{item.Custname}</Text>
-                                                    </TouchableOpacity>
-                                                    <Text style={[styles.StockListDescTextSmall, { color: '#30B3A4', fontFamily: 'Lexend-Regular', }]}>{item.Avai_Bal}</Text>
-                                                </View>
-                                                <View style={{
-                                                    flexDirection: 'row',
-                                                    width: '100%',
-                                                    paddingVertical: 6
-                                                }}>
-                                                    <Text style={styles.StockListDescTextSmall}>{item.account}</Text>
-                                                    <View style={{
-                                                        marginLeft: 24,
-                                                        flexDirection: 'row'
-                                                    }}>
-                                                        <Text style={[styles.StockListDescTextSmall,]}>C.Limit:</Text>
-                                                        <Text style={[styles.StockListDescTextSmall,]}>{item.Credit_Limit}</Text>
-                                                    </View>
-
-                                                    <TouchableOpacity style={[styles.PlusMinusCont, { marginLeft: 'auto' }]} onPress={() => toggleExpand(item.account)}>
-                                                        {
-                                                            expandedItems.includes(item.account) ?
-                                                                <Image style={styles.PlusMinusImg} source={require('../images/chkMinus.png')} />
-                                                                :
-                                                                <Image style={styles.PlusMinusImg} source={require('../images/chkPlus.png')} />
-                                                        }
-                                                    </TouchableOpacity>
-                                                </View>
-                                            </View>
-
-                                        </View>
+                                    <ScrollView contentContainerStyle={[styles.CheckStockListView]} keyboardShouldPersistTaps="always">
 
                                         {
-                                            expandedItems.includes(item.account) && (
+                                            stockData && stockData.length > 0 && stockData.map((item, index) => (
+                                                <View style={styles.StockListItem} key={index}>
+                                                    <View style={styles.CustomerListCont}>
 
-                                                <View style={styles.QtyAvlQtyCont}>
+                                                        <View style={styles.CustomerImgWrap}>
+                                                            <Image style={styles.CustomerImage} source={require('../images/customerList.png')} />
+                                                        </View>
 
-                                                    <TouchableOpacity style={[styles.QtyCont, { backgroundColor: '#D8D8DA', marginRight: 16 }]} onPress={() => statementClick(item)}>
-                                                        <Text style={styles.QtyText}>Statement</Text>
-                                                    </TouchableOpacity>
-                                                    <TouchableOpacity style={[styles.QtyCont, { backgroundColor: '#D8D8DA', }]} onPress={() => outStandingClick(item)}>
-                                                        <Text style={styles.AvlText}>Outstanding</Text>
-                                                    </TouchableOpacity>
+                                                        <View style={styles.CustomerListMid}>
+                                                            <View style={{
+                                                                flexDirection: 'row',
+                                                                justifyContent: 'space-between',
+                                                                width: '100%'
+                                                            }}>
+                                                                <TouchableOpacity style={[styles.StockListDescText, { width: '75%' }]} onPress={() => setSelectedStock(item)}>
+                                                                    <Text style={[styles.StockListDescText]}>{item.Custname}</Text>
+                                                                </TouchableOpacity>
+                                                                <Text style={[styles.StockListDescTextSmall, { color: '#30B3A4', fontFamily: 'Lexend-Regular', }]}>{item.Avai_Bal}</Text>
+                                                            </View>
+                                                            <View style={{
+                                                                flexDirection: 'row',
+                                                                width: '100%',
+                                                                paddingVertical: 6
+                                                            }}>
+                                                                <Text style={styles.StockListDescTextSmall}>{item.account}</Text>
+                                                                <View style={{
+                                                                    marginLeft: 24,
+                                                                    flexDirection: 'row'
+                                                                }}>
+                                                                    <Text style={[styles.StockListDescTextSmall,]}>C.Limit:</Text>
+                                                                    <Text style={[styles.StockListDescTextSmall,]}>{item.Credit_Limit}</Text>
+                                                                </View>
+
+                                                                <TouchableOpacity style={[styles.PlusMinusCont, { marginLeft: 'auto' }]} onPress={() => toggleExpand(item.account)}>
+                                                                    {
+                                                                        expandedItems.includes(item.account) ?
+                                                                            <Image style={styles.PlusMinusImg} source={require('../images/chkMinus.png')} />
+                                                                            :
+                                                                            <Image style={styles.PlusMinusImg} source={require('../images/chkPlus.png')} />
+                                                                    }
+                                                                </TouchableOpacity>
+                                                            </View>
+                                                        </View>
+
+                                                    </View>
+
+                                                    {
+                                                        expandedItems.includes(item.account) && (
+
+                                                            <View style={styles.QtyAvlQtyCont}>
+
+                                                                <TouchableOpacity style={[styles.QtyCont, { backgroundColor: '#D8D8DA', marginRight: 16 }]} onPress={() => statementClick(item)}>
+                                                                    <Text style={styles.QtyText}>Statement</Text>
+                                                                </TouchableOpacity>
+                                                                <TouchableOpacity style={[styles.QtyCont, { backgroundColor: '#D8D8DA', }]} onPress={() => outStandingClick(item)}>
+                                                                    <Text style={styles.AvlText}>Outstanding</Text>
+                                                                </TouchableOpacity>
+                                                            </View>
+                                                        )
+                                                    }
+
                                                 </View>
-                                            )
+
+                                            ))
                                         }
+                                    </ScrollView>
 
-                                    </View>
-
-                                ))
-                            }
-                        </ScrollView>
+                                }
+                            </>
+                            :
+                            <View><Text style={{ marginTop: 10, fontSize: 18 }}>No Data Found</Text></View>
                     }
-
                     {
                         !stockData && !selectedStock && !searchItem && top50Customers &&
                         <>
@@ -1374,7 +1519,25 @@ const NewCollections = () => {
                                             keyboardType="numeric" // This ensures the numeric keyboard appears
                                             onChangeText={text => {
                                                 const numericText = text.replace(/[^0-9.]/g, '');// This removes any non-numeric characters
-                                                setRvAmnt(numericText);
+
+                                                console.log("st>>>", numericText, statementData.reduce((arr, curr) => {
+
+                                                    return arr + curr.BALANCE
+                                                }, 0))
+
+                                                if (numericText <= statementData.reduce((arr, curr) => {
+
+                                                    return arr + curr.BALANCE
+                                                }, 0)) {
+
+                                                    setRvAmnt(numericText);
+
+                                                } else {
+
+                                                    Alert.alert("Cannot enter more than invoice total")
+                                                    return
+                                                }
+
                                             }}
                                             value={rvAmnt}
                                             // onChangeText={text => setRvAmnt(text)}
@@ -1395,7 +1558,7 @@ const NewCollections = () => {
                                     <View style={{
                                         paddingVertical: 4
                                     }}>
-                                        <Text style={styles.StockLabel}>Outstanding bills, Click to Select:</Text>
+                                        <Text style={styles.StockLabel}>Outstanding bills, Click to Select</Text>
                                     </View>
 
                                     {
@@ -1622,13 +1785,17 @@ const NewCollections = () => {
                             }} onPress={() => resultClosePress()}>
                                 <Text style={styles.CancelText}>Close</Text>
                             </TouchableOpacity>
-                            <TouchableOpacity style={{
+
+                            {/* this button because no voucher number , because from api i get only result:saved so cannot show
+                            this issue came in soca so i told them to go to collection report there voucher number is there,, 
+                             then click print then sharing oprion comes  */}
+                            {/* <TouchableOpacity style={{
                                 backgroundColor: 'green',
                                 padding: 12,
                                 borderRadius: 8
                             }} onPress={generatePDF}>
                                 <Text style={styles.PDFText}>Save Pdf</Text>
-                            </TouchableOpacity>
+                            </TouchableOpacity> */}
                         </View>
                     </View>
                 </View>

@@ -77,6 +77,21 @@ const OutstandingPop = ({ setShowOutstandingPop, privateKey, accountNo, appUrl, 
             }
         }
 
+
+        const getLetterheadBase64 = async () => new Promise((resolve, reject) => {
+
+            RNFS.readFileAssets('soca_letterhead_text.txt').then(result => {
+                console.log(result);
+                resolve(result)
+            }).catch(err => {
+                console.log(err);
+            })
+    
+    
+        })
+
+const logoUri = await getLetterheadBase64()
+
         const htmlContent2 = `
 <!DOCTYPE html>
 <html lang="en">
@@ -186,10 +201,19 @@ const OutstandingPop = ({ setShowOutstandingPop, privateKey, accountNo, appUrl, 
             color: #1A6CF6;
             font-weight: bold;
         }
+        .image_letterhead{
+            width:99%;
+            object-fit:contain;
+        }
     </style>
 </head>
 <body>
     <div class="table-container">
+
+
+ ${cmpcode.toLowerCase().trim() == 'soca' ? `<div>
+ <img class="image_letterhead" src=${logoUri}
+ </div>` : ""}
 
     <div class="statementHead">
         <div><h3>Outstanding Statement of Account ${accountNo}</h3></div>

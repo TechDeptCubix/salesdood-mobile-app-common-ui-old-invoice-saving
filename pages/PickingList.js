@@ -22,7 +22,7 @@ const PickingList = () => {
     const fetchPickingList = async () => {
         setShowLoader(true)
         try {
-            // const response = await axios.get(`https://cubixweberp.com:199/api/Pick/ShowPick?cmpcode=PREMIER&guid=501FDABB-47FD-4851-AB6C-3A7AE0576D3F&mod=SHOW_PICK&deptno=%27%27%27`);
+            
             const response = await axios.get(`https://cubixweberp.com:199/api/Pick/ShowPick?cmpcode=autoland&guid=425cc3d5-8e70-4502-a3a2-dc85e4bfbd83&mod=SHOW_PICK&deptno=%27%27%27`);
             setPickingList(response.data);
             setShowLoader(false)

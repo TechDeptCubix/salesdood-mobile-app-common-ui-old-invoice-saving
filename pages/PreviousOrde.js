@@ -85,9 +85,14 @@ const PreviousOrde = () => {
         try {
             // const response = await axios.get(`${REACT_APP_BASE_URL}Sales_Order/Salesall/ALL`);
             // const response = await axios.get(`https://cubixweberp.com:208/api/Sales_Order/automax/Salesall/ALL`);
-            const response = await axios.get(`${appUrl}Sales_Order/${cmpcode}/previous/${salesMan}`);
 
-            console.log(`${appUrl}Sales_Order/${cmpcode}/previous/${salesMan}`)
+            const deptno = await AsyncStorage.getItem('DEPTNO')
+
+            console.log("previous order api url -->[[]] ", `${appUrl}Sales_Order/${cmpcode}/previous/${salesMan}/${deptno}`)
+
+            const response = await axios.get(`${appUrl}Sales_Order/${cmpcode}/previous/${salesMan}/${deptno}`);
+
+           // console.log(`${appUrl}Sales_Order/${cmpcode}/previous/${salesMan}`)
 
             // https://cubixweberp.com:208/api/Sales_Order/automax/previous/SHA01
             setData(response.data);
@@ -263,13 +268,13 @@ const PreviousOrde = () => {
                                     expandedItems.includes(item.so_no) && (
 
                                         <View style={styles.QtyAvlQtyCont}>
-
+{/* commented because to check if working properly
                                             <TouchableOpacity style={[styles.QtyCont, { backgroundColor: '#D8D8DA', marginRight: 16 }]} onPress={() => navigation.navigate('MakeOrder', { orderId: item.so_no, type: 'edit' })}>
                                                 <Text style={styles.QtyText}>Edit Sales Order</Text>
                                             </TouchableOpacity>
                                             <TouchableOpacity style={[styles.QtyCont, { backgroundColor: '#D8D8DA', }]} onPress={() => navigation.navigate('MakeOrder', { orderId: item.so_no, type: 'pull' })}>
                                                 <Text style={styles.AvlText}>Pull Sales Order</Text>
-                                            </TouchableOpacity>
+                                            </TouchableOpacity> */}
                                         </View>
 
                                     )

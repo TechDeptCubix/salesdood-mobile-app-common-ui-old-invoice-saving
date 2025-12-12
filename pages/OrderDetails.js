@@ -29,6 +29,7 @@ const OrderDetails = ({ route }) => {
     const [cmpcode, setCmpCode] = useState('')
 
     const fetchAppUrl = async () => {
+
         const appUrl = await AsyncStorage.getItem('appUrl')
         const storedUserDataArray = await AsyncStorage.getItem("userDataArray");
         const parsedUserDataArray = storedUserDataArray && JSON.parse(storedUserDataArray) || [];
@@ -46,14 +47,24 @@ const OrderDetails = ({ route }) => {
     const fetchPreviousOrders = async () => {
         try {
             // const response = await axios.get('http://tanoof.dyndns.org:92/api/Sales_Order/Salesall/ALL');
-            const response = await axios.get(`${appUrl}Sales_Order/${cmpcode}/Salesall/ALL`);
+
+
+            
+
+            const deptno = await AsyncStorage.getItem('DEPTNO')
+
+            console.log("fetch previous order api+++-->>>><<<", `${appUrl}Sales_Order/${cmpcode}/Salesall/ALL/${deptno}`)
+            
+            const response = await axios.get(`${appUrl}Sales_Order/${cmpcode}/Salesall/ALL/${deptno}`);
             const allOrders = response.data;
             const filteredOrder = allOrders.filter(order => order.so_no === orderId);
             const salesMan = await AsyncStorage.getItem('sales_man')
             setSalesMan(salesMan)
+
+            console.log("filteredOrder >> fetchPreviousOrders allOrders orderId" ,allOrders,orderId, filteredOrder)
             setData(filteredOrder);
         } catch (error) {
-            console.log('fetchPreviousOrdersError', error);
+            console.log('fetchPreviousOrdersError[[[', error);
             setError(error);
         }
     };
@@ -62,7 +73,12 @@ const OrderDetails = ({ route }) => {
         try {
             // const response = await axios.get(`http://tanoof.dyndns.org:92/api/Sales_Order/salesall/details/${orderId}`);
             // const response = await axios.get(`${REACT_APP_BASE_URL}Sales_Order/salesall/details/${orderId}`);
-            const response = await axios.get(`${appUrl}Sales_Order/${cmpcode}/details/${orderId}`);
+
+
+            const deptno = await AsyncStorage.getItem('DEPTNO')
+
+            console.log("order details-->++[[[", `${appUrl}Sales_Order/${cmpcode}/details/${orderId}/${deptno}`)
+            const response = await axios.get(`${appUrl}Sales_Order/${cmpcode}/details/${orderId}/${deptno}`);
             setItemList(response.data);
         } catch (error) {
             console.log('fetchItemListError', error)
@@ -134,7 +150,7 @@ const OrderDetails = ({ route }) => {
             }
 
             {
-                data && itemList && data.length > 0 && itemList.length > 0 &&
+                itemList && itemList.length > 0 &&
                 <ScrollView style={styles.OrderDetailsWrap}>
 
                     {/* <View style={styles.TopButtonsWrap}>
@@ -146,7 +162,9 @@ const OrderDetails = ({ route }) => {
                         </TouchableOpacity>
                     </View> */}
 
-                    <View style={styles.TopButtonsWrap}>
+                    {/* hidden because data is empty array have to check what problem now hidden for demo for icelab */}
+
+                    {/* <View style={styles.TopButtonsWrap}>
                         <View style={styles.CustomerOrderCont}>
                             <Text style={styles.CustomerOrderText}>Customer Code</Text>
                             <Text style={styles.CustomerOrderValue}>{data.length > 0 && data[0].cust_acc}</Text>
@@ -173,7 +191,7 @@ const OrderDetails = ({ route }) => {
                         <View style={styles.CustomerItemWrap}>
                             <Text style={styles.CustomerValueText}>---</Text>
                         </View>
-                    </View>
+                    </View> */}
 
                     <View style={styles.CustomerSection}>
                         <View style={styles.CustomerItemWrap}>
@@ -181,37 +199,7 @@ const OrderDetails = ({ route }) => {
                         </View>
                     </View>
 
-                    {/* <ScrollView nestedScrollEnabled={true} style={styles.InnerScroll}>
-
-                        <View style={styles.InnerView}>
-
-                            {
-                                itemList && itemList.map((item, index) => (
-                                    <View style={styles.SelectedItemCont} key={index}>
-                                        <View style={styles.totalTag}>
-                                            <Text style={styles.itemCountText}>
-                                                {item.line_total}
-                                            </Text>
-                                        </View>
-                                        <Text style={styles.DescText}>{item.idesc}</Text>
-                                        <View style={styles.DescCont}>
-                                            <Text style={styles.DescSubText}>Item Code :</Text>
-                                            <Text style={styles.DescSubTextValue}>{item.so_icode}</Text>
-                                        </View>
-                                        <View style={styles.DescCont}>
-                                            <Text style={styles.DescSubText}>Unit Price :</Text>
-                                            <Text style={styles.DescSubTextValue}>{item.so_cost}</Text>
-                                        </View>
-                                        <View style={styles.DescCont}>
-                                            <Text style={styles.DescSubText}>Quantity :</Text>
-                                            <Text style={styles.DescSubTextValue}>{item.tr_qty2}</Text>
-                                        </View>
-                                    </View>
-                                ))
-                            }
-
-                        </View>
-                    </ScrollView> */}
+                   
 
                     <ScrollView nestedScrollEnabled={true} style={styles.InnerScroll}>
 

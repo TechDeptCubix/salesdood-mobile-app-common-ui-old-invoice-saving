@@ -185,16 +185,16 @@ const Login = () => {
     async function subscribeToTopic() {
 
         // here add company code + drivers else drivers of all company will get notification
-        await messaging().subscribeToTopic(`${(userDataArray[0].cmpcode).trim().toUpperCase()}_drivers`);
+        await messaging().subscribeToTopic(`${(userDataArray[0].cmpcode)?.trim().toUpperCase()}_drivers`);
 
-        console.log('Subscribed to topic', `${ (userDataArray[0].cmpcode).trim().toUpperCase()}_drivers`);
+        console.log('Subscribed to topic', `${(userDataArray[0].cmpcode)?.trim().toUpperCase()}_drivers`);
     }
 
     async function unsubscribeFromTopic() {
 
         // here also company code + drivers
-        await messaging().unsubscribeFromTopic(`${(userDataArray[0].cmpcode).trim().toUpperCase()}_drivers`);
-        console.log('Unsubscribed from topic ', `${(userDataArray[0].cmpcode).trim().toUpperCase()}_drivers`);
+        await messaging().unsubscribeFromTopic(`${(userDataArray[0].cmpcode)?.trim().toUpperCase()}_drivers`);
+        console.log('Unsubscribed from topic ', `${(userDataArray[0].cmpcode)?.trim().toUpperCase()}_drivers`);
     }
 
 
@@ -203,7 +203,7 @@ const Login = () => {
     }
 
     const showLoginFailedToast = () => {
-        Toast.error('Some Error occured, Please try again later')
+        Toast.error('Some Error occured, Please try again later+++')
     }
 
     const showFormEmptyToast = () => {
@@ -221,7 +221,7 @@ const Login = () => {
 
                     setUserDataArray(parsedUserDataArray)
 
-                    let apiUrl = `https://cubixweberp.com:${parsedUserDataArray[0].portNo}/api/`
+                    let apiUrl = `${parsedUserDataArray[0].api_config}/api/`
 
                     await AsyncStorage.setItem('appUrl', apiUrl)
 
@@ -241,6 +241,9 @@ const Login = () => {
     );
 
     const ReLogin = async () => {
+
+        console.log("log clicked ReLogin----->")
+
         try {
 
             const locusername = await AsyncStorage.getItem('loginUserName')
@@ -255,7 +258,7 @@ const Login = () => {
 
             const uri = `${appUrl}LoginUser?user=${username}&pass=${pass}&cmpcode=${userDataArray[0].cmpcode}`
 
-            console.log('reloginUrl', uri)
+            console.log('reloginUrl>>++++', uri)
 
             const response = await axios.get(uri);
             // const result = response.data.result1.value[0];
@@ -289,45 +292,51 @@ const Login = () => {
                 await AsyncStorage.setItem('accessgrp', result.accessgrp?.trim());
                 await AsyncStorage.setItem('SalesRole', result.SalesRole?.trim());
 
-                console.log("result.Mobile_User.trim()->-> RL ",result.Mobile_User?.trim())
+                if (result.smankey) {
 
-                console.log("result.Sales_type.trim() RL ",result.Sales_type?.trim())
+                    await AsyncStorage.setItem('Smankey', result.smankey?.trim());
+
+                    console.log("smankey after login ", result.smankey?.trim())
+                }
+
+                console.log("result.Mobile_User.trim()->-> RL ", result.Mobile_User?.trim())
+
+                console.log("result.Sales_type.trim() RL ", result.Sales_type?.trim())
 
                 await AsyncStorage.setItem('mobileUserTypeAsyncStorage', result.Mobile_User?.trim());
 
-                
+
 
                 await AsyncStorage.setItem('SalesTypeAsyncStorage', result.Sales_type?.trim());
 
-                // await AsyncStorage.setItem('DEPTNO', result.DEPTNO.trim());
-                // await AsyncStorage.setItem('VAN', result.VAN.trim());
+
 
                 if (result.Fleet_Name === '') {
                     await AsyncStorage.setItem('Fleet_Name', '----');
                 } else {
-                    await AsyncStorage.setItem('Fleet_Name', result.Fleet_Name.trim());
+                    await AsyncStorage.setItem('Fleet_Name', result.Fleet_Name?.trim());
                 }
 
                 if (result.sales_man === '') {
                     await AsyncStorage.setItem('sales_man', '----');
                 } else {
-                    await AsyncStorage.setItem('sales_man', result.sales_man.trim());
+                    await AsyncStorage.setItem('sales_man', result.sales_man?.trim());
                 }
                 if (result.salesman_name === null) {
                     await AsyncStorage.setItem('salesman_name', '----');
                 } else {
-                    await AsyncStorage.setItem('salesman_name', result.salesman_name.trim());
+                    await AsyncStorage.setItem('salesman_name', result.salesman_name?.trim());
                 }
 
                 if (result.DEPTNO === null) {
                     await AsyncStorage.setItem('DEPTNO', '----');
                 } else {
-                    await AsyncStorage.setItem('DEPTNO', result.DEPTNO.trim());
+                    await AsyncStorage.setItem('DEPTNO', result.DEPTNO?.trim());
                 }
                 if (result.VAN === null) {
                     await AsyncStorage.setItem('VAN', '----');
                 } else {
-                    await AsyncStorage.setItem('VAN', result.VAN.trim());
+                    await AsyncStorage.setItem('VAN', result.VAN?.trim());
                 }
 
                 setLoading(false);
@@ -349,6 +358,9 @@ const Login = () => {
 
 
     const login = async () => {
+
+        console.log("log clicked ReLogin>>>>>")
+
         setLoading(true);
 
         if (userId !== '' && password !== '') {
@@ -359,16 +371,18 @@ const Login = () => {
 
                 const appUrl = await AsyncStorage.getItem('appUrl')
 
+                console.log("appUrl ", appUrl)
+
                 console.log("encodePass", pass)
 
                 const uri = `${appUrl}LoginUser?user=${username}&pass=${pass}&cmpcode=${userDataArray[0].cmpcode}`
 
-                console.log(uri)
+                console.log("login api url---->>", uri)
 
                 const response = await axios.get(uri);
                 // const result = response.data.result1.value[0];
 
-                console.log('loginres', response.data)
+                console.log('loginres>>>', response.data)
                 const result = response.data[0];
 
                 if (result.Userlogin === 'Sucess') {
@@ -389,49 +403,57 @@ const Login = () => {
 
                     await AsyncStorage.setItem('loginPass', password)
 
-                    await AsyncStorage.setItem('Userlogin', result.Userlogin.trim());
-                    await AsyncStorage.setItem('accessgrp', result.accessgrp.trim());
-                    await AsyncStorage.setItem('SalesRole', result.SalesRole.trim());
+                    await AsyncStorage.setItem('Userlogin', result.Userlogin?.trim());
+                    await AsyncStorage.setItem('accessgrp', result.accessgrp?.trim());
+                    await AsyncStorage.setItem('SalesRole', result.SalesRole?.trim());
 
-                    console.log("result.Mobile_User.trim()->-> L ",result.Mobile_User?.trim())
+                    if (result.smankey) {
 
-                    console.log("result.Sales_type.trim() L ",result.Sales_type?.trim())
+                        await AsyncStorage.setItem('Smankey', result.smankey?.trim());
 
-                    if(result.Mobile_User){
+                        console.log("smankey after login ", result.smankey?.trim())
+                    }
+
+                    console.log("result.Mobile_User.trim()->-> L ", result.Mobile_User?.trim())
+
+                    console.log("result.Sales_type.trim() L ", result.Sales_type?.trim())
+
+                    if (result.Mobile_User) {
                         await AsyncStorage.setItem('mobileUserTypeAsyncStorage', result.Mobile_User?.trim());
                     }
-    
-                    if(result.Sales_type){
+
+                    if (result.Sales_type) {
                         await AsyncStorage.setItem('SalesTypeAsyncStorage', result.Sales_type?.trim());
                     }
-                    
+
 
                     if (result.Fleet_Name === '') {
                         await AsyncStorage.setItem('Fleet_Name', '----');
                     } else {
-                        await AsyncStorage.setItem('Fleet_Name', result.Fleet_Name.trim());
+                        await AsyncStorage.setItem('Fleet_Name', result.Fleet_Name?.trim());
                     }
 
                     if (result.sales_man === '') {
                         await AsyncStorage.setItem('sales_man', '----');
                     } else {
-                        await AsyncStorage.setItem('sales_man', result.sales_man.trim());
+                        await AsyncStorage.setItem('sales_man', result.sales_man?.trim());
                     }
                     if (result.salesman_name === null) {
                         await AsyncStorage.setItem('salesman_name', '----');
                     } else {
-                        await AsyncStorage.setItem('salesman_name', result.salesman_name.trim());
+                        await AsyncStorage.setItem('salesman_name', result.salesman_name?.trim());
                     }
 
                     if (result.DEPTNO === null) {
                         await AsyncStorage.setItem('DEPTNO', '----');
                     } else {
-                        await AsyncStorage.setItem('DEPTNO', result.DEPTNO.trim());
+                        console.log("DEPTNO is issue")
+                        await AsyncStorage.setItem('DEPTNO', result.DEPTNO?.trim() ? result.DEPTNO?.trim() : "");
                     }
                     if (result.VAN === null) {
                         await AsyncStorage.setItem('VAN', '----');
                     } else {
-                        await AsyncStorage.setItem('VAN', result.VAN.trim());
+                        await AsyncStorage.setItem('VAN', result.VAN?.trim() ? result.VAN?.trim() : "");
                     }
                     setLoading(false);
 
@@ -442,14 +464,18 @@ const Login = () => {
                     navigation.navigate('Home')
 
                 } else {
-                    setLoginError("Some Error occured, Please try again later")
+                    setLoginError("Some Error occured, Please try again later---")
                     setLoginClick(false)
 
                     showLoginFailedToast()
                     setLoading(false);
                 }
             } catch (error) {
-                console.error('Error Login:', error);
+                console.error('Error Login:--->>', error);
+                console.error('Error Request:--->>', error.request);
+                console.log('AXIOS ERROR:--->>', error.message);
+                console.log('DETAILS:--->>', error.toJSON?.());
+
                 showLoginFailedToast()
                 setLoading(false);
             }
@@ -460,12 +486,7 @@ const Login = () => {
 
     };
 
-    // console.log('userDataArray', userDataArray)
 
-    // console.log('portNoData', portNoData)
-
-
-    // #E9EBE6
 
     return (
         <>
@@ -569,6 +590,8 @@ const Login = () => {
                             </View>
                         }
                         <Text style={styles.cmpcodeText}>{cmpcode}</Text>
+
+                        <Text style={{ color: 'grey', marginRight: 6, fontFamily: 'Lexend-Regular' }}>version number 5.82_v2</Text>
 
                         <View style={styles.CBXImgWrap}>
                             {/* <Image style={styles.CBXImg} source={require('../images/cubix_logo_new.png')}></Image> */}

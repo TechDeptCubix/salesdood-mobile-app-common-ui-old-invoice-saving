@@ -11,10 +11,17 @@ import REACT_APP_BASE_URL from '../url/AppUrl'
 import HeaderUiNew from './HeaderUiNew'
 import { format } from 'date-fns'
 import RadioGroup from 'react-native-radio-buttons-group';
+import { da } from 'date-fns/locale'
+import { Checkbox } from 'react-native-paper'
 
 
 
 const SalesInvoiceNew = ({ route }) => {
+
+
+    const [unitPriceToShowUser, setUnitPriceToShowUser] = useState('')
+
+    const [checked, setChecked] = useState(false)
 
     const { orderId, type } = route.params || {};
 
@@ -109,6 +116,7 @@ const SalesInvoiceNew = ({ route }) => {
     const qtyInpRef = useRef(null)
 
     const unitPriceInpRef = useState(null)
+    const unitPriceInpRefToShowUser = useState(null)
 
     const cashCustNameRef = useRef(null)
 
@@ -149,6 +157,20 @@ const SalesInvoiceNew = ({ route }) => {
             searchUserInputRef.current.focus()
         }
     }, [])
+
+    useEffect(() => {
+
+        if (unitPriceToShowUser) {
+            let numberToCalculate = parseFloat(unitPriceToShowUser).toFixed(2)
+            if (checked) {
+                console.log("incl vat turned on>>", unitPriceToShowUser, numberToCalculate, numberToCalculate * 0.047619047)
+                setUnitPrice(parseFloat(numberToCalculate - (numberToCalculate * 0.047619047)).toFixed(2) + "")
+            } else {
+                setUnitPrice(parseFloat(numberToCalculate).toFixed(2) + "")
+            }
+        }
+
+    }, [checked, unitPriceToShowUser])
 
     const cashCreditRadio = useMemo(() => ([
         {
@@ -279,15 +301,21 @@ const SalesInvoiceNew = ({ route }) => {
         setSelectedStock(item)
         setQuantity(item.quantity?.toString())
         setUnitPrice(item.unitPrice?.toString())
+        setUnitPriceToShowUser(item.unitPriceToShowUser?.toString())
     }
 
 
     const searchCustomer = async (value) => {
         setShowActivity(true)
         setCustomerSearchError('')
-        console.log('searchCustomer', `${appUrl}Search_Customer/${cmpcode}/Cust/${value}/${deptNo}`)
+
+        let customerSearchType = "Cust"
+        if (selectedRadio?.trim()?.toUpperCase() == "CASH") {
+            customerSearchType = "CashCust"
+        }
+        console.log('searchCustomer', `${appUrl}Search_Customer/${cmpcode}/${customerSearchType}/${value}/${deptNo}`)
         try {
-            await axios.get(`${appUrl}Search_Customer/${cmpcode}/Cust/${value}/${deptNo}`)
+            await axios.get(`${appUrl}Search_Customer/${cmpcode}/${customerSearchType}/${value}/${deptNo}`)
                 .then((res) => {
                     const data = res.data;
 
@@ -308,9 +336,15 @@ const SalesInvoiceNew = ({ route }) => {
     const searchEditCustomer = async (value) => {
         // setShowActivity(true)
         console.log('searchEditCustomer', value)
+
+        let customerSearchType = "Cust"
+        if (selectedRadio?.trim()?.toUpperCase() == "CASH") {
+            customerSearchType = "CashCust"
+        }
+
         try {
-            console.log(`${appUrl}Search_Customer/${cmpcode}/Cust/${value}/${deptNo}`)
-            await axios.get(`${appUrl}Search_Customer/${cmpcode}/Cust/${value}/${deptNo}`)
+            console.log(`${appUrl}Search_Customer/${cmpcode}/${customerSearchType}/${value}/${deptNo}`)
+            await axios.get(`${appUrl}Search_Customer/${cmpcode}/${customerSearchType}/${value}/${deptNo}`)
                 .then((res) => {
                     setSelectedCustomer(res.data)
                     AsyncStorage.setItem('selectedCustomerInv', JSON.stringify(res.data))
@@ -450,9 +484,26 @@ const SalesInvoiceNew = ({ route }) => {
 
 
     useEffect(() => {
+
+        console.log("selectedStock >> []", selectedStock)
+
         if (selectedStock) {
             setSearchItem('')
-            setUnitPrice((selectedStock.price).toString())
+            if(unitPrice){
+                
+                setUnitPrice(unitPrice)
+                setUnitPriceToShowUser(unitPriceToShowUser)
+
+                if(unitPrice != unitPriceToShowUser){
+                    setChecked(true)
+                }
+
+
+            }else{
+
+                setUnitPrice((selectedStock.price).toString())
+                setUnitPriceToShowUser((selectedStock.price).toString())
+            }
         }
 
         if (selectedStock && qtyInpRef.current) {
@@ -506,6 +557,16 @@ const SalesInvoiceNew = ({ route }) => {
 
 
     const SaveItem = async () => {
+
+
+        let checkQuantity = parseFloat(quantity).toFixed(3)
+        let checkUnitPrice = parseFloat(unitPrice).toFixed(2)
+
+        if(checkQuantity == 0 || checkUnitPrice == 0){
+            Alert.alert("Please enter Quantity and Price")
+            return
+        }
+
         // Retrieve existing savedItemData from AsyncStorage
         const savedItemDataString = await AsyncStorage.getItem('savedItemDataInv');
         const savedItemDataArray = savedItemDataString ? JSON.parse(savedItemDataString) : [];
@@ -519,28 +580,46 @@ const SalesInvoiceNew = ({ route }) => {
         // // Check if the item already exists in the list
         const itemExists = savedItemDataArray.some(item => item.Code === selectedStock.Code);
 
-        console.log('itemExists', itemExists)
+        console.log('itemExists >> Sales invoice++ ', itemExists)
+
+        console.log("selected account before showAddToCartCustomerErr", selectedCustomer);
 
 
         if (itemExists) {
             showItemExistError()
             setQuantity('');
             setUnitPrice('');
+            setUnitPriceToShowUser('');
             setSelectedStock(null)
             return; // Exit the function
         }
 
-        if(cmpcode.toUpperCase().trim() == "MALBAR"){
+        if (selectedStock["Block Price"]) {
 
-        
-        if (!itemExists && savedItemDataArray.length > 9) {
-            showMoreThan10ItemError()
-            setQuantity('');
-            setUnitPrice('');
-            setSelectedStock(null)
-            return; // Exit the function
+            if (selectedStock["Block Price"] > 0) {
+
+                if (selectedStock["Block Price"] > unitPrice) {
+                    Alert.alert("Entered price less than block price")
+                    return
+                }
+
+            }
+
+
         }
-    }
+
+        if (cmpcode.toUpperCase().trim() == "MALBAR") {
+
+
+            if (!itemExists && savedItemDataArray.length > 9) {
+                showMoreThan10ItemError()
+                setQuantity('');
+                setUnitPrice('');
+                setUnitPriceToShowUser('');
+                setSelectedStock(null)
+                return; // Exit the function
+            }
+        }
 
 
         if (selectedStock && quantity && unitPrice && selectedCustomer && !cashCustomerName && selectedCustomer.CREDITMETHOD == 'CREDIT BLOCK') {
@@ -549,6 +628,7 @@ const SalesInvoiceNew = ({ route }) => {
                 ...selectedStock,
                 quantity: parseFloat(quantity).toFixed(3),
                 unitPrice: parseFloat(unitPrice).toFixed(2),
+                unitPriceToShowUser: parseFloat(unitPriceToShowUser).toFixed(2),
                 total: quantity * unitPrice
             }
 
@@ -583,6 +663,7 @@ const SalesInvoiceNew = ({ route }) => {
                 setSavedItemData([...savedItemData, newItem]);
                 setQuantity('');
                 setUnitPrice('');
+                setUnitPriceToShowUser('');
                 setSelectedStock(null)
                 // showSaveItemSuccess()
 
@@ -594,11 +675,12 @@ const SalesInvoiceNew = ({ route }) => {
             }
         }
 
-        if (selectedStock && quantity && unitPrice && selectedCustomer && selectedCustomer.CREDITMETHOD == 'OPEN') {
+        if (selectedStock && quantity && unitPriceToShowUser && selectedCustomer && (selectedCustomer.CREDITMETHOD == 'OPEN' || selectedCustomer.creditmethod == 'OPEN')) {
             const newItem = {
                 ...selectedStock,
                 quantity: parseFloat(quantity).toFixed(3),
                 unitPrice: parseFloat(unitPrice).toFixed(2),
+                unitPriceToShowUser: parseFloat(unitPriceToShowUser).toFixed(2),
                 total: quantity * unitPrice
             };
 
@@ -643,7 +725,9 @@ const SalesInvoiceNew = ({ route }) => {
             setSavedItemData([...savedItemData, newItem]);
             setQuantity('');
             setUnitPrice('');
+            setUnitPriceToShowUser('');
             setSelectedStock(null)
+            setChecked(false)
             // showSaveItemSuccess()
 
             logAsyncData()
@@ -653,11 +737,12 @@ const SalesInvoiceNew = ({ route }) => {
             }
         }
 
-        if (selectedStock && quantity && unitPrice && cashCustomerName) {
+        if (selectedStock && quantity && unitPriceToShowUser && cashCustomerName) {
             const newItem = {
                 ...selectedStock,
                 quantity: parseFloat(quantity).toFixed(3),
                 unitPrice: parseFloat(unitPrice).toFixed(2),
+                unitPriceToShowUser: parseFloat(unitPriceToShowUser).toFixed(2),
                 total: quantity * unitPrice
             };
 
@@ -702,6 +787,7 @@ const SalesInvoiceNew = ({ route }) => {
             setSavedItemData([...savedItemData, newItem]);
             setQuantity('');
             setUnitPrice('');
+            setUnitPriceToShowUser('');
             setSelectedStock(null)
             // showSaveItemSuccess()
 
@@ -711,6 +797,8 @@ const SalesInvoiceNew = ({ route }) => {
                 searchItemInpRef.current.focus()
             }
         }
+
+
 
         else if (!selectedCustomer && !cashCustomerName) {
             showAddToCartCustomerErr();
@@ -1045,6 +1133,7 @@ const SalesInvoiceNew = ({ route }) => {
     };
 
     const updateTotalUnitPrice = (data) => {
+        console.log("data of cart items ", data)
         const total = data.reduce((sum, item) => sum + (item.total || 0), 0);
         setTotalUnitPrice(total);
     };
@@ -1075,6 +1164,7 @@ const SalesInvoiceNew = ({ route }) => {
         setSelectedStock('')
         setQuantity('')
         setUnitPrice('')
+        setUnitPriceToShowUser('')
         setTotalUnitPrice('')
     }
 
@@ -2314,8 +2404,8 @@ const SalesInvoiceNew = ({ route }) => {
                                                                 setQuantity(numericText);
                                                             }}
                                                             onBlur={() => {
-                                                                if (unitPriceInpRef.current) {
-                                                                    unitPriceInpRef.current.focus();
+                                                                if (unitPriceInpRefToShowUser.current) {
+                                                                    unitPriceInpRefToShowUser.current.focus();
                                                                 }
                                                             }}
                                                             value={quantity}
@@ -2324,23 +2414,55 @@ const SalesInvoiceNew = ({ route }) => {
                                                 </View>
 
                                                 <View style={[styles.TANDCInpItem, { width: '75%' }]}>
+
                                                     <Text style={[styles.CustHeadText, { width: '20%' }]}>Price</Text>
 
-                                                    <View style={[styles.TANDCInpCont, { marginTop: 0, width: '60%' }]}>
-                                                        {/* <Text style={styles.AddCartInpLabel}>Price</Text> */}
-                                                        <TextInput
-                                                            style={styles.NewInputStyle}
-                                                            ref={unitPriceInpRef}
-                                                            // placeholder='Unit price'
-                                                            placeholderTextColor="#aaa"
-                                                            keyboardType="numeric"
-                                                            onChangeText={text => {
-                                                                const numericText = text.replace(/[^0-9.]/g, ''); // This removes any non-numeric characters
-                                                                setUnitPrice(numericText);
-                                                            }}
-                                                            value={unitPrice}
-                                                        />
+                                                    <View style={{ width: "60%" }}>
+
+                                                        {/* <View style={{ marginBottom: 10, backgroundColor: "white" }}>
+                                                            <TextInput
+
+                                                                ref={unitPriceInpRef}
+                                                                // placeholder='Unit price'
+                                                                placeholderTextColor="#aaa"
+                                                                keyboardType="numeric"
+                                                                onChangeText={text => {
+                                                                    const numericText = text.replace(/[^0-9.]/g, ''); // This removes any non-numeric characters
+                                                                    setUnitPrice(numericText);
+                                                                }}
+                                                                value={unitPrice}
+                                                            />
+                                                        </View> */}
+
+                                                        <View style={[styles.TANDCInpContToShowCustomer, { marginTop: 0, }]}>
+                                                            {/* <Text style={styles.AddCartInpLabel}>Price</Text> */}
+
+
+                                                            <TextInput
+                                                                style={[styles.NewInputStyle]}
+                                                                ref={unitPriceInpRefToShowUser}
+                                                                // placeholder='Unit price'
+                                                                placeholderTextColor="#aaa"
+                                                                keyboardType="numeric"
+                                                                onChangeText={text => {
+                                                                    const numericText = text.replace(/[^0-9.]/g, ''); // This removes any non-numeric characters
+                                                                    setUnitPriceToShowUser(numericText);
+                                                                }}
+                                                                value={unitPriceToShowUser}
+                                                            />
+                                                        </View>
                                                     </View>
+
+                                                    <TouchableOpacity
+                                                        style={{ flexDirection: "column", alignItems: "left", marginLeft: 15 }}
+                                                        onPress={() => {
+                                                            setChecked(!checked);
+                                                        }}>
+                                                        <Checkbox
+                                                            status={checked ? 'checked' : 'unchecked'}
+                                                        />
+                                                        <Text>Incl. VAT</Text>
+                                                    </TouchableOpacity>
                                                 </View>
 
                                                 <View style={[styles.TANDCInpItem, { width: '75%' }]}>
@@ -3862,6 +3984,30 @@ const styles = StyleSheet.create({
 
     TANDCInpCont: {
         width: '75%',
+        backgroundColor: '#F0F4FD',
+        borderWidth: 1,
+        borderColor: '#dbdbdb',
+        borderRadius: 6,
+        flexDirection: 'row',
+        justifyContent: 'center',
+        // justifyContent: 'space-between',
+        alignItems: 'center',
+        marginLeft: 12,
+
+        shadowColor: '#000', // Shadow color for iOS
+        shadowOffset: { width: 0, height: 2 }, // Shadow offset for iOS
+        shadowOpacity: 0.25, // Shadow opacity for iOS
+        shadowRadius: 3.84, // Shadow radius for iOS
+        elevation: 1.5, // Elevation for Android
+
+        borderColor: 'grey',
+        borderWidth: 0.5,
+        padding: 5
+    },
+
+
+    TANDCInpContToShowCustomer: {
+        width: '100%',
         backgroundColor: '#F0F4FD',
         borderWidth: 1,
         borderColor: '#dbdbdb',

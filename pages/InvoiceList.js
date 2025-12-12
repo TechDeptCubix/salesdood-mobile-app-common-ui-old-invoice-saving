@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, Dimensions, TouchableOpacity, ScrollView, FlatList, ActivityIndicator, Image, PermissionsAndroid } from 'react-native'
+import { View, Text, StyleSheet, Dimensions, TouchableOpacity, ScrollView, FlatList, ActivityIndicator, Image, PermissionsAndroid, Platform } from 'react-native'
 import React, { useEffect, useState } from 'react'
 import Header from './Header'
 import { useNavigation } from '@react-navigation/native'
@@ -11,14 +11,267 @@ import { format } from 'date-fns'
 import RNHTMLtoPDF from 'react-native-html-to-pdf';
 import Share from 'react-native-share';
 import { ToWords } from 'to-words';
+import * as RNFS from 'react-native-fs';
+import { PDFDocument } from 'pdf-lib'
+import ThermalPrinterModule from 'react-native-thermal-printer';
+
 
 const InvoiceList = () => {
 
+
+
+
+    // the issue is fixed padding
+    // const generateItemLines = () => {
+
+    //     const DESC_MAX_LEN = 24;
+
+    //     return itemListBluetooth?.map((item, index) => {
+    //         const fullDesc = `${item.DESCRIPTION}`;
+    //         let itemLine = '';
+
+    //         // 1. Split the description into chunks
+    //         let remainingDesc = fullDesc;
+    //         let isFirstLine = true;
+
+    //         while (remainingDesc.length > 0) {
+    //             // Get the next chunk of the description
+    //             const currentChunk = remainingDesc.substring(0, DESC_MAX_LEN);
+    //             remainingDesc = remainingDesc.substring(DESC_MAX_LEN).trimStart();
+
+    //             if (isFirstLine) {
+    //                 // FIRST LINE: Contains Description, QTY, PRICE, and TOTAL
+    //                 const descriptionPadded = currentChunk.padEnd(DESC_MAX_LEN, ' ');
+    //                 const qty = item.QTY.toString().padStart(8, ' ');
+    //                 const price = item.PRICE.toFixed(2).padStart(8, ' ');
+    //                 const vat = (item.LINE_TOTAL * 0.05).toFixed(2).padStart(8, ' ');
+    //                 const total = (item.LINE_TOTAL + item.LINE_TOTAL * 0.05).toFixed(2).padStart(8, ' ');
+
+    //                 itemLine += `[L]${descriptionPadded}${qty} ${price} ${vat} ${total}\n`;
+    //                 isFirstLine = false;
+    //             } else {
+    //                 // WRAPPED LINES: Only contain the indented description text
+    //                 itemLine += `[L]${currentChunk}\n`;
+    //             }
+    //         }
+
+    //         return itemLine;
+    //     }).join('');
+    // };
+
+
+    // new generated dynamic solution 
+    const generateItemLines = () => {
+        const DESC_MAX_LEN = 20; // Reduced to make room for larger numbers
+
+        // Column end positions (adjust based on your 58-60 char paper width)
+        const QTY_END = 32;      // Where Qty column ends
+        const RATE_END = 42;     // Where Rate column ends  
+        const VAT_END = 52;      // Where VAT column ends
+        const AMOUNT_END = 62;   // Where Amount column ends (matches your totals)
+
+        return itemListBluetooth?.map((item, index) => {
+            const fullDesc = `${item.DESCRIPTION}`;
+            let itemLine = '';
+
+            // Split the description into chunks
+            let remainingDesc = fullDesc;
+            let isFirstLine = true;
+
+            while (remainingDesc.length > 0) {
+                const currentChunk = remainingDesc.substring(0, DESC_MAX_LEN);
+                remainingDesc = remainingDesc.substring(DESC_MAX_LEN).trimStart();
+
+                if (isFirstLine) {
+                    // FIRST LINE: Contains Description + all values right-aligned in columns
+                    const descriptionPadded = currentChunk.padEnd(DESC_MAX_LEN, ' ');
+
+                    // Format values as strings
+                    const qtyStr = item.QTY.toString();
+                    const rateStr = item.PRICE.toFixed(2);
+                    const vatStr = (item.LINE_TOTAL * 0.05).toFixed(2);
+                    const amountStr = (item.LINE_TOTAL + item.LINE_TOTAL * 0.05).toFixed(2);
+
+                    // Calculate spacing for right-alignment in each column
+                    const qtySpaces = QTY_END - DESC_MAX_LEN - qtyStr.length;
+                    const rateSpaces = RATE_END - QTY_END - rateStr.length;
+                    const vatSpaces = VAT_END - RATE_END - vatStr.length;
+                    const amountSpaces = AMOUNT_END - VAT_END - amountStr.length;
+
+                    itemLine += `[L]${descriptionPadded}${' '.repeat(Math.max(1, qtySpaces))}${qtyStr}${' '.repeat(Math.max(1, rateSpaces))}${rateStr}${' '.repeat(Math.max(1, vatSpaces))}${vatStr}${' '.repeat(Math.max(1, amountSpaces))}${amountStr}\n`;
+
+                    isFirstLine = false;
+                } else {
+                    // WRAPPED LINES: Only contain the indented description text
+                    itemLine += `[L]${currentChunk}\n`;
+                }
+            }
+
+            return itemLine;
+        }).join('');
+    };
+
+
+    // const setFormatTextForBluetooth = () => {
+    //     return {
+    //         text: '[L]\n' +
+    //             '[C]<b><font size=\'tall\'>THE ICELAB</font></b>\n' +
+    //             '[C]AJMAN\n' +
+    //             '[C]INVOICE\n' +
+    //             // Invoice and Customer Info
+    //             '[L]\n' +
+    //             `[L]${itemListBluetooth[0]?.custref}[R] Trans ID: ${itemListBluetooth[0]?.inv_no}\n` +
+    //             `[L]Inv Date: ${itemListBluetooth[0]?.inv_date.split('T')[0]}[R]Time: ${itemListBluetooth[0]?.time}\n` +
+    //             '[L]\n' +
+    //             // Item Table Header (4-COLUMN MANUAL ALIGNMENT)
+    //             '[C]<b>============================================================</b>\n' +
+    //             '[L]<b>DESCRIPTION</b>              <b>         QTY</b><b>       PRICE</b><b>       TOTAL</b>\n' + // Manually spaced header
+    //             '[C]<b>============================================================</b>\n' +
+    //             // Item Lines (Dynamic)
+    //             generateItemLines() +
+    //             '[C]<b>============================================================</b>\n' +
+    //             // Totals Summary
+    //             `[L]Grand Total[R]${itemListBluetooth?.reduce((acc, curr) => acc + curr.LINE_TOTAL, 0)?.toFixed(2)}\n` +
+    //             `[L]VAT(5%)[R]${(itemListBluetooth?.reduce((acc, curr) => acc + curr.LINE_TOTAL, 0) * 0.05)?.toFixed(2)}\n` +
+    //             '[R]CASH RECEIVED \n' +
+    //             '[R]CARD RECEIVED \n' +
+    //             '[C]<b>============================================================</b>\n' +
+    //             // Footer
+    //             '[L]\n' +
+    //             '[C]THE ICELAB MANUFACTURING LLC\n' +
+    //             '[C]Central Plazza2, Al jurf\n' +
+    //             '[C]Ajman, UAE\n'
+    //     }
+    // }
+
+    // --- Define Padding Functions ---
+    const pad = (count) => ' '.repeat(count);
+    // Adjusted for a wider print area (e.g., 64 characters)
+
+    // Text Length: "THE ICE LAB MANUFACTURING LLC" (29 chars) -> (64-29)/2 = 17.5
+    const COMP_PAD = pad(18);
+
+    const CITY_PAD = pad(27);
+
+    const TEL_PAD = pad(26);
+    // Text Length: "Central Plaza 2, Al Jurf" (24 chars) -> (64-24)/2 = 20
+    const ADD_PAD = pad(24);
+
+    // Text Length: "TRN : 104112430400003" (21 chars) -> (64-21)/2 = 21.5
+    const TRN_PAD = pad(22);
+
+    // Text Length: "Tax Invoice" (11 chars) -> (64-11)/2 = 26.5
+    const INV_PAD = pad(27);
+
+    // Text Length: "Signature/date" (14 chars) -> (64-14)/2 = 25
+    const FOOT_PAD = pad(20);
+    const FOOT_PAD_SIGN = pad(23)
+
+    const formatTotalLine = (label, value) => {
+        const valueStr = typeof value === 'number' ? value.toFixed(2) : value.toString();
+        const labelStart = 28; // Where label starts (below Qty column)
+        const valueEnd = 62; // Increased to align with Amount column (was 48)
+
+        // Create the label with its starting position
+        const labelWithPadding = ' '.repeat(labelStart) + label;
+
+        // Calculate total spaces needed between start and value end
+        const totalSpaceForValue = valueEnd - labelWithPadding.length - valueStr.length;
+
+        return `[L]${labelWithPadding}${' '.repeat(Math.max(1, totalSpaceForValue))}${valueStr}\n`;
+    };
+
+    const generateTableHeader = () => {
+        const DESC_WIDTH = 20;
+        const QTY_END = 32;
+        const RATE_END = 42;
+        const VAT_END = 52;
+        const AMOUNT_END = 62;
+
+        // Right-align each column header
+        const desc = 'Description'.padEnd(DESC_WIDTH, ' ');
+
+        // Calculate spaces needed for right-alignment
+        const qtySpaces = QTY_END - DESC_WIDTH - 'Qty'.length;
+        const rateSpaces = RATE_END - QTY_END - 'Rate'.length;
+        const vatSpaces = VAT_END - RATE_END - 'VAT'.length;
+        const amountSpaces = AMOUNT_END - VAT_END - 'Amount'.length;
+
+        return `[L]<b>${desc}${' '.repeat(Math.max(1, qtySpaces))}Qty${' '.repeat(Math.max(1, rateSpaces))}Rate${' '.repeat(Math.max(1, vatSpaces))}VAT${' '.repeat(Math.max(1, amountSpaces))}Amount</b>\n`;
+    };
+    // this one based on the reference syed icelab given
+    const setFormatTextForBluetooth = () => {
+        return {
+            text: COMP_PAD + '[C]<b><font size=\'tall\'>THE ICE LAB MANUFACTURING LLC</font></b>\n' +
+                ADD_PAD + '[C]Central Plaza 2, Al Jurf\n' +
+                CITY_PAD + '[C]Ajman, UAE\n' +
+                TEL_PAD + '[C]Tel:065617700\n' +
+                TRN_PAD + '[C]TRN : 104112430400003\n' +
+
+                // Invoice and Customer Info
+                '[L]\n' +
+                INV_PAD + '[L]<font size=\'tall\'>Tax Invoice</font>\n \n' +
+                `[L]INVOICE NO       :  ${itemListBluetooth[0]?.inv_no}\n` +
+                `[L]INVOICE DATE     :  ${itemListBluetooth[0]?.inv_date.split('T')[0]} ${itemListBluetooth[0]?.time}\n` +
+                `[L]SALESMAN NAME    :  ${itemListBluetooth[0]?.sale_man}\n` +
+                `[L]SALESMAN PHONE   :  ${itemListBluetooth[0]?.Sman_Mobile}\n` +
+                `[L]CUSTOMER NAME    :  ${itemListBluetooth[0]?.custref}\n` +
+                `[L]CUSTOMER TRN NO  :  ${itemListBluetooth[0]?.TRN}\n` +
+                `[L]PAYMENT MODE     :  ${itemListBluetooth[0]?.enginetype}\n` +
+
+
+                '[L]\n' +
+                // Item Table Header (4-COLUMN MANUAL ALIGNMENT)
+                '[C]============================================================\n' +
+                generateTableHeader() +
+                '[C]============================================================\n' +
+                // Item Lines (Dynamic)
+                generateItemLines() +
+
+                '[L]\n' +
+                // Totals Summary
+
+                formatTotalLine('Total (Ex VAT)', (itemListBluetooth[0]?.inv_total - itemListBluetooth[0]?.w)?.toFixed(2)) +
+                formatTotalLine('VAT amount', itemListBluetooth[0]?.w) +
+                formatTotalLine('Grand Total', itemListBluetooth[0]?.inv_total) +
+
+                '[L]\n' +
+
+                '[C]============================================================\n' +
+                `[L]OPENING BALANCE  :  ${itemListBluetooth[0]?.Opening_Balance}\n` +
+                `[L]CUR TRANSACTION  :  ${itemListBluetooth[0]?.Transaction_Balance}\n` +
+                `[L]CLOSING BALANCE  :  ${itemListBluetooth[0]?.Closing_Balance}\n` +
+                '[C]============================================================\n' +
+
+                // Footer
+                '[L]\n' +
+                FOOT_PAD + '[C]Thank you for shopping with us\n' +
+                FOOT_PAD_SIGN + '[C]Signature/date\n' +
+                '[L]\n' +
+                '[L]\n' +
+                '[L]\n'
+        }
+    }
+
+
+
+    const getLetterheadBase64 = async () => new Promise((resolve, reject) => {
+
+        RNFS.readFileAssets('premier_letterhead_text.txt').then(result => {
+            console.log(result);
+            resolve(result)
+        }).catch(err => {
+            console.log(err);
+        })
+
+
+    })
+
     const toWords = new ToWords();
 
-    const logoUri = Image.resolveAssetSource(
-        require("../images/premier_letterhead.jpeg")
-    ).uri;
+    // const logoUri = Image.resolveAssetSource(
+    //     require("../assets/images/premier_letterhead.jpeg")
+    // ).uri;
 
     // in this image not coming even in emulator
 
@@ -26,7 +279,7 @@ const InvoiceList = () => {
     //     require("../images/premier_letterhead.jpeg")
     //     ;
 
-    console.log("logoUri>>> ", logoUri)
+    // console.log("logoUri>>> ", logoUri)
 
     const ITEMS_PER_PAGE = 20;
 
@@ -63,6 +316,8 @@ const InvoiceList = () => {
 
     const [itemList, setItemList] = useState('')
 
+    const [itemListBluetooth, setItemListBluetooth] = useState('')
+
     const [loginUser, setLoginUser] = useState('')
 
     const [pdfUri, setPdfUri] = useState(null);
@@ -86,6 +341,9 @@ const InvoiceList = () => {
     const [payment, setPayment] = useState('CASH-B2B')
 
     const [showPrintButtonLoader, setShowPrintButtonLoader] = useState(false)
+    const [showPrintButtonLoaderBluetooth, setShowPrintButtonLoaderBluetooth] = useState(false)
+
+
 
     useEffect(() => {
         if (discount > 0) {
@@ -101,7 +359,9 @@ const InvoiceList = () => {
 
         switch (companyCodeToCheck) {
             case "MALBAR": return "100335207500003";
-            case "PREMIER": return "10027835690000"
+            case "PREMIER": return "10027835690000";
+            case "ICELAB": return "104112430400003";
+            case "ICELAB_TEST": return "104112430400003";
             default: return "-"
         }
 
@@ -186,6 +446,8 @@ const InvoiceList = () => {
       </table>
       `
 
+        const logoUri = await getLetterheadBase64()
+
         const htmlNew = `
 <html>
 <head>
@@ -223,6 +485,19 @@ const InvoiceList = () => {
             border-bottom: 1px solid gray;
              margin-top: 90px;
         }
+        .header_zero_margin_top {
+            /* background-color: #12151C; */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+             justify-content: center;
+            width: 100%;
+            padding: 8px 0;
+            color: black;
+            border-top: 1px solid gray;
+            border-bottom: 1px solid gray;
+             margin-top: 0px;
+        }
 
         .header_without_top_margin {
             // /* background-color: #12151C; */
@@ -250,6 +525,14 @@ const InvoiceList = () => {
             font-weight: bold;
             font-family: 'Calibri', 'InriaSans-Regular', sans-serif;
             font-size: 24px;
+            text-align: center;
+            margin-top:20px;
+        }
+
+        .LogoContent_below_company_name {
+            font-weight: bold;
+            font-family: 'Calibri', 'InriaSans-Regular', sans-serif;
+            font-size: 16px;
             text-align: center;
             margin-top:20px;
         }
@@ -490,27 +773,21 @@ const InvoiceList = () => {
             padding: 0px 8px;
         }
 
-
-        .footerPageNo {
-            position: fixed;
-            bottom: 10px;
-            left: 0;
-            right: 0;
-            text-align: center;
-            font-size: 10px;
-            color: #333;
-            counter-reset: page;
-        }
-        .footerPageNo::before {
-            counter-increment: page;
-            content: "Page " counter(page);
-        }
         .image_letterhead{
             width:99%;
             object-fit:contain;
         }
 
-       
+
+        @page{ 
+            margin-left: 20pt;
+             margin-right: 20pt; 
+             margin-top: 0pt;
+             margin-bottom: 38pt; 
+             padding-left: 0pt; 
+             padding-right: 0pt;
+              padding-top: 20pt; 
+              padding-bottom: 0pt; }
         
 
     </style>
@@ -525,12 +802,28 @@ const InvoiceList = () => {
                 <img class="image_letterhead" src=${logoUri}
                 </div>` : ""}
 
-
-        <div class=${cmpcode?.trim().toLowerCase() == 'premier' ? "header_without_top_margin" : "header"}>
-            <div class="LogoContent">
-                <div>TAX INVOICE</div>
-            </div>
-        </div>
+                ${cmpcode?.trim().toLowerCase() == 'premier' ?
+                `<div class=${cmpcode?.trim().toLowerCase() == 'premier' ? "header_without_top_margin" : "header"}>
+                       <div class="LogoContent">
+                         <div> TAX INVOICE </div>
+                      </div>
+                 </div>`
+                : ""}
+        
+        <div class=${cmpcode?.trim().toLowerCase() == 'icelab' || cmpcode?.trim().toLowerCase() == 'icelab_test' ? "header_zero_margin_top" : "header"}>
+            
+                <div class="LogoContent">
+                    <div>THE ICE LAB MANUFACTURING LLC</div>
+                </div>
+                <div class="LogoContent_below_company_name">
+                        <div>Central Plaza 2, Al Jurf</div>
+                        <div>Ajman, UAE</div>
+                        <div>Tel:065617700</div>
+                    
+                </div>
+                <div class="LogoContent"> TAX INVOICE </div>
+        
+        </div> 
 
         <div class="content">
 
@@ -557,7 +850,7 @@ const InvoiceList = () => {
                     </div>  
                     <div class="TrnTop">
                         <div class="label">CLIENT TRN:</div>
-                        <div class="labelValue">${trn ? trn : ''}</div>
+                        <div class="labelValue">${itemList ? itemList[0].TRN : ''}</div>
                     </div>
 
                 </div>
@@ -616,7 +909,8 @@ const InvoiceList = () => {
                     <tbody>
 
                        ${itemList.map((item, index) => `
-                        <tr style="border-bottom:2px dashed #7f7f7f">
+                       
+                        <tr class="singleRowOfItem" style="border-bottom:2px dashed #7f7f7f">
                             <td style="width:10%">${index + 1}</td>
                             <td style="width:15%">${item.ITEM_CODE}</td>
                             <td style="width:25%">${item.DESCRIPTION}</td>
@@ -653,18 +947,17 @@ const InvoiceList = () => {
                         <div style="display:flex;justify-content:end;margin:10">
                             <div style="display:flex;justify-content:space-between;width:40%">
                                 <label>Total Qty: </label>
-                                <label style="min-width: 30%;margin-right: 10px;">${
-                                    itemList?.reduce((acc,curr)=>{
-                                        return acc = acc + curr.QTY
-                                    },0)
-                                } </label>
+                                <label style="min-width: 30%;margin-right: 10px;">${itemList?.reduce((acc, curr) => {
+                    return acc = acc + curr.QTY
+                }, 0)
+            } </label>
                             </div>
                             <div style="display:flex;justify-content:space-between;width:40%">
                                 <label>Total [Excl. VAT]: </label>
                                 <label>${subTotal ? new Intl.NumberFormat('en-US', {
-                                    minimumFractionDigits: 2,
-                                    maximumFractionDigits: 2
-                                }).format(subTotal) : ''} </label>
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }).format(subTotal) : ''} </label>
                             </div>
                         </div>
 
@@ -672,30 +965,40 @@ const InvoiceList = () => {
 
                     <div style="width:100%;display:flex;padding-top:30px">
                         <div style="width:60%">
-                            <div style="margin-left: 30px;">${toWords.convert(123)}</div>
+                            <div style="margin-left: 30px;">${toWords.convert(
+                parseInt(
+                    subTotal
+                        ? subTotal + subTotal * 0.05
+                        : '')
+            )
+            }
+            AND 
+            ${(((subTotal + subTotal * 0.05) - Math.floor(subTotal + subTotal * 0.05)).toFixed(2) * 100)}
+            / 100
+            ONLY
+            </div>
                             <div style="margin-left: 30px;">TERMS </div>
                         </div>
                         <div style="width:40%">
                             <div style="display:flex;justify-content:space-between;padding: 0px 10px 10px 0px;">
                                 <div>TAXABLE AMOUNT</div>
                                 <div>${subTotal ? new Intl.NumberFormat('en-US', {
-                                    minimumFractionDigits: 2,
-                                    maximumFractionDigits: 2
-                                }).format(subTotal) : ''}</div>
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }).format(subTotal) : ''}</div>
                             </div>
                                 <div style="display:flex;justify-content:space-between;padding: 0px 10px 10px 0px;">
                             <div>VAT AMOUNT</div>
-                            <div>${
-                                (subTotal ? (subTotal * 0.05).toFixed(2) : '')
-                            }</div>
+                            <div>${(subTotal ? (subTotal * 0.05).toFixed(2) : '')
+            }</div>
                         </div>
                         <div style="display:flex;justify-content:space-between;padding: 0px 10px 10px 0px;">
                             <div>TOTAL[incl. VAT]</div>
                             <div>${(subTotal
-                                ? new Intl.NumberFormat('en-US', {
-                                    minimumFractionDigits: 2, maximumFractionDigits: 2
-                                }).format(subTotal + subTotal * 0.05)
-                                : '')}</div>
+                ? new Intl.NumberFormat('en-US', {
+                    minimumFractionDigits: 2, maximumFractionDigits: 2
+                }).format(subTotal + subTotal * 0.05)
+                : '')}</div>
                         </div>
                     </div>
 
@@ -736,23 +1039,477 @@ const InvoiceList = () => {
         </body>    
         </html>`
 
+        const htmlNewMalbar = `
+        <html>
+        <head>
+           <style>
+               body {
+                   display: flex;
+                   justify-content: center;
+                   align-items: center;
+                   margin: 0;
+                   padding: 0;
+                   background-color: white;
+               }
+        
+               .InvCard {
+                   display: flex;
+                   flex-direction: column;
+                   align-items: center;
+                   width: 100%;
+                    height: 96%;
+                   background-color: white;
+                   border-radius: 12px;
+                   overflow: hidden;
+                   padding: 18px;
+               }
+        
+               .header {
+                   /* background-color: #12151C; */
+                   display: flex;
+                   flex-direction: row;
+                   align-items: center;
+                    justify-content: center;
+                   width: 100%;
+                   padding: 8px 0;
+                   color: black;
+                   border-top: 1px solid gray;
+                   border-bottom: 1px solid gray;
+                    margin-top: 90px;
+               }
+        
+               .HeadTop {
+                   display: flex;
+                   flex-direction: row;
+                   justify-content: space-between;
+                   width: 100%;
+                   padding: 0 24px;
+               }
+        
+              .LogoContent {
+                   font-weight: bold;
+                   font-family: 'Calibri', 'InriaSans-Regular', sans-serif;
+                   font-size: 24px;
+               }
+        
+               .CmpnyLogo {
+                   width: 80%;
+                   height: 150px;
+               }
+        
+               .HeadInvoiceData {
+                   width: 40%;
+                   text-align: right;
+               }
+        
+               .InvcData {
+                   display: flex;
+                   flex-direction: row;
+                   justify-content: flex-end;
+                   /* margin: 12px 0; */
+                   font-weight: bold;
+                   font-family: InriaSans-Regular, sans-serif;
+                   width: 100%;
+               }
+        
+               .HeadBottom {
+                   display: flex;
+                   flex-direction: row;
+                   width: 100%;
+               }
+        
+               .ContactItem {
+                   display: flex;
+                   flex-direction: row;
+                   padding: 24px;
+                   align-items: center;
+                   font-size: 14px;
+                   margin-right: 12px;
+                   font-family: InriaSans-Regular, sans-serif;
+               }
+        
+               .ContactItemImg {
+                   width: 25px;
+                   height: 25px;
+                   margin-right: 8px;
+               }
+        
+               .content {
+                   display: flex;
+                   flex-direction: column;
+                   width: 100%;
+               }
+        
+               .topSection {
+                   display: flex;
+                   flex-wrap: wrap;
+                   flex-direction: row;
+                   justify-content: space-between;
+               }
+        
+               .section {
+                   margin: 8px 0;
+                   width: 30%;
+               }
+        
+               .label {
+                   font-size: 14px;
+                   font-weight: bold;
+                   font-family: InriaSans-Regular, sans-serif;
+               }
+        
+               .labelValue {
+                   font-size: 14px;
+                   margin: 4px 0;
+                   font-family: InriaSans-Regular, sans-serif;
+               }
+        
+               .tableCont {
+                   /* width: 100%; */
+                   display: flex;
+                   flex-direction: column;
+                   justify-content: center;
+                   align-items: center;
+                   padding: 12px;
+                   flex-grow: 1;
+               }
+        
+               table {
+                   border-collapse: collapse;
+                   width: 100%;
+               }
+        
+               td {
+                   border-bottom: 1px solid gray;
+                   padding: 8px;
+                   text-align: left;
+                   color: rgb(75, 75, 75);
+                   font-size: 14px;
+                   font-family: InriaSans-Regular, sans-serif;
+               }
+        
+               thead tr {
+                   border-bottom: 1px solid black;
+               }
+        
+               th {
+                   text-align: left;
+               }
+        
+               .BottomTotalCont {
+                   width: 100%;
+                   display: flex;
+                   justify-content: flex-end;
+                   flex-direction: row;
+               }
+        
+               .TotalValues {
+                   width: 45%;
+                   display: flex;
+                   flex-direction: column;
+               }
+        
+               .subtotal,
+               .vat,
+               .grandTotal {
+                   display: flex;
+                   justify-content: space-between;
+                   padding: 8px;
+                   font-size: 14px;
+                   font-family: InriaSans-Regular, sans-serif;
+               }
+        
+               .grandTotal {
+                   font-size: 16px;
+                   font-weight: bold;
+                   color: blue;
+                   font-family: InriaSans-Regular, sans-serif;
+               }
+        
+               .netTotal {
+                   font-size: 16px;
+                   font-weight: bold;
+                   font-family: InriaSans-Regular, sans-serif;
+               }
+        
+               .BottomSignSection {
+                   width: 100%;
+                   display: flex;
+                   flex-direction: row;
+                   justify-content: space-between;
+                   align-items: center;
+                   padding-bottom: 50px;
+               }
+        
+               .ForCustomer {
+                   display: flex;
+                   flex-direction: row;
+                   justify-content: space-between;
+               }
+        
+               .CustomerName {
+                   font-family: InriaSans-Bold, sans-serif;
+               }
+        
+               .SignBoxCont {
+                   display: flex;
+                   flex-direction: column;
+                   justify-content: center;
+                   align-items: center;
+               }
+        
+               .SignBox {
+                   width: 120px;
+                   height: 40px;
+                   border: 1px solid grey;
+               }
+        
+               .our_trn_number {
+                   display: flex;
+                   justify-content: center;
+                   margin: 8px 0;
+               }
+        
+               .our_company_name_panel {
+                   display: flex;
+                   justify-content: space-between;
+                   padding: 0px 8px;
+               }
+        
+                .TopRightItemCont {
+                   display: flex;
+                   flex-direction: row;
+                   justify-content: space-between;
+               }
+        
+               .TopRightLables {
+                   font-size: 14px;
+                   font-weight: bold;
+                   font-family: 'Calibri', 'InriaSans-Regular', sans-serif;
+                   padding: 2px 0px;
+               }
+        
+               .TrnTop {
+                   display: flex;
+                   flex-direction: row;
+                   justify-content: space-between;
+                   align-items: center;
+                   width: max-content;
+                   padding: 0px 8px;
+               }
+        
+                  .footer-received-panel {
+                   display: flex;
+                   justify-content: space-between;
+                   padding-right: 12px;
+               }
+        
+                 .loginUserLabel {
+                   display: flex;
+                   flex-direction: column;
+               }
+        
+                .footer {
+                   width: 100%;
+                   display: flex;
+                   flex-direction: column;
+                   margin-top: 18px;
+                   padding: 0px 8px;
+               }
+        
+        
+               .footerPageNo {
+                   position: fixed;
+                   bottom: 10px;
+                   left: 0;
+                   right: 0;
+                   text-align: center;
+                   font-size: 10px;
+                   color: #333;
+                   counter-reset: page;
+               }
+               .footerPageNo::before {
+                   counter-increment: page;
+                   content: "Page " counter(page);
+               }
+        
+              
+        
+           </style>
+           </head>
+        
+           <body>
+           <div class="InvCard">
+               <div class="header">
+                   <div class="LogoContent">
+                       <div>TAX INVOICE</div>
+                   </div>
+               </div>
+        
+               <div class="content">
+        
+                   <div class="our_trn_number">
+                       <div class="label">TRN:100335207500003</div>
+                   </div>
+        
+                   <div class="our_company_name_panel">
+        
+                       <div class="section">
+                           <div class="label">Invoice To:</div>
+                           <div class="labelValue" style="font-weight: bold;">${selectedCustomer ? selectedCustomer : ''}
+                           </div>
+                         
+        
+        
+        
+                       </div>
+        
+                       <div class="TopRightItemCont">
+        
+                           <div>
+                               <div class="TopRightLables">Invoice No</div>
+                               <div class="TopRightLables">Date</div>
+                               <div class="TopRightLables">Payment Terms</div>
+                           
+                           </div>
+                           <div style="margin-left: 8px; margin-right: 8px;">
+                               <div style="font-weight: bold;">:</div>
+                               <div style="font-weight: bold;">:</div>
+                               <div style="font-weight: bold;">:</div>
+                           </div>
+                           <div>
+                               <div style="font-weight: bold;">MFS-${selectedInvoiceNo ? selectedInvoiceNo : ""}
+                               </div>
+                               <div style="padding-top:1px">${selectedInvDate}
+                               </div>
+                               <div style="padding-top:1px">${terms ? terms : ""}</div>
+                           </div>
+                       </div>
+        
+                   </div>
+        
+                     <div class="TrnTop">
+                       <div class="label">TRN Number:</div>
+                       <div class="labelValue">${itemList ? itemList[0].TRN : ''}</div>
+                   </div>
+        
+                   <div class="tableCont">
+        
+                       <table>
+                           <thead>
+                               <tr>
+                                   <th>Sl.No</th>
+                                   <th>Item</th>
+                                   <th>Qty</th>
+                                   <th>Unit</th>
+                                   <th style="text-align: right;">Price</th>
+                                   <th style="text-align: right;">Total</th>
+        
+                               </tr>
+                           </thead>
+        
+                           <tbody>
+        
+                              ${itemList.map((item, index) => `
+                               <tr>
+                                   <td>${index + 1}</td>
+                                   <td>${item.DESCRIPTION}</td>
+                                
+                                   <td>${new Intl.NumberFormat('en-US', {
+            minimumFractionDigits: 3,
+            maximumFractionDigits: 3
+        }).format(item.QTY)}</td>
+                                   <td>${item.UNIT}</td>
+                                   <td style="text-align: right;">${new Intl.NumberFormat('en-US', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        }).format(item.PRICE)}</td>
+                                   <td style="text-align: right;">${new Intl.NumberFormat('en-US', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        }).format(item.LINE_TOTAL)}</td>
+                               </tr>
+                               `).join('')}
+                               <tr style="border:none; font-weight: bold; margin-top:12px">
+                                   <td colspan="4" style="border:none; padding:4px;">Terms:</td>
+                                   <td style="border-top: 1px solid black; border-bottom: 1px solid black; padding:4px;">
+                                       Discount:</td>
+                                   <td
+                                       style="border-top: 1px solid black; border-bottom: 1px solid black; padding:4px; text-align: right;">
+                                       ${discount !== 0 ? (discount ? discount : '0.00') : '0.00'}</td>
+                               </tr>
+                               <tr style="border:none; font-weight: bold;">
+                                   <td colspan="4" style="border:none; padding:4px;">1. Goods received in good condition.</td>
+                                   <td style="border-top: 1px solid black; border-bottom: 1px solid black; padding:4px;">
+                                       Subtotal:</td>
+                                   <td
+                                       style="border-top: 1px solid black; border-bottom: 1px solid black; padding:4px; text-align: right;">
+                                       ${subTotal ? new Intl.NumberFormat('en-US', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        }).format(subTotal) : ''}</td>
+                               </tr>
+                               <tr style="border:none; font-weight: bold;">
+                                   <td colspan="4" style="border:none; padding:4px;">2. Expired goods will not be taken back
+                                       under any circumstances.</td>
+                                   <td style="border-top: 1px solid black; border-bottom: 1px solid black; padding:4px;">VAT
+                                       (5%):</td>
+                                   <td
+                                       style="border-top: 1px solid black; border-bottom: 1px solid black; padding:4px; text-align: right;">
+                                       ${discount !== 0 ? (discountedTotal ? (discountedTotal * 0.05).toFixed(2) :
+                '') : (subTotal ? (subTotal * 0.05).toFixed(2) : '')}</td>
+                               </tr>
+                               <tr style="border:none; font-weight: bold;">
+                                   <td colspan="4" style="border:none; padding:4px;">3. Goods once sold will not be taken back
+                                       or exchanged.</td>
+                                   <td style="border-top: 1px solid black; border-bottom: 1px solid black; padding:4px;">Amount
+                                       Incl. VAT:</td>
+                                   <td
+                                       style="border-top: 1px solid black; border-bottom: 1px solid black; padding:4px; text-align: right;">
+                                       ${discount !== 0
+                ? (discountedTotal
+                    ? new Intl.NumberFormat('en-US', {
+                        minimumFractionDigits: 2, maximumFractionDigits: 2
+                    }).format(discountedTotal + discountedTotal * 0.05)
+                    : '')
+                : (subTotal
+                    ? new Intl.NumberFormat('en-US', {
+                        minimumFractionDigits: 2, maximumFractionDigits: 2
+                    }).format(subTotal + subTotal * 0.05)
+                    : '')}</td>
+                               </tr>
+        
+                           </tbody>
+                       </table>
+        
+                       
+                   </div>
+                  
+                   <div class="footer">
+        
+                       <div class="footer-received-panel">
+                           <label class="loginUserLabel">
+                               <div style="font-weight: bold;">For Malbar Stars Food Stuff TR.LLC</div>
+                               <div>${loginUser ? loginUser : ''}</div>
+                           </label>
+                           <label class="loginUserLabel" style="margin-right:12px;">
+                               <div style="font-weight: bold;">For ${selectedCustomer ? selectedCustomer : ''}</div>
+                               <div>Received By,</div>
+                           </label>
+                       </div>
+        
+                   </div>
+               </div>
+           </div>
+        
+         
+               </body>   
+               </html>`
 
-        const addPageNumbersToHTML = (html, totalPages) => {
-            let pageNumberHTML = '';
-            for (let i = 1; i <= totalPages; i++) {
-                pageNumberHTML += `<div class="page-number">Page ${i} of ${totalPages}</div>`;
-            }
-
-            return html.replace(/<div class="Pagefooter">([\s\S]*?)<\/div>/g, (_, footerContent) => {
-                const pageNumberDiv = pageNumberHTML.split('</div>')[0] + '</div>';
-                pageNumberHTML = pageNumberHTML.replace(pageNumberDiv, '');
-                return `<div class="Pagefooter">${footerContent}${pageNumberDiv}</div>`;
-            });
-        };
 
         const cmpcodeChk = cmpcode.toUpperCase();
         // const initialHTML = cmpcodeChk === 'MALBAR' ? htmlNewMalbar : htmlNew;
-        const initialHTML = cmpcodeChk === 'MALBAR' ? htmlNew : htmlNew;
+        const initialHTML = cmpcodeChk === 'MALBAR' ? htmlNewMalbar : htmlNew;
 
         console.log('cmpcodeChk', cmpcodeChk)
 
@@ -760,6 +1517,7 @@ const InvoiceList = () => {
             html: initialHTML,
             fileName: 'Invoice',
             directory: 'Documents',
+            base64: true
         };
 
         try {
@@ -770,11 +1528,69 @@ const InvoiceList = () => {
 
             console.log("totalPage>>", totalPages);
 
+            ///
+
+
+
+            //
             setPdfUri(`file://${file.filePath}`);
-            await Share.open({
-                title: 'Share Invoice Details PDF',
-                url: `file://${file.filePath}`,
-            });
+
+            if (cmpcode == 'MALBAR') {
+                await Share.open({
+                    title: 'Share Invoice Details PDF',
+                    url: `file://${file.filePath}`,
+                });
+            } else {
+
+                const existingPdfBytes = await fetch(`file://${file.filePath}`).then(res => res.arrayBuffer())
+                const pdfDoc = await PDFDocument.load(existingPdfBytes)
+
+                const pages = pdfDoc.getPages()
+
+                // const firstPage = pages[0]
+
+                for (i = 0; i < pages.length; i++) {
+
+                    const { width, height } = pages[i].getSize()
+
+                    console.log("page size ", width, height)
+
+                    pages[i].drawText("Page " + (i + 1) + " of " + totalPages, {
+                        x: (width / 2) - 50,
+                        y: 20,
+                        size: 16,
+                    })
+                }
+
+                try {
+
+                    // const pdfBytes = await pdfDoc.save()
+                    const pdfBytes = await pdfDoc.saveAsBase64()
+
+
+                    // Path where the file will be saved
+                    const filePath = RNFS.DocumentDirectoryPath + `/invoice_${selectedInvoiceNo}.pdf`; // Save as an image file (can be any file type)
+
+                    // Write the base64 string as a file
+                    await RNFS.writeFile(filePath, pdfBytes, 'base64');
+
+                    console.log('File saved at:->>>', filePath, selectedInvoiceNo);
+
+                    await Share.open({
+                        title: 'Share Invoice Details PDF',
+                        url: `file://${filePath}`,
+                    });
+
+                    // ends 
+
+
+
+                } catch (error) {
+                    console.log('File save error ', error);
+                }
+            }
+
+
         } catch (error) {
             console.error(error);
         } finally {
@@ -811,7 +1627,7 @@ const InvoiceList = () => {
 
     const fetchItemList = async (item) => {
 
-        console.log("item after print button clicked ", item)
+        console.log("item after print button clicked >>", item)
 
         setShowPrintButtonLoader(true)
         try {
@@ -832,6 +1648,7 @@ const InvoiceList = () => {
                 // setSubTotal(response.data[0].inv_total)
                 setDiscount(response.data[0].disc_amt)
                 setTrn(response.data[0].TRN)
+                console.log("trn from invoice list ", response.data[0].TRN)
 
                 // setShowPrintButtonLoader(false)
             }
@@ -844,11 +1661,63 @@ const InvoiceList = () => {
         }
     };
 
+    const fetchItemListBLuetooth = async (item) => {
+
+        console.log("item after print button clicked >>", item)
+
+        setShowPrintButtonLoaderBluetooth(true)
+        try {
+            setSelectedCustomer(item.CUSTOMER)
+            setSelectedCustomerAddress(item.ADDRESS)
+            setSlelecetdInvNo(item.INVNO)
+            setLoginUser(item.USER)
+
+            // Convert and format the date
+            const formattedDate = format(new Date(item.INV_DATE), 'dd/MM/yyyy');
+            setSelectedInvDate(formattedDate)
+            console.log('fetchItemList', `${appUrl}SalesInvoiceDetail/${cmpcode}/${item.INVNO}/${deptNo}`)
+            const response = await axios.get(`${appUrl}SalesInvoiceDetail/${cmpcode}/${item.INVNO}/${deptNo}`);
+
+            if (response.status === 200) {
+                setItemListBluetooth(response.data);
+                setTerms(response.data[0].terms.trim().toUpperCase())
+                // setSubTotal(response.data[0].inv_total)
+                setDiscount(response.data[0].disc_amt)
+                setTrn(response.data[0].TRN)
+                console.log("trn from invoice list ", response.data[0].TRN)
+
+
+            }
+
+            setShowPrintButtonLoaderBluetooth(false)
+
+        } catch (error) {
+            console.log('fetchItemListError', error)
+            setError(error);
+            setShowPrintButtonLoaderBluetooth(false)
+        }
+    };
+
     useEffect(() => {
         if (itemList && subTotal) {
-            generatePDF()
+            generatePDF()// earlier like this
+
+            // navigation.navigate("PrintSmallDevice")
+
+
         }
     }, [itemList, subTotal])
+
+
+    useEffect(() => {
+        if (itemListBluetooth) {
+            printBt()
+
+
+        }
+    }, [itemListBluetooth])
+
+
 
     // const subTotal = itemList && itemList.length > 0 && itemList.reduce((sum, item) => sum + (item.line_total || 0), 0)
 
@@ -1003,6 +1872,66 @@ const InvoiceList = () => {
         fetchAppUrl()
     })
 
+    const requestBluetoothPermissions = async () => {
+        // If scanning is not needed, you can skip this check for older Android
+        if (Platform.OS === 'android') {
+            let permissionsToRequest = [];
+
+            // Android 12 (API 31) and higher require the new runtime permissions
+            if (Platform.Version >= 31) {
+                permissionsToRequest.push(PermissionsAndroid.PERMISSIONS.BLUETOOTH_CONNECT);
+                permissionsToRequest.push(PermissionsAndroid.PERMISSIONS.BLUETOOTH_SCAN);
+            } else {
+                // Older Android versions require location for discovery/scanning
+                permissionsToRequest.push(PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION);
+            }
+
+            if (permissionsToRequest.length > 0) {
+                try {
+                    const results = await PermissionsAndroid.requestMultiple(permissionsToRequest);
+
+                    // Check if all requested permissions were granted
+                    const allGranted = permissionsToRequest.every(permission =>
+                        results[permission] === PermissionsAndroid.RESULTS.GRANTED
+                    );
+
+                    if (allGranted) {
+                        console.log("All required Bluetooth permissions granted");
+                        return true;
+                    } else {
+                        console.log("Not all required Bluetooth permissions granted:", results);
+                        return false;
+                    }
+                } catch (err) {
+                    console.warn("Bluetooth permissions error:", err);
+                    return false;
+                }
+            }
+        }
+        // For other platforms (or if no Android-specific runtime permissions were needed), assume success.
+        return true;
+    };
+
+    const printBt = async () => {
+
+        const hasPermission = await requestBluetoothPermissions();
+
+        if (!hasPermission) {
+            // Optionally show a message to the user that printing cannot proceed
+            console.log("Cannot print: Bluetooth Connect permission denied.");
+            return;
+        }
+
+        try {
+            await ThermalPrinterModule.printBluetooth({
+                payload: setFormatTextForBluetooth().text,
+
+            });
+        } catch (err) {
+            //error handling
+            console.log(err.message);
+        }
+    }
 
 
     // console.log('prevOrder', data)
@@ -1108,14 +2037,11 @@ const InvoiceList = () => {
                                                 <Text style={[styles.StockListDescTextSmall,]}>{item['SALES MAN']}</Text>
                                             </View>
 
-                                            <TouchableOpacity style={[styles.PrintAcceptButton,]} onPress={() => fetchItemList(item)}>
-                                                {
-                                                    showPrintButtonLoader && item.INVNO === selectedInvoiceNo ?
-                                                        <ActivityIndicator color={'white'} />
-                                                        :
-                                                        <Text style={styles.PrintAcceptText}>Print</Text>
-                                                }
-                                            </TouchableOpacity>
+                                            {/* commented because to test print bt */}
+
+
+
+
 
                                             {/* <TouchableOpacity style={[styles.PlusMinusCont, { marginLeft: 'auto' }]} onPress={() => toggleExpand(item.INVNO)}>
                                                 {
@@ -1127,6 +2053,29 @@ const InvoiceList = () => {
                                             </TouchableOpacity> */}
                                         </View>
                                     </View>
+
+                                </View>
+
+                                <View style={{ flexDirection: "row", justifyContent: "flex-end" }}>
+                                    <TouchableOpacity style={[styles.PrintAcceptButton,]} onPress={() => fetchItemList(item)}>
+                                        {
+                                            showPrintButtonLoader && item.INVNO === selectedInvoiceNo ?
+                                                <ActivityIndicator color={'white'} />
+                                                :
+                                                <Text style={styles.PrintAcceptText}>Print</Text>
+                                        }
+                                    </TouchableOpacity>
+
+                                    {(cmpcode?.toUpperCase().trim() == "ICELAB" || cmpcode?.toUpperCase().trim() == "ICELAB_TEST") && <TouchableOpacity style={[styles.PrintAcceptButtonBT,]} onPress={() => fetchItemListBLuetooth(item)}>
+
+                                        {
+                                            showPrintButtonLoaderBluetooth && item.INVNO === selectedInvoiceNo ?
+                                                <ActivityIndicator color={'white'} />
+                                                :
+                                                <Text style={styles.PrintAcceptText}>Print BT</Text>
+                                        }
+                                    </TouchableOpacity>}
+
 
                                 </View>
 
@@ -1510,8 +2459,18 @@ const styles = StyleSheet.create({
         borderWidth: 0.5,
         borderColor: 'grey',
 
-        position: 'absolute',
-        right: 0
+    },
+
+    PrintAcceptButtonBT: {
+        backgroundColor: '#30B3A4',
+        // padding: 8,
+        paddingVertical: 6,
+        paddingHorizontal: 4,
+        borderRadius: 4,
+        borderWidth: 0.5,
+        borderColor: 'grey',
+        marginLeft: 10
+
     },
     PrintAcceptText: {
         fontSize: 14,

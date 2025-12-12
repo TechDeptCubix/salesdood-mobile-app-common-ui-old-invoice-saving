@@ -151,7 +151,7 @@ const HeaderUiNew = ({ name,
                             <View style={styles.itemCount}>
                                 <Text style={styles.itemCountText}>{savedItemData && savedItemData.length}</Text>
                             </View>
-
+                            
                             <View style={styles.TotalAmntCont}>
                                 <Text style={styles.TotalText}>{totalUnitPrice && (totalUnitPrice).toFixed(3)}</Text>
                             </View>

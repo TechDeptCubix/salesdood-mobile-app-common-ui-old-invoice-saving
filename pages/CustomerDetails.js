@@ -11,6 +11,10 @@ import OutstandingPop from '../popups/OutstandingPop'
 
 const CustomerDetails = () => {
 
+
+    const [salesManKey, setSalesManKey] = useState(null)
+    const [salesName, setSalseName] = useState('')
+
     const navigation = useNavigation()
 
     // const searchUrl = 'https://cubixweberp.com:203/api/Search_Customer/Cust/'
@@ -50,6 +54,12 @@ const CustomerDetails = () => {
         const deptNo = await AsyncStorage.getItem('DEPTNO')
 
 
+        const salesName = await AsyncStorage.getItem('salesman_name')
+
+        const sman_key = await AsyncStorage.getItem('Smankey')
+
+        console.log("sman_key in customer details", sman_key)
+
         const storedUserDataArray = await AsyncStorage.getItem("userDataArray");
         const parsedUserDataArray = storedUserDataArray && JSON.parse(storedUserDataArray) || [];
 
@@ -63,6 +73,17 @@ const CustomerDetails = () => {
         if (deptNo) {
             setDeptNo(deptNo)
         }
+
+        if (salesName) {
+            setSalseName(salesName)
+        }
+
+
+        if (sman_key) {
+            setSalesManKey(sman_key)
+        }
+
+
     }
 
 
@@ -83,10 +104,37 @@ const CustomerDetails = () => {
     const searchStock = async (value) => {
         setShowActivity(true)
         try {
-            console.log(`${appUrl}Search_Customer/${cmpcode}/Cust/${value}/${deptNo}`)
+            console.log("SEARCH_CUSTOMER_LINK", `${appUrl}Search_Customer/${cmpcode}/Cust/${value}/${deptNo}`)
             await axios.get(`${appUrl}Search_Customer/${cmpcode}/Cust/${value}/${deptNo}`)
                 .then((res) => {
-                    setStockData(res.data)
+
+                    if (cmpcode?.trim().toUpperCase() == "SOCA") {
+                        let filteredArrayBasedOnSalesman = res.data.filter((item) => {
+                            return item.sale_man?.trim().toUpperCase() == salesName.trim().toUpperCase()
+                        })
+
+
+                        console.log("filteredArrayBasedOnSalesman>>", filteredArrayBasedOnSalesman, salesName.trim().toUpperCase())
+
+                        setStockData(filteredArrayBasedOnSalesman)
+                    } else if (cmpcode?.trim().toUpperCase() == "TAMMDOOD") {
+                        let filteredArrayBasedOnSalesman = res.data.filter((item) => {
+
+                            console.log("filteredArrayBasedOnSalesman>> loop ", salesName.trim().toUpperCase(), salesManKey)
+
+                            return item.sale_man?.trim().toUpperCase() == salesManKey?.trim().toUpperCase()
+                        })
+
+
+                        console.log("filteredArrayBasedOnSalesman>>", filteredArrayBasedOnSalesman, salesName.trim().toUpperCase(), salesManKey)
+
+                        setStockData(filteredArrayBasedOnSalesman)
+                    }
+                    else {
+                        setStockData(res.data)
+                    }
+
+
                 })
             setShowActivity(false)
         } catch (error) {
@@ -98,10 +146,32 @@ const CustomerDetails = () => {
     const fetchTop50Customers = async () => {
         setShowActivity(true)
         try {
+
+            console.log(`SEARCH_CUSTOMER_LINK ${appUrl}Search_Customer/${cmpcode}/Cust50/a/${deptNo}`)
+            
             const response = await axios.get(`${appUrl}Search_Customer/${cmpcode}/Cust50/a/${deptNo}`);
-            console.log(`${appUrl}Search_Customer/${cmpcode}/Cust50/a`)
-            // console.log('fetchTop50Customers', response.data);
-            setTop50Customers(response.data)
+            
+            console.log('fetchTop50Customers>>', response.data);
+
+            if (cmpcode?.trim().toUpperCase() == "SOCA") {
+                let filteredArrayBasedOnSalesman = response.data.filter((item) => {
+                    return item.sale_man?.trim().toUpperCase() == salesName.trim().toUpperCase()
+                })
+                setTop50Customers(filteredArrayBasedOnSalesman)
+
+                console.log("filteredArrayBasedOnSalesman>>", filteredArrayBasedOnSalesman, salesName.trim().toUpperCase())
+            } else if (cmpcode?.trim().toUpperCase() == "TAMMDOOD") {
+                let filteredArrayBasedOnSalesman = response.data.filter((item) => {
+                    return item.sale_man?.trim().toUpperCase() == salesManKey?.trim().toUpperCase()
+                })
+                setTop50Customers(filteredArrayBasedOnSalesman)
+
+                console.log("filteredArrayBasedOnSalesman>>", filteredArrayBasedOnSalesman, salesName.trim().toUpperCase())
+            } else {
+                setTop50Customers(response.data)
+            }
+
+
             setShowActivity(false)
         } catch (error) {
             console.log('fetchTop50CustomersError', error);
@@ -133,10 +203,10 @@ const CustomerDetails = () => {
 
 
     useEffect(() => {
-        if (appUrl && cmpcode && deptNo) {
+        if (appUrl && cmpcode && deptNo && salesName) {
             fetchTop50Customers()
         }
-    }, [appUrl, cmpcode, deptNo])
+    }, [appUrl, cmpcode, deptNo, salesName])
 
     useEffect(() => {
         if (searchItem !== '') {
@@ -252,105 +322,115 @@ const CustomerDetails = () => {
 
                             </View> */}
 
-                            <ScrollView contentContainerStyle={[styles.CheckStockListView]} keyboardShouldPersistTaps="always">
+                            {
+                                stockData?.length > 0 ?
 
-                                {
-                                    stockData && stockData.length > 0 && stockData.map((item, index) => (
-                                        <View style={styles.StockListItem} key={index}>
+                                    <ScrollView contentContainerStyle={[styles.CheckStockListView]} keyboardShouldPersistTaps="always">
 
-                                            <View style={styles.CustomerListCont}>
+                                        {
+                                            stockData && stockData.length > 0 && stockData.map((item, index) => (
+                                                <View style={styles.StockListItem} key={index}>
 
-                                                <View style={styles.CustomerImgWrap}>
-                                                    <Image style={styles.CustomerImage} source={require('../images/customerList.png')} />
-                                                </View>
+                                                    <View style={styles.CustomerListCont}>
 
-                                                <View style={styles.CustomerListMid}>
-                                                    <View style={{
-                                                        flexDirection: 'row',
-                                                        justifyContent: 'space-between',
-                                                        width: '100%'
-                                                    }}>
-                                                        <Text style={[styles.StockListDescText, { width: '75%' }]}>{item.Custname}</Text>
-                                                        <Text style={[styles.StockListDescTextSmall, { color: '#30B3A4', fontFamily: 'Lexend-Regular', }]}>{item.Balance}</Text>
-                                                    </View>
-                                                    <View style={{
-                                                        flexDirection: 'row',
-                                                        width: '100%',
-                                                        paddingVertical: 6
-                                                    }}>
-                                                        <Text style={styles.StockListDescTextSmall}>{item.account}</Text>
-                                                        <View style={{
-                                                            marginLeft: 24,
-                                                            flexDirection: 'row'
-                                                        }}>
-                                                            <Text style={[styles.StockListDescTextSmall,]}>C.Limit:</Text>
-                                                            <Text style={[styles.StockListDescTextSmall,]}>{item.Credit_Limit}</Text>
+                                                        <View style={styles.CustomerImgWrap}>
+                                                            <Image style={styles.CustomerImage} source={require('../images/customerList.png')} />
+                                                        </View>
+
+                                                        <View style={styles.CustomerListMid}>
+                                                            <View style={{
+                                                                flexDirection: 'row',
+                                                                justifyContent: 'space-between',
+                                                                width: '100%'
+                                                            }}>
+                                                                <Text style={[styles.StockListDescText, { width: '75%' }]}>{item.Custname}</Text>
+                                                                <Text style={[styles.StockListDescTextSmall, { color: '#30B3A4', fontFamily: 'Lexend-Regular', }]}>{item.Balance}</Text>
+                                                            </View>
+                                                            <View style={{
+                                                                flexDirection: 'row',
+                                                                width: '100%',
+                                                                paddingVertical: 6
+                                                            }}>
+                                                                <Text style={styles.StockListDescTextSmall}>{item.account}</Text>
+                                                                <View style={{
+                                                                    marginLeft: 24,
+                                                                    flexDirection: 'row'
+                                                                }}>
+                                                                    <Text style={[styles.StockListDescTextSmall,]}>C.Limit:</Text>
+                                                                    <Text style={[styles.StockListDescTextSmall,]}>{item.Credit_Limit}</Text>
+                                                                </View>
+
+                                                            </View>
+
+                                                            <View style={{
+                                                                width: "100%",
+                                                                flexDirection: 'row',
+                                                                justifyContent: 'space-between'
+                                                            }}>
+                                                                <View style={{
+
+                                                                    flexDirection: 'row'
+                                                                }}>
+                                                                    <Text style={[styles.StockListDescTextSmall,]}>Avail.Bal: </Text>
+                                                                    <Text style={[styles.StockListDescTextSmall,]}>{item.Avai_Bal}</Text>
+                                                                </View>
+                                                                <TouchableOpacity style={[styles.PlusMinusCont, { marginLeft: 'auto' }]} onPress={() => toggleExpand(item.account)}>
+                                                                    {
+                                                                        expandedItems.includes(item.account) ?
+                                                                            <Image style={styles.PlusMinusImg} source={require('../images/chkMinus.png')} />
+                                                                            :
+                                                                            <Image style={styles.PlusMinusImg} source={require('../images/chkPlus.png')} />
+                                                                    }
+                                                                </TouchableOpacity>
+
+
+                                                            </View>
                                                         </View>
 
                                                     </View>
 
-                                                    <View style={{
-                                                        width: "100%",
-                                                        flexDirection: 'row',
-                                                        justifyContent: 'space-between'
-                                                    }}>
-                                                        <View style={{
 
-                                                            flexDirection: 'row'
-                                                        }}>
-                                                            <Text style={[styles.StockListDescTextSmall,]}>Avail.Bal: </Text>
-                                                            <Text style={[styles.StockListDescTextSmall,]}>{item.Avai_Bal}</Text>
-                                                        </View>
-                                                        <TouchableOpacity style={[styles.PlusMinusCont, { marginLeft: 'auto' }]} onPress={() => toggleExpand(item.account)}>
-                                                            {
-                                                                expandedItems.includes(item.account) ?
-                                                                    <Image style={styles.PlusMinusImg} source={require('../images/chkMinus.png')} />
-                                                                    :
-                                                                    <Image style={styles.PlusMinusImg} source={require('../images/chkPlus.png')} />
-                                                            }
-                                                        </TouchableOpacity>
+                                                    {
+                                                        expandedItems.includes(item.account) && (
+
+                                                            <View style={styles.QtyAvlQtyCont}>
+
+                                                                <TouchableOpacity style={[styles.QtyCont, { backgroundColor: '#D8D8DA', marginRight: 16 }]} onPress={() => statementClick(item)}>
+                                                                    <Text style={styles.QtyText}>Statement</Text>
+                                                                </TouchableOpacity>
+                                                                <TouchableOpacity style={[styles.QtyCont, { backgroundColor: '#D8D8DA', }]} onPress={() => outStandingClick(item)}>
+                                                                    <Text style={styles.AvlText}>Outstanding</Text>
+                                                                </TouchableOpacity>
+                                                            </View>
+                                                            // <View style={styles.DynamicPriceView}>
+                                                            //     <View style={styles.PriceTag}>
+                                                            //         <Text style={styles.StockListCodeText}>openbal</Text>
+                                                            //         <Text style={styles.PriceValueText}>{item.openbal}</Text>
+                                                            //     </View>
+                                                            //     <View style={styles.PriceTag}>
+                                                            //         <Text style={styles.StockListCodeText}>Credit Price</Text>
+                                                            //         <Text style={styles.PriceValueText}>{item.credit}</Text>
+                                                            //     </View>
+                                                            //     <View style={styles.PriceTag}>
+                                                            //         <Text style={styles.StockListCodeText}>debit</Text>
+                                                            //         <Text style={styles.PriceValueText}>{item.debit}</Text>
+                                                            //     </View>
+                                                            // </View>
+                                                        )
+                                                    }
 
 
-                                                    </View>
                                                 </View>
+                                            ))
+                                        }
+                                    </ScrollView>
+                                    :
 
-                                            </View>
+                                    <View>
+                                        <Text style={{ marginTop: 10, fontSize: 20 }}>No Data found</Text>
+                                    </View>
+                            }
 
-
-                                            {
-                                                expandedItems.includes(item.account) && (
-
-                                                    <View style={styles.QtyAvlQtyCont}>
-
-                                                        <TouchableOpacity style={[styles.QtyCont, { backgroundColor: '#D8D8DA', marginRight: 16 }]} onPress={() => statementClick(item)}>
-                                                            <Text style={styles.QtyText}>Statement</Text>
-                                                        </TouchableOpacity>
-                                                        <TouchableOpacity style={[styles.QtyCont, { backgroundColor: '#D8D8DA', }]} onPress={() => outStandingClick(item)}>
-                                                            <Text style={styles.AvlText}>Outstanding</Text>
-                                                        </TouchableOpacity>
-                                                    </View>
-                                                    // <View style={styles.DynamicPriceView}>
-                                                    //     <View style={styles.PriceTag}>
-                                                    //         <Text style={styles.StockListCodeText}>openbal</Text>
-                                                    //         <Text style={styles.PriceValueText}>{item.openbal}</Text>
-                                                    //     </View>
-                                                    //     <View style={styles.PriceTag}>
-                                                    //         <Text style={styles.StockListCodeText}>Credit Price</Text>
-                                                    //         <Text style={styles.PriceValueText}>{item.credit}</Text>
-                                                    //     </View>
-                                                    //     <View style={styles.PriceTag}>
-                                                    //         <Text style={styles.StockListCodeText}>debit</Text>
-                                                    //         <Text style={styles.PriceValueText}>{item.debit}</Text>
-                                                    //     </View>
-                                                    // </View>
-                                                )
-                                            }
-
-
-                                        </View>
-                                    ))
-                                }
-                            </ScrollView>
                         </>
                     }
 
@@ -407,72 +487,73 @@ const CustomerDetails = () => {
 
                             </View> */}
 
-                            <ScrollView contentContainerStyle={[styles.CheckStockListView]} keyboardShouldPersistTaps="always">
+                            {top50Customers?.length > 0 ?
+                                <ScrollView contentContainerStyle={[styles.CheckStockListView]} keyboardShouldPersistTaps="always">
 
-                                {
-                                    top50Customers && top50Customers.length > 0 && top50Customers.map((item, index) => (
-                                        <View style={styles.StockListItem} key={index}>
+                                    {
+                                        top50Customers && top50Customers.length > 0 && top50Customers.map((item, index) => (
+                                            <View style={styles.StockListItem} key={index}>
 
-                                            <View style={styles.CustomerListCont}>
+                                                <View style={styles.CustomerListCont}>
 
-                                                <View style={styles.CustomerImgWrap}>
-                                                    <Image style={styles.CustomerImage} source={require('../images/customerList.png')} />
-                                                </View>
-
-                                                <View style={styles.CustomerListMid}>
-                                                    <View style={{
-                                                        flexDirection: 'row',
-                                                        justifyContent: 'space-between',
-                                                        width: '100%'
-                                                    }}>
-                                                        <Text style={[styles.StockListDescText, { width: '75%' }]}>{item.Custname}</Text>
-                                                        <Text style={[styles.StockListDescTextSmall, { color: '#30B3A4', fontFamily: 'Lexend-Regular', }]}>{item.Balance}</Text>
+                                                    <View style={styles.CustomerImgWrap}>
+                                                        <Image style={styles.CustomerImage} source={require('../images/customerList.png')} />
                                                     </View>
-                                                    <View style={{
-                                                        flexDirection: 'row',
-                                                        width: '100%',
-                                                        paddingVertical: 6
-                                                    }}>
-                                                        <Text style={styles.StockListDescTextSmall}>{item.account}</Text>
+
+                                                    <View style={styles.CustomerListMid}>
                                                         <View style={{
-                                                            marginLeft: 24,
-                                                            flexDirection: 'row'
+                                                            flexDirection: 'row',
+                                                            justifyContent: 'space-between',
+                                                            width: '100%'
                                                         }}>
-                                                            <Text style={[styles.StockListDescTextSmall,]}>C.Limit: </Text>
-                                                            <Text style={[styles.StockListDescTextSmall,]}>{item.Credit_Limit}</Text>
+                                                            <Text style={[styles.StockListDescText, { width: '75%' }]}>{item.Custname}</Text>
+                                                            <Text style={[styles.StockListDescTextSmall, { color: '#30B3A4', fontFamily: 'Lexend-Regular', }]}>{item.Balance}</Text>
+                                                        </View>
+                                                        <View style={{
+                                                            flexDirection: 'row',
+                                                            width: '100%',
+                                                            paddingVertical: 6
+                                                        }}>
+                                                            <Text style={styles.StockListDescTextSmall}>{item.account}</Text>
+                                                            <View style={{
+                                                                marginLeft: 24,
+                                                                flexDirection: 'row'
+                                                            }}>
+                                                                <Text style={[styles.StockListDescTextSmall,]}>C.Limit: </Text>
+                                                                <Text style={[styles.StockListDescTextSmall,]}>{item.Credit_Limit}</Text>
+                                                            </View>
+
+
                                                         </View>
 
-
-                                                    </View>
-
-                                                    <View style={{
-                                                        width: "100%",
-                                                        flexDirection: 'row',
-                                                        justifyContent: 'space-between'
-                                                    }}>
                                                         <View style={{
-                                                            // marginLeft: 24,
-                                                            flexDirection: 'row'
+                                                            width: "100%",
+                                                            flexDirection: 'row',
+                                                            justifyContent: 'space-between'
                                                         }}>
-                                                            <Text style={[styles.StockListDescTextSmall,]}>Avail.Bal: </Text>
-                                                            <Text style={[styles.StockListDescTextSmall,]}>{item.Avai_Bal}</Text>
+                                                            <View style={{
+                                                                // marginLeft: 24,
+                                                                flexDirection: 'row'
+                                                            }}>
+                                                                <Text style={[styles.StockListDescTextSmall,]}>Avail.Bal: </Text>
+                                                                <Text style={[styles.StockListDescTextSmall,]}>{item.Avai_Bal}</Text>
+                                                            </View>
+                                                            <TouchableOpacity style={[styles.PlusMinusCont, { marginLeft: 'auto' }]} onPress={() => toggleExpand(item.account)}>
+                                                                {
+                                                                    expandedItems.includes(item.account) ?
+                                                                        <Image style={styles.PlusMinusImg} source={require('../images/chkMinus.png')} />
+                                                                        :
+                                                                        <Image style={styles.PlusMinusImg} source={require('../images/chkPlus.png')} />
+                                                                }
+                                                            </TouchableOpacity>
+
+
                                                         </View>
-                                                        <TouchableOpacity style={[styles.PlusMinusCont, { marginLeft: 'auto' }]} onPress={() => toggleExpand(item.account)}>
-                                                            {
-                                                                expandedItems.includes(item.account) ?
-                                                                    <Image style={styles.PlusMinusImg} source={require('../images/chkMinus.png')} />
-                                                                    :
-                                                                    <Image style={styles.PlusMinusImg} source={require('../images/chkPlus.png')} />
-                                                            }
-                                                        </TouchableOpacity>
-
-
                                                     </View>
+
                                                 </View>
 
-                                            </View>
-
-                                            {/* <View style={styles.StockItemListHead}>
+                                                {/* <View style={styles.StockItemListHead}>
                                                 <Text style={styles.StockListCodeText}>{item.account}</Text>
                                                 <TouchableOpacity style={styles.PlusMinusCont} onPress={() => toggleExpand(item.account)}>
                                                     {
@@ -499,40 +580,43 @@ const CustomerDetails = () => {
                                                 </TouchableOpacity>
                                             </View> */}
 
-                                            {
-                                                expandedItems.includes(item.account) && (
+                                                {
+                                                    expandedItems.includes(item.account) && (
 
-                                                    <View style={styles.QtyAvlQtyCont}>
+                                                        <View style={styles.QtyAvlQtyCont}>
 
-                                                        <TouchableOpacity style={[styles.QtyCont, { backgroundColor: '#D8D8DA', marginRight: 16 }]} onPress={() => statementClick(item)}>
-                                                            <Text style={styles.QtyText}>Statement</Text>
-                                                        </TouchableOpacity>
-                                                        <TouchableOpacity style={[styles.QtyCont, { backgroundColor: '#D8D8DA', }]} onPress={() => outStandingClick(item)}>
-                                                            <Text style={styles.AvlText}>Outstanding</Text>
-                                                        </TouchableOpacity>
-                                                    </View>
-                                                    // <View style={styles.DynamicPriceView}>
-                                                    //     <View style={styles.PriceTag}>
-                                                    //         <Text style={styles.StockListCodeText}>openbal</Text>
-                                                    //         <Text style={styles.PriceValueText}>{item.openbal}</Text>
-                                                    //     </View>
-                                                    //     <View style={styles.PriceTag}>
-                                                    //         <Text style={styles.StockListCodeText}>Credit Price</Text>
-                                                    //         <Text style={styles.PriceValueText}>{item.credit}</Text>
-                                                    //     </View>
-                                                    //     <View style={styles.PriceTag}>
-                                                    //         <Text style={styles.StockListCodeText}>debit</Text>
-                                                    //         <Text style={styles.PriceValueText}>{item.debit}</Text>
-                                                    //     </View>
-                                                    // </View>
-                                                )
-                                            }
+                                                            <TouchableOpacity style={[styles.QtyCont, { backgroundColor: '#D8D8DA', marginRight: 16 }]} onPress={() => statementClick(item)}>
+                                                                <Text style={styles.QtyText}>Statement</Text>
+                                                            </TouchableOpacity>
+                                                            <TouchableOpacity style={[styles.QtyCont, { backgroundColor: '#D8D8DA', }]} onPress={() => outStandingClick(item)}>
+                                                                <Text style={styles.AvlText}>Outstanding</Text>
+                                                            </TouchableOpacity>
+                                                        </View>
+                                                        // <View style={styles.DynamicPriceView}>
+                                                        //     <View style={styles.PriceTag}>
+                                                        //         <Text style={styles.StockListCodeText}>openbal</Text>
+                                                        //         <Text style={styles.PriceValueText}>{item.openbal}</Text>
+                                                        //     </View>
+                                                        //     <View style={styles.PriceTag}>
+                                                        //         <Text style={styles.StockListCodeText}>Credit Price</Text>
+                                                        //         <Text style={styles.PriceValueText}>{item.credit}</Text>
+                                                        //     </View>
+                                                        //     <View style={styles.PriceTag}>
+                                                        //         <Text style={styles.StockListCodeText}>debit</Text>
+                                                        //         <Text style={styles.PriceValueText}>{item.debit}</Text>
+                                                        //     </View>
+                                                        // </View>
+                                                    )
+                                                }
 
 
-                                        </View>
-                                    ))
-                                }
-                            </ScrollView>
+                                            </View>
+                                        ))
+                                    }
+                                </ScrollView>
+                                :
+                                <View><Text style={{marginTop:10, fontSize:18}}>No top customers found, please search</Text></View>
+                            }
                         </>
                     }
 

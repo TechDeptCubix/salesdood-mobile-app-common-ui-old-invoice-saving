@@ -221,7 +221,7 @@ const MakeOrder = ({ route }) => {
             await axios.get(`${appUrl}Search_Customer/${cmpcode}/Cust/${value}`)
                 .then((res) => {
                     setSelectedCustomer(res.data)
-                    AsyncStorage.setItem('selectedCustomer', JSON.stringify(res.data))
+                    AsyncStorage.setItem('selectedCustomer-->', JSON.stringify(res.data))
                         .then(() => console.log('Data saved successfully'))
                         .catch(error => console.log('Error saving data', error));
                 })
@@ -731,7 +731,7 @@ const MakeOrder = ({ route }) => {
     }
 
     const showItemExistError = () => {
-        Toast.error(`Item already selected`)
+        Toast.error(`Item already selected--`)
     }
 
     useEffect(() => {

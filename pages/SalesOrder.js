@@ -20,6 +20,12 @@ import { resolver } from '../metro.config'
 const SalesOrder = ({ route }) => {
 
 
+    const [salesManKey, setSalesManKey] = useState("")
+    const [isItemFOC, setIsItemFOC] = useState(false)
+    const this_item_is_foc = useRef(false)
+    const [lastSellingPrice, setLastSellingPrice] = useState("")
+    const [salesName, setSalseName] = useState('')
+    const [lponumber, setLPONumber] = useState("")
     const [isCallingDueDateApi, setIsCallingDueDateApi] = useState(false)
     const [isCallingPriceManagementApi, setIsCallingpriceManagementApi] = useState(false)
     const [isCallingBulkApi, setIsCallingBulkPriceApi] = useState(false)
@@ -219,6 +225,13 @@ const SalesOrder = ({ route }) => {
 
         const van = await AsyncStorage.getItem('VAN')
 
+        const salesName = await AsyncStorage.getItem('salesman_name')
+
+
+        const salesMankey = await AsyncStorage.getItem('Smankey')
+
+        console.log("van from local storage ", van)
+
 
         if (parsedUserDataArray) {
             setCmpCode(parsedUserDataArray[0].cmpcode.trim().toUpperCase());
@@ -247,6 +260,15 @@ const SalesOrder = ({ route }) => {
         } else {
             setDeptNo('----')
         }
+
+        if (salesName) {
+            setSalseName(salesName)
+        }
+
+
+        if (salesMankey) {
+            setSalesManKey(salesMankey)
+        }
     }
 
     useEffect(() => {
@@ -272,7 +294,7 @@ const SalesOrder = ({ route }) => {
     const EditItem = (item) => {
         setShowSelectedStockPop(false)
         handleEditRemoveItem(item.Code)
-        console.log('editItem', item.unitPrice)
+        console.log('setUnitPrice 2 editItem', item.unitPrice)
         setSelectedStock(item)
         setQuantity(item.quantity?.toString())
         setUnitPrice(item.unitPrice?.toString())
@@ -281,17 +303,58 @@ const SalesOrder = ({ route }) => {
 
     const searchCustomer = async (value) => {
         setShowActivity(true)
-        console.log(`${appUrl}Search_Customer/${cmpcode}/Cust/${value}/${deptNo}`)
+
+        let customerSearchType = "Cust"
+        if (selectedRadio?.trim()?.toUpperCase() == "CASH") {
+            customerSearchType = "CashCust"
+        }
+
+        console.log('searchEditCustomer operation type>> xx', selectedRadio, value)
+
+        console.log(`${appUrl}Search_Customer/${cmpcode}/${customerSearchType}/${value}/${deptNo}`)
         try {
-            await axios.get(`${appUrl}Search_Customer/${cmpcode}/Cust/${value}/${deptNo}`)
+            await axios.get(`${appUrl}Search_Customer/${cmpcode}/${customerSearchType}/${value}/${deptNo}`)
                 .then((res) => {
                     const data = res.data;
 
-                    // Limit the data to the first 25 items
-                    const limitedData = data.slice(0, 25);
+                    if (cmpcode?.trim().toUpperCase() == "SOCA") {
+                        let filteredArrayBasedOnSalesman = data.filter((item) => {
+                            return item.sale_man?.trim().toUpperCase() == salesName.trim().toUpperCase()
+                        })
 
-                    // Set the limited data to the state
-                    setCustomerData(limitedData);
+
+                        console.log("filteredArrayBasedOnSalesman>> SO", filteredArrayBasedOnSalesman, salesName.trim().toUpperCase())
+
+
+                        // Limit the data to the first 25 items
+                        const limitedData = filteredArrayBasedOnSalesman.slice(0, 25);
+
+                        // Set the limited data to the state
+                        setCustomerData(limitedData);
+                    } else if (cmpcode?.trim().toUpperCase() == "TAMMDOOD") {
+                        let filteredArrayBasedOnSalesman = data.filter((item) => {
+                            return item.sale_man?.trim().toUpperCase() == salesManKey.trim().toUpperCase()
+                        })
+
+
+                        console.log("filteredArrayBasedOnSalesman>> SO", filteredArrayBasedOnSalesman, salesManKey.trim().toUpperCase())
+
+
+                        // Limit the data to the first 25 items
+                        const limitedData = filteredArrayBasedOnSalesman.slice(0, 25);
+
+                        // Set the limited data to the state
+                        setCustomerData(limitedData);
+                    }
+                    else {
+                        // Limit the data to the first 25 items
+                        const limitedData = data.slice(0, 25);
+
+                        // Set the limited data to the state
+                        setCustomerData(limitedData);
+                    }
+
+
                 })
             setShowActivity(false)
         } catch (error) {
@@ -303,9 +366,15 @@ const SalesOrder = ({ route }) => {
 
     const searchEditCustomer = async (value) => {
         // setShowActivity(true)
-        console.log('searchEditCustomer', value)
+
+        let customerSearchType = "Cust"
+        if (selectedRadio?.trim()?.toUpperCase() == "CASH") {
+            customerSearchType = "CashCust"
+        }
+
+        console.log('searchEditCustomer operation type', value, selectedRadio?.trim()?.toUpperCase())
         try {
-            await axios.get(`${appUrl}Search_Customer/${cmpcode}/Cust/${value}/${deptNo}`)
+            await axios.get(`${appUrl}Search_Customer/${cmpcode}/${customerSearchType}/${value}/${deptNo}`)
                 .then((res) => {
                     setSelectedCustomer(res.data[0])
                     AsyncStorage.setItem('selectedCustomer', JSON.stringify(res.data))
@@ -402,7 +471,7 @@ const SalesOrder = ({ route }) => {
             if (selectedCustomer.CREDITMETHOD == 'OPEN') {
                 setCustomerCreditBlocked(false)
                 setCustomerSearchItem('')
-                setTrn(selectedCustomer.TRN)
+                setTrn(selectedCustomer.TRN ? selectedCustomer.TRN : "")
                 setPayment(selectedCustomer.terms)
                 setBlockNextButtonView(false)
 
@@ -432,11 +501,16 @@ const SalesOrder = ({ route }) => {
         console.log("value before and after ", value, encodedvalue);
         console.log("search api url ", `${appUrl}Search_Items/${cmpcode}/Sitem/${encodedvalue} `)
 
+        // `${appUrl}Search_Items/${cmpcode}/Sitem/${encodedvalue} `
+
+        let apiUrl =  `${appUrl}Search_Items/InventoryList?cmpcode=${cmpcode}&guid=F4369B5E-8E23-4BCF-AC82-76C977991728&mod=CODE&Loc=MASTER&searchKey=${encodedvalue}`
+        console.log("search api url new", apiUrl)
+
         setShowItemSrchAct(true)
         try {
-            await axios.get(`${appUrl}Search_Items/${cmpcode}/Sitem/${encodedvalue} `)
+            await axios.get(apiUrl)
                 .then((res) => {
-                    console.log("searched item ", res.data)
+                    console.log("searched item ---->", res.data)
                     setStockData(res.data)
                 })
             setShowItemSrchAct(false)
@@ -463,7 +537,7 @@ const SalesOrder = ({ route }) => {
 
                 console.log("res due days ->2", res.data)
 
-                if (res.data?.length == 0){
+                if (res.data?.length == 0) {
                     resolve(false)
                 }
 
@@ -484,8 +558,9 @@ const SalesOrder = ({ route }) => {
 
             }).catch((err) => {
                 setIsCallingDueDateApi(false);
-                console.log("err is -> ++ ", err)
-                reject(null)
+                console.log("err is -> ++ ??????", err)
+                resolve(false) // even if error send false  because most of customer may not need this duedate checking, so no need of this api , so even of sp not present in db set false so on next click goes to next screen
+
             })
 
         })
@@ -515,11 +590,38 @@ const SalesOrder = ({ route }) => {
 
         if (selectedStock) {
             setSearchItem('')
-            if (cmpcode?.trim().toUpperCase() == "SUPERLAND") {
-                setUnitPrice((selectedStock["price"]).toString())
-                setQuantity("1")
+
+            //earlier like this may be only automax needs this customer category so chnaging to condition like that
+            //if (cmpcode?.trim().toUpperCase() == "SUPERLAND" || cmpcode?.trim().toUpperCase() == "POPULAR") {
+            if (cmpcode?.trim().toUpperCase() !== "AUTOMAX") {
+
+
+                if (this_item_is_foc.current) {
+                    console.log("setunitprice 8")
+                    setUnitPrice("0")
+                } else {
+
+                    console.log("setUnitPrice 4 selectedStock+++", selectedStock)
+
+                    if (cmpcode?.trim().toUpperCase() == "SOCA") {
+
+                        setUnitPrice( selectedStock["Credit Price"] ? (selectedStock["Credit Price"])?.toString() : "")
+                    } else {
+                        setUnitPrice(selectedStock["price"] ? (selectedStock["price"])?.toString() : "")
+                    }
+
+                    setQuantity("1")
+                }
             } else {
-                setUnitPrice((selectedStock[custPriceGrp]).toString())
+                console.log("setUnitPrice 5 ")
+                setUnitPrice(selectedStock[custPriceGrp] ? (selectedStock[custPriceGrp]).toString() : "")
+            }
+
+            if (cmpcode?.trim().toUpperCase() == "SOCA") {
+
+                getLastCustomerSellingPrice(selectedStock.Code)
+
+
             }
 
         }
@@ -527,6 +629,8 @@ const SalesOrder = ({ route }) => {
         if (selectedStock && qtyInpRef.current) {
             qtyInpRef.current.focus()
         }
+
+
     }, [selectedStock])
 
     const NextClick = async () => {
@@ -546,32 +650,35 @@ const SalesOrder = ({ route }) => {
 
             // check for due date 
 
-            let resultOfDueDays = await isDueDateExceeded()
+            // hidden temporarily while checking with soca this sp may be misisng in their database
+            // if (selectedUserType === 'reg') {
+            //     let resultOfDueDays = await isDueDateExceeded()
 
-            console.log("resultOfDueDays>>", resultOfDueDays)
+            //     console.log("resultOfDueDays>>", resultOfDueDays)
 
-            if (resultOfDueDays == true) {
-                Alert.alert(
-                    'Due Days',
-                    'Due Days Limit Exceeded',
-                    [{ text: 'OK' }]
-                );
-                return
-            } else if (resultOfDueDays == null) {
-                Alert.alert(
-                    'Due Days',
-                    'Something went wrong... cannot proceed',
-                    [{ text: 'OK' }]
-                );
-                return
-            }
+            //     if (resultOfDueDays == true) {
+            //         Alert.alert(
+            //             'Due Days',
+            //             'Due Days Limit Exceeded',
+            //             [{ text: 'OK' }]
+            //         );
+            //         return
+            //     } else if (resultOfDueDays == null) {
+            //         Alert.alert(
+            //             'Due Days',
+            //             'Something went wrong... cannot proceed',
+            //             [{ text: 'OK' }]
+            //         );
+            //         return
+            //     }
+            // }
 
             if (selectedUserType === 'reg') {
                 await AsyncStorage.setItem('selectedCustomer', JSON.stringify(selectedCustomer))
                 await AsyncStorage.setItem('orderRemark', orderRemark)
-                await AsyncStorage.setItem('payment', payment)
-                await AsyncStorage.setItem('delivery', delivery)
-                await AsyncStorage.setItem('validity', validity)
+                await AsyncStorage.setItem('payment', payment ? payment :"" )
+                await AsyncStorage.setItem('delivery', delivery ? delivery :"")
+                await AsyncStorage.setItem('validity', validity ? validity :"")
                 await AsyncStorage.setItem('trn', trn)
                 Keyboard.dismiss()
                 setShowCartPanel(true)
@@ -596,6 +703,8 @@ const SalesOrder = ({ route }) => {
         }
     }
 
+
+
     const SaveItem = async () => {
         // Retrieve existing savedItemData from AsyncStorage
         const savedItemDataString = await AsyncStorage.getItem('savedItemData');
@@ -603,22 +712,64 @@ const SalesOrder = ({ route }) => {
 
         console.log('savedItemDataArray', savedItemDataArray)
 
+
+
         if (!selectedStock) {
             showAddToCartEmptyErr()
             return
         }
 
+        if (this_item_is_foc.current) {
+            // no checking
+        } else {
+            if (parseFloat(unitPrice).toFixed(2) < selectedStock["Block Price"]) {
+                Alert.alert("Cannot enter Price below Block Price")
+                return
+            }
+        }
+
+
         // // Check if the item already exists in the list
         const itemExists = savedItemDataArray.some(item => item.Code === selectedStock.Code);
 
-        console.log('itemExists', itemExists)
+        console.log('itemExists>>', itemExists)
 
         if (itemExists) {
-            showItemExistError()
-            setQuantity('');
-            setUnitPrice('');
-            setSelectedStock(null)
-            return; // Exit the function
+            if (cmpcode?.trim().toUpperCase() == "SOCA") {
+                // duplicate allowed just show foc in it and put 0 as price 
+
+                setIsItemFOC(true)
+                this_item_is_foc.current = true
+
+            } else {
+                showItemExistError()
+                setQuantity('');
+                setUnitPrice('');
+                setSelectedStock(null)
+                return; // Exit the function
+            }
+
+        }
+
+
+        // INITIALLY NO CHECKING WHEN SOCA POINTED OUT PUT, NOW CHECKING FOR ALL COMPANIES
+        if (cmpcode?.trim().toUpperCase() == "SOCA") {
+
+            if (quantity > selectedStock.AvlQty) {
+                Toast.error("Cannot enter quantity more than Available Quantity")
+                return
+            }
+
+        }
+
+        if (quantity == null || quantity == undefined || quantity == 0) {
+            Toast.error("Please enter quantity")
+            return
+        }
+
+        if (unitPrice == null || unitPrice == undefined || unitPrice == 0) {
+            Toast.error("Please enter price")
+            return
         }
 
 
@@ -627,8 +778,9 @@ const SalesOrder = ({ route }) => {
             const newItem = {
                 ...selectedStock,
                 quantity: parseFloat(quantity).toFixed(3),
-                unitPrice: parseFloat(unitPrice).toFixed(2),
-                total: quantity * unitPrice
+                unitPrice: this_item_is_foc.current ? 0 : parseFloat(unitPrice).toFixed(2),
+                total: this_item_is_foc.current ? 0 : quantity * unitPrice,
+                is_foc_item: this_item_is_foc.current
             }
 
             // Add the new item to the list
@@ -677,8 +829,9 @@ const SalesOrder = ({ route }) => {
             const newItem = {
                 ...selectedStock,
                 quantity: parseFloat(quantity).toFixed(3),
-                unitPrice: parseFloat(unitPrice).toFixed(2),
-                total: quantity * unitPrice
+                unitPrice: this_item_is_foc.current ? 0 : parseFloat(unitPrice).toFixed(2),
+                total: this_item_is_foc.current ? 0 : quantity * unitPrice,
+                is_foc_item: this_item_is_foc.current
             };
 
             console.log('newItem', newItem)
@@ -709,15 +862,15 @@ const SalesOrder = ({ route }) => {
 
             await AsyncStorage.setItem('selectedCustomer', JSON.stringify(selectedCustomer))
             // await AsyncStorage.setItem('savedItemData', JSON.stringify(savedItemData))
-            await AsyncStorage.setItem('orderRemark', orderRemark)
-            await AsyncStorage.setItem('trn', trn)
-            await AsyncStorage.setItem('payment', payment)
-            await AsyncStorage.setItem('delivery', delivery)
-            await AsyncStorage.setItem('validity', validity)
+            await AsyncStorage.setItem('orderRemark', orderRemark ? orderRemark :"")
+            await AsyncStorage.setItem('trn', trn ? trn :"")
+            await AsyncStorage.setItem('payment', payment ? payment :"")
+            await AsyncStorage.setItem('delivery', delivery ? delivery :"")
+            await AsyncStorage.setItem('validity', validity ? validity :"")
             // await AsyncStorage.setItem('totalUnitPrice', totalUnitPrice)
-            await AsyncStorage.setItem('cashCustomerName', cashCustomerName)
-            await AsyncStorage.setItem('cashCustomerAddress', cashCustomerAddress)
-            await AsyncStorage.setItem('cashCustomerPhone', cashCustomerPhone)
+            await AsyncStorage.setItem('cashCustomerName', cashCustomerName ? cashCustomerName :"")
+            await AsyncStorage.setItem('cashCustomerAddress', cashCustomerAddress ? cashCustomerAddress : "")
+            await AsyncStorage.setItem('cashCustomerPhone', cashCustomerPhone ? cashCustomerPhone :"")
 
             setSavedItemData([...savedItemData, newItem]);
             setQuantity('');
@@ -736,8 +889,9 @@ const SalesOrder = ({ route }) => {
             const newItem = {
                 ...selectedStock,
                 quantity: parseFloat(quantity).toFixed(3),
-                unitPrice: parseFloat(unitPrice).toFixed(2),
-                total: quantity * unitPrice
+                unitPrice: this_item_is_foc.current ? 0 : parseFloat(unitPrice).toFixed(2),
+                total: this_item_is_foc.current ? 0 : quantity * unitPrice,
+                is_foc_item: this_item_is_foc.current
             };
 
             console.log('newItem', newItem)
@@ -842,6 +996,9 @@ const SalesOrder = ({ route }) => {
         // else {
         //     showAddToCartEmptyErr()
         // }
+
+        this_item_is_foc.current = false
+        setIsItemFOC(false)
     };
 
     const logAsyncData = async () => {
@@ -1262,7 +1419,7 @@ const SalesOrder = ({ route }) => {
     }
 
     const showItemExistError = () => {
-        Toast.error(`Item already selected`)
+        Toast.error(`Item already selected  `)
     }
 
     useEffect(() => {
@@ -1350,26 +1507,41 @@ const SalesOrder = ({ route }) => {
 
     const callBulkPriceAPI = (qty) => {
 
-        setIsCallingBulkPriceApi(true)
-
-        let encodedItemvalue = encodeURIComponent(selectedStock?.Code)
+        try {
 
 
-        const apiUrl = `${appUrl}PriceSlab/${cmpcode}/${encodedItemvalue}/${selectedCustomer.account}/${qty}`
+
+            setIsCallingBulkPriceApi(true)
+
+            let encodedItemvalue = encodeURIComponent(selectedStock?.Code)
 
 
-        console.log("apiurl bulk price", apiUrl)
+            const apiUrl = `${appUrl}PriceSlab/${cmpcode}/${encodedItemvalue}/${selectedCustomer.account}/${qty}`
 
-        axios.get(`${apiUrl}`).then((res) => {
 
+            console.log("apiurl bulk price", apiUrl)
+
+            axios.get(`${apiUrl}`).then((res) => {
+
+                setIsCallingBulkPriceApi(false)
+
+                console.log("setUnitPrice 12 res.data[0].Price ", res.data[0].Price)
+                setUnitPrice(res.data[0].Price)
+
+
+            }).catch((err) => {
+                setIsCallingBulkPriceApi(false)
+            })
+        } catch (err) {
+
+            console.log("err in try catch ", err)
             setIsCallingBulkPriceApi(false)
 
-            console.log("res.data[0].Price ", res.data[0].Price)
-            setUnitPrice(res.data[0].Price)
-
-        }).catch((err) => {
+        } finally {
             setIsCallingBulkPriceApi(false)
-        })
+        }
+
+
     }
     useEffect(() => {
 
@@ -1507,10 +1679,78 @@ const SalesOrder = ({ route }) => {
 
             return
         } else {
+
+            console.log("item before saving -->", item)
             setSelectedStock(item)
+
+            // foc checking 
+
+            const savedItemDataString = await AsyncStorage.getItem('savedItemData');
+            const savedItemDataArray = savedItemDataString ? JSON.parse(savedItemDataString) : [];
+
+            console.log('savedItemDataArray', savedItemDataArray)
+
+            // // Check if the item already exists in the list
+            const itemExists = savedItemDataArray.some(itemFilter => itemFilter.Code === item.Code);
+
+            if (itemExists) {
+                if (cmpcode?.trim().toUpperCase() == "SOCA") {
+                    // duplicate allowed just show foc in it and put 0 as price 
+
+                    setIsItemFOC(true)
+                    this_item_is_foc.current = true
+
+
+                }
+
+            }
+
+            // foc checking ends
         }
 
 
+    }
+
+    const getLastCustomerSellingPrice = (product_code) => {
+
+        console.log("user_account_number ", selectedCustomer.account)
+
+       // let apiUrl = `${appUrl}/Search_Items/lastsellprice?code=${product_code}&custacount=${selectedCustomer.account}`
+
+        let apiUrl = `${appUrl}Search_Items/${cmpcode}?type=lastsellprice&code=${product_code}&account=${selectedCustomer.account}`
+
+        console.log("apiUrl last sell price-->", apiUrl)
+
+        axios.get(apiUrl).then((res) => {
+
+
+           
+            //console.log("e from which getLastCustomerSellingPrice is called and code res.data[0].UNIT_PRICE", e.target, product_code, res.data[0].UNIT_PRICE)
+
+            if (res.data?.length > 0) {
+                console.log("last sel price res is-->", res.data[0].lastsellprice);
+                setLastSellingPrice(""+res.data[0].lastsellprice)
+            }else{
+                setLastSellingPrice("no data found")
+            }
+
+            // let thePriceToBePutInTheField = null;
+            // if (res.data.result1 != null) {
+            //     thePriceToBePutInTheField = res.data.result1[0].lastsellprice;
+            // }
+
+            // console.log(" thePriceToBePutInTheField is ", thePriceToBePutInTheField);
+
+            // if (thePriceToBePutInTheField != null) {
+            //     setUpdatedObjectWithLastCustomerSellingPrice({ item_code: product_code, last_price: thePriceToBePutInTheField });
+            //     console.log("before setting updatedObjectWithLastCustomerSellingPrice ", updatedObjectWithLastCustomerSellingPrice);
+
+            // }
+
+        }).catch(err => {
+
+            console.log("error is ", err);
+        })
     }
 
     return (
@@ -1932,6 +2172,23 @@ const SalesOrder = ({ route }) => {
                                                                             />
                                                                         </View>
                                                                     </View>
+
+                                                                    {
+                                                                        cmpcode?.trim().toUpperCase() == "SOCA" &&
+                                                                        <View style={styles.TANDCInpItem}>
+                                                                            <Text style={[styles.CustHeadText, { width: '20%' }]}>LPO</Text>
+                                                                            <View style={styles.TANDCInpCont}>
+                                                                                <TextInput
+                                                                                    style={styles.NewInputStyle}
+                                                                                    // placeholder='Enter Trn'
+                                                                                    value={lponumber}
+                                                                                    onChangeText={text => setLPONumber(text)}
+                                                                                    placeholderTextColor="#aaa"
+                                                                                />
+                                                                            </View>
+                                                                        </View>
+                                                                    }
+
                                                                 </View>
 
                                                             </View>
@@ -2549,8 +2806,8 @@ const SalesOrder = ({ route }) => {
                                                         width: '100%',
                                                         paddingVertical: 6
                                                     }}>
-                                                        <Text style={styles.StockListDescTextSmall}>AvlQty </Text>
-                                                        <Text style={{ marginLeft: 10 }}>{selectedStock && selectedStock.Code !== '' ? selectedStock.Qty : ''}</Text>
+                                                        <Text style={styles.StockListDescTextSmall}>AvlQty</Text>
+                                                        <Text style={{ marginLeft: 10 }}>{selectedStock && selectedStock.Code !== '' ? selectedStock.AvlQty : ''}</Text>
 
                                                     </View>
                                                 </View>
@@ -2599,6 +2856,11 @@ const SalesOrder = ({ route }) => {
                                                 <View style={[styles.TANDCInpItem, { width: '75%' }]}>
                                                     <Text style={[styles.CustHeadText, { width: '20%' }]}>Price</Text>
 
+                                                    {
+                                                        // earlier edit price for only superland salesdooddemo and popular
+                                                        // now changed to if company code not automax 
+                                                        // also in value attribute also
+                                                    }
                                                     <View style={[styles.TANDCInpCont, { marginTop: 0, width: '60%' }]}>
                                                         {/* <Text style={styles.AddCartInpLabel}>Price</Text> */}
                                                         <TextInput
@@ -2612,8 +2874,10 @@ const SalesOrder = ({ route }) => {
                                                                 const numericText = text.replace(/[^0-9.]/g, ''); // This removes any non-numeric characters
                                                                 setUnitPrice(numericText);
                                                             }}
-                                                            value={ (cmpcode?.trim().toUpperCase() == "SUPERLAND" || cmpcode?.trim().toUpperCase() == "SALESDOODDEMO")  ? unitPrice : formatPrice3Decimal(unitPrice)}
-                                                            editable={ (cmpcode?.trim().toUpperCase() == "SUPERLAND" || cmpcode?.trim().toUpperCase() == "SALESDOODDEMO") ? true: false}
+
+                                                            value={(cmpcode?.trim().toUpperCase() !== "AUTOMAX") ? unitPrice : formatPrice3Decimal(unitPrice)}
+
+                                                            editable={(cmpcode?.trim().toUpperCase() !== "AUTOMAX") ? true : false}
                                                         />
 
                                                     </View>
@@ -2632,88 +2896,38 @@ const SalesOrder = ({ route }) => {
                                                     </View>
                                                 </View>
 
+                                                {
+                                                    isItemFOC && <Text style={{ color: "#f00", fontSize: 18 }}>FOC</Text>
+                                                }
+{
+    console.log("selectedStock -->++",selectedStock)
+}
+                                                {
+                                                    cmpcode?.trim().toUpperCase() == "SOCA" &&
+                                                    <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
+                                                        {console.log("selectedStock?.price ", selectedStock)}
+                                                        <Text style={{ backgroundColor: "#dedede", margin: 3, padding: 4, color: "#000000" }}>Cash Price <Text style={{ fontSize: 18, color: "#000000" }}>{selectedStock && selectedStock["Cash Price"]} </Text></Text>
+                                                        <Text style={{ backgroundColor: "#dedede", margin: 3, padding: 4, color: "#000000" }}> Credit price <Text style={{ fontSize: 18, color: "#000000" }}>{selectedStock && selectedStock["Credit Price"]}</Text> </Text>
+
+                                                        <Text style={{ backgroundColor: "#dedede", margin: 3, padding: 4, color: "#000000" }}>Special Price <Text style={{ fontSize: 18, color: "#000000" }}> {selectedStock && selectedStock["Spl.Price"]}</Text> </Text>
+
+                                                        <Text style={{ backgroundColor: "#dedede", margin: 3, padding: 4, color: "#000000" }}>Qty <Text style={{ fontSize: 18, color: "#000000" }}>{selectedStock && selectedStock["STOCK"]}</Text> </Text>
+                                                        <Text style={{ backgroundColor: "#dedede", margin: 3, padding: 4, color: "#000000" }}> Ord pend  <Text style={{ fontSize: 18, color: "#000000" }}>{selectedStock && selectedStock["ORD_PEND"]}</Text></Text>
+                                                        <Text style={{ backgroundColor: "#dedede", margin: 3, padding: 4, color: "#000000" }}> Avl Qty  <Text style={{ fontSize: 18, color: "#000000" }}>{selectedStock && selectedStock.AvlQty} </Text></Text>
+                                                        <Text style={{ backgroundColor: "#dedede", margin: 3, padding: 4, color: "#000000" }}>Carton Qty <Text style={{ fontSize: 18, color: "#000000" }}> {selectedStock && selectedStock["CTN QTY"]} </Text> </Text>
+                                                        <Text style={{ backgroundColor: "#dedede", margin: 3, padding: 4, color: "#000000" }}>Packet Qty <Text style={{ fontSize: 18, color: "#000000" }}> {selectedStock && selectedStock["PKT QTY"]}</Text> </Text>
+                                                        <Text style={{ backgroundColor: "#dedede", margin: 3, padding: 4, color: "#000000" }}>Last Selling Price <Text style={{ fontSize: 18, color: "#000000" }}> {lastSellingPrice}</Text> </Text>
+
+
+
+                                                    </View>
+                                                }
+
+
+
 
                                             </View>
 
-                                            {/* <View style={styles.StockItemQtyPriceWrap}>
-    
-                                                    <View style={[styles.StockInputCont, { width: '28%' }]}>
-    
-                                                        <View style={[styles.RemarkInputCont, { width: '100%', marginTop: 0 }]}>
-                                                            <TextInput
-                                                                style={styles.PlaceHolderInput}
-                                                                ref={qtyInpRef}
-                                                                placeholder="Qty"
-                                                                placeholderTextColor="#aaa"
-                                                                keyboardType="numeric" // This ensures the numeric keyboard appears
-                                                                onChangeText={text => {
-                                                                    const numericText = text.replace(/[^0-9.]/g, ''); // This removes any non-numeric characters
-                                                                    setQuantity(numericText);
-                                                                }}
-                                                                onBlur={() => {
-                                                                    if (unitPriceInpRef.current) {
-                                                                        unitPriceInpRef.current.focus();
-                                                                    }
-                                                                }}
-                                                                value={quantity}
-                                                            />
-                                                        </View>
-                                                    </View>
-    
-                                                    <View style={[styles.StockInputCont, { width: '48%' }]}>
-                                                        <View style={[styles.RemarkInputCont, { width: '100%', marginTop: 0 }]}>
-                                                            <TextInput
-                                                                style={styles.PlaceHolderInput}
-                                                                ref={unitPriceInpRef}
-                                                                placeholder='Unit price'
-                                                                placeholderTextColor="#aaa"
-                                                                keyboardType="numeric"
-                                                                onChangeText={text => {
-                                                                    const numericText = text.replace(/[^0-9.]/g, ''); // This removes any non-numeric characters
-                                                                    setUnitPrice(numericText);
-                                                                }}
-                                                                value={unitPrice}
-                                                            />
-                                                        </View>
-                                                    </View>
-    
-                                                    <View style={styles.AddtoCartCont}>
-                                                        <TouchableOpacity style={styles.SelectItemCont} onPress={() => SaveItem()}>
-                                                            <Image style={styles.stockBagIcon} source={require('../images/addCart.png')} />
-                                                        </TouchableOpacity>
-                                                    </View>
-                                                </View> */}
-
-
-                                            {/* <View style={styles.StockValueWrap}>
-    
-                                                    <View style={styles.W100}>
-                                                        <Text style={styles.SelectText}>Details</Text>
-                                                    </View>
-                                                    <View style={styles.SelectedItemHeadStockCost}>
-                                                        <Text style={styles.SelectHeadText}>Ord pend: </Text>
-                                                        <Text style={styles.SelectedItemText}>{selectedStock && selectedStock.Ord_pend !== '' ? selectedStock.Ord_pend : ''}</Text>
-                                                    </View>
-                                                    <View style={styles.SelectedItemHeadStockCost}>
-                                                        <Text style={styles.SelectHeadText}>Avl Stock: </Text>
-                                                        <Text style={styles.SelectedItemText}>{selectedStock && selectedStock.AvlQty !== '' ? selectedStock.AvlQty : ''}</Text>
-                                                    </View>
-                                                    <View style={styles.SelectedItemHeadStockCost}>
-                                                        <Text style={styles.SelectHeadText}>Price: </Text>
-                                                        <Text style={styles.SelectedItemText}>{selectedStock && selectedStock.price !== '' ? selectedStock.price : ''}</Text>
-                                                    </View>
-                                                    <View style={styles.SelectedItemHeadStockCost}>
-                                                        <Text style={styles.SelectHeadText}>Credit Price: </Text>
-                                                        <Text style={styles.SelectedItemText}>{selectedStock && selectedStock['Credit Price'] !== '' ? selectedStock['Credit Price'] : ''}</Text>
-                                                    </View>
-    
-                                                </View> */}
-
-
-                                            {/* <View style={styles.SelectedItemHeadStockCost}>
-                                                    <Text style={styles.SelectHeadText}>Cart Total: </Text>
-                                                    <Text style={styles.SelectedItemText}>{totalUnitPrice && (totalUnitPrice).toFixed(2)}</Text>
-                                                </View> */}
 
                                         </View>
 
@@ -2792,6 +3006,7 @@ const SalesOrder = ({ route }) => {
                         payment={payment}
                         delivery={delivery}
                         validity={validity}
+                        lponumber={lponumber}
                         savedItemData={savedItemData}
                         totalUnitPrice={totalUnitPrice}
                         cashCustomerName={cashCustomerName}

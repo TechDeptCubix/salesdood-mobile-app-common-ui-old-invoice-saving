@@ -11,6 +11,8 @@ import formatPrice3Decimal from '../utils'
 
 const CheckStock = () => {
 
+
+    const [vanFromLocalStorage, setVanFromLocalStorage] = useState(null)
     // const searchUrl = 'https://cubixweberp.com:203/api/Search_Items/Sitem/'
 
     const searchUrl = 'https://cubixweberp.com:208/api/Search_Items/automax/Sitem/'
@@ -46,6 +48,11 @@ const CheckStock = () => {
 
 
     const fetchAppUrl = async () => {
+
+        const van_from_local = await AsyncStorage.getItem('VAN')
+
+        setVanFromLocalStorage(van_from_local)
+
         const appUrl = await AsyncStorage.getItem('appUrl')
 
         const storedUserDataArray = await AsyncStorage.getItem("userDataArray");
@@ -67,9 +74,25 @@ const CheckStock = () => {
 
             let encodedvalue = encodeURIComponent(value)
 
-            console.log(`searchStock -- ${appUrl}Search_Items/${cmpcode}/Sitem/${encodedvalue}`)
-            
-            await axios.get(`${appUrl}Search_Items/${cmpcode}/Sitem/${encodedvalue}`)
+            // CHANGED SERACH STOCK TO THIS API BECAUSE IT WILL NOT CONFLICT WITH SOCA WEB APP SERCH STOCK 
+            // AND THIS IS ALREADY PRESENT IN ALL SALESDOOD API AS ABHILASH SIR SAID
+            // loc = master means will search in all locations
+           // let apiUrl = `${appUrl}Search_Items/InventoryList?cmpcode=${cmpcode}&guid=F4369B5E-8E23-4BCF-AC82-76C977991728&mod=MOBILE&Loc=MASTER&searchKey=${encodedvalue}`
+
+           // not changed to MODE CODE because on result CODE comes so i have to change everywhere
+           let apiUrl = `${appUrl}Search_Items/InventoryList?cmpcode=${cmpcode}&guid=F4369B5E-8E23-4BCF-AC82-76C977991728&mod=MOBILE&Loc=MASTER&searchKey=${encodedvalue}`
+
+            //let apiUrl = `${appUrl}Search_Items/${cmpcode}/Sitem/${encodedvalue}`
+
+
+            console.log("search url ==>", apiUrl)
+            if (cmpcode?.trim()?.toUpperCase() == "MESHARI") {
+
+                apiUrl = `${appUrl}Search_Itemsnew/${cmpcode}/Sitem/${encodedvalue}/${vanFromLocalStorage}`
+                console.log(`searchStock url meshari  -- ${apiUrl}`)
+            }
+
+            await axios.get(apiUrl)
                 .then((res) => {
                     setStockData(res.data)
                 })
@@ -144,8 +167,21 @@ const CheckStock = () => {
     const fetchTop50StockItems = async () => {
         setShowActivity(true)
         try {
-            console.log(`fetchTop50StockItems--${appUrl}Search_Items/${cmpcode}/Sitem50/12345`)
-            const response = await axios.get(`${appUrl}Search_Items/${cmpcode}/Sitem50/12345`);
+
+
+
+
+            let apiUrl = `${appUrl}Search_Items/InventoryList?cmpcode=${cmpcode}&guid=F4369B5E-8E23-4BCF-AC82-76C977991728&mod=MOBILE50&Loc=MASTER&searchKey=ALL`
+
+            if (cmpcode?.trim()?.toUpperCase() == "MESHARI") {
+
+                apiUrl = `${appUrl}Search_Itemsnew/${cmpcode}/Sitem50/12345/${vanFromLocalStorage}`
+                console.log(`searchStock url meshari  -- ${apiUrl}`)
+            }
+
+            console.log(`fetchTop50StockItems--${apiUrl}`)
+
+            const response = await axios.get(apiUrl);
             // console.log('fetchTop50StockItems', response.data[0]);
             setTop50Items(response.data)
             setShowActivity(false)
@@ -334,7 +370,7 @@ const CheckStock = () => {
                                                     justifyContent: 'space-between',
                                                     width: '100%'
                                                 }}>
-                                                    
+
                                                     <Text style={[styles.StockListDescText, { width: '75%' }]}>{item.Description}</Text>
                                                     <Text style={[styles.StockListDescTextSmall, { color: '#30B3A4', fontFamily: 'Lexend-Regular', }]}>{item.Qty}</Text>
                                                 </View>
@@ -343,10 +379,10 @@ const CheckStock = () => {
                                                     width: '100%',
                                                     paddingVertical: 6
                                                 }}>
-                                                    <Text style={styles.StockListDescTextSmall}>{item.Code}</Text>
-                                                    <TouchableOpacity style={[styles.PlusMinusCont, { marginLeft: 'auto' }]} onPress={() => toggleExpand(item.Code, item.OEM)}>
+                                                    <Text style={styles.StockListDescTextSmall}>{item.Code ? item.Code : item.code}</Text>
+                                                    <TouchableOpacity style={[styles.PlusMinusCont, { marginLeft: 'auto' }]} onPress={() => toggleExpand(item.Code ? item.Code : item.code, item.OEM)}>
                                                         {
-                                                            expandedItems.includes(item.Code) ?
+                                                            expandedItems.includes(item.Code ? item.Code : item.code) ?
                                                                 <Image style={styles.PlusMinusImg} source={require('../images/chkMinus.png')} />
                                                                 :
                                                                 <Image style={styles.PlusMinusImg} source={require('../images/chkPlus.png')} />
@@ -357,13 +393,24 @@ const CheckStock = () => {
 
                                         </View>
 
+                                        {/* {console.log("item.Code ? item.Code : item.code-->>", item.Code ? item.Code : item.code)}
                                         {
-                                            expandedItems.includes(item.Code) && (
+                                            console.log("image_url", `http://popbr2.dyndns.org:86/` + item.Code + `.png`)
+                                        } */}
+                                        
+
+                                        {
+                                            expandedItems.includes(item.Code ? item.Code : item.code) && (
                                                 <View style={styles.DynamicPriceView}>
                                                     <View style={{
                                                         flexDirection: 'column',
                                                         width: 'auto'
                                                     }}>
+
+                                            {cmpcode?.trim().toUpperCase() == "POPULAR" &&
+                                            <Image style={{ width: 100, height: 100, margin:10 }} source={{uri:`http://popbr2.dyndns.org:86/` + item.Code + `.png`}} />
+                                                }
+
                                                         <View style={styles.PriceTag}>
                                                             <Text style={styles.StockListCodeText}>Cash Price</Text>
                                                             <Text style={styles.PriceValueText}>
@@ -656,8 +703,8 @@ const CheckStock = () => {
                                                     width: '100%',
                                                     paddingVertical: 6
                                                 }}>
-                                                    <Text style={styles.StockListDescTextSmall}>{item.Code}</Text>
-                                                    <TouchableOpacity style={[styles.PlusMinusCont, { marginLeft: 'auto' }]} onPress={() => toggleExpand(item.Code, item.OEM)}>
+                                                    <Text style={styles.StockListDescTextSmall}>{item.Code ? item.Code : item.code}</Text>
+                                                    <TouchableOpacity style={[styles.PlusMinusCont, { marginLeft: 'auto' }]} onPress={() => toggleExpand(item.Code ? item.Code : item.code, item.OEM)}>
                                                         {
                                                             expandedItems.includes(item.Code) ?
                                                                 <Image style={styles.PlusMinusImg} source={require('../images/chkMinus.png')} />
@@ -671,7 +718,7 @@ const CheckStock = () => {
                                         </View>
 
                                         {
-                                            expandedItems.includes(item.Code) && (
+                                            expandedItems.includes(item.Code ? item.Code : item.code) && (
                                                 <View style={styles.DynamicPriceView}>
                                                     <View style={{
                                                         flexDirection: 'column',
@@ -689,12 +736,23 @@ const CheckStock = () => {
                                                                 {formatPrice3Decimal(item['Credit Price'])}
                                                             </Text>
                                                         </View>
-                                                        <View style={styles.PriceTag}>
-                                                            <Text style={styles.StockListCodeText}>Block Price</Text>
-                                                            <Text style={styles.PriceValueText}>
-                                                                {formatPrice3Decimal(item['Block Price'])}
-                                                            </Text>
-                                                        </View>
+
+                                                        {cmpcode?.trim().toUpperCase() != "SOCA" ?
+                                                            <View style={styles.PriceTag}>
+                                                                <Text style={styles.StockListCodeText}>Block Price</Text>
+                                                                <Text style={styles.PriceValueText}>
+                                                                    {formatPrice3Decimal(item['Block Price'])}
+                                                                </Text>
+                                                            </View>
+                                                            :
+                                                            <View style={styles.PriceTag}>
+                                                                <Text style={styles.StockListCodeText}>Special Price</Text>
+                                                                <Text style={styles.PriceValueText}>
+                                                                    {formatPrice3Decimal(item['Spcial Price'])}
+                                                                </Text>
+                                                            </View>
+                                                        }
+
                                                         <View style={styles.PriceTag}>
                                                             <Text style={styles.StockListCodeText}>Order Pend.</Text>
                                                             <Text style={styles.PriceValueText}>{item.Ord_pend}</Text>
@@ -703,12 +761,14 @@ const CheckStock = () => {
                                                             <Text style={styles.StockListCodeText}>BIN.</Text>
                                                             <Text style={styles.PriceValueText}>{item.BIN}</Text>
                                                         </View>
-                                                        <View style={styles.PriceTag}>
-                                                            <Text style={styles.StockListCodeText}>Discount Price</Text>
-                                                            <Text style={styles.PriceValueText}>
-                                                                {formatPrice3Decimal(item.Discount_Price)}
-                                                            </Text>
-                                                        </View>
+                                                        {cmpcode?.trim().toUpperCase() != "SOCA" &&
+                                                            <View style={styles.PriceTag}>
+                                                                <Text style={styles.StockListCodeText}>Discount Price</Text>
+                                                                <Text style={styles.PriceValueText}>
+                                                                    {formatPrice3Decimal(item.Discount_Price)}
+                                                                </Text>
+                                                            </View>
+                                                        }
                                                     </View>
 
                                                     <View style={styles.TabCont}>

@@ -2,7 +2,7 @@ import { View, Text, ScrollView, ImageBackground, StyleSheet, Image, Dimensions,
 import React, { useEffect, useRef, useState } from 'react'
 import { useFocusEffect, useNavigation } from '@react-navigation/native'
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import axios from 'axios';
+import axios, { all } from 'axios';
 import { Picker } from '@react-native-picker/picker';
 import LinearGradient from 'react-native-linear-gradient';
 import Home from '../dashPages/Home';
@@ -14,6 +14,21 @@ import { SERVER_KEY } from "@env";
 
 
 const HomeNew = () => {
+
+    const [salesmanTarget, setSalesmanTarget] = useState(null)
+    const [isCallingMenuListAvailabletoThisRole, setCallingMenuListAvailabletoThisRole] = useState(false)
+
+    const [callingNotAvailableMenuList, setCallingNotAvailableMenuList] = useState(false)
+
+    const [menuNotAllowedToThisCompany, setMenuNotAllowedToThisCompany] = useState(null)
+
+    const [menuAllowedToThisRole, setMenuAllowedToThisRole] = useState(null)
+
+    useEffect(() => {
+
+        console.log("menuNotAllowedToThisCompany ", menuNotAllowedToThisCompany)
+
+    }, [menuNotAllowedToThisCompany])
 
     const [mobileUserType, setMobileUserType] = useState("")
 
@@ -117,6 +132,8 @@ const HomeNew = () => {
 
         const appUrl = await AsyncStorage.getItem('appUrl')
 
+        console.log("appUrl in  home", appUrl)
+
         const portNoData = await AsyncStorage.getItem('portNoData')
 
         console.log('portNoData', portNoData)
@@ -166,6 +183,15 @@ const HomeNew = () => {
             await AsyncStorage.removeItem('salesman_name');
             await AsyncStorage.removeItem('sales_man_drop');
             await AsyncStorage.removeItem('salesman_name_drop');
+
+            let smankey = await AsyncStorage.getItem('Smankey');
+
+            if (smankey) {
+
+                console.log("smankey present remove item")
+                await AsyncStorage.removeItem('Smankey');
+
+            }
 
             // Navigate to the MachineValidation page
             navigation.navigate('MachineValidation');
@@ -242,11 +268,13 @@ const HomeNew = () => {
             const response = await axios.get(`${appUrl}MasterList/${userDataArray[0].cmpcode}/SALESMAN/${paramValue}`)
             setMasterList(response.data)
         } catch (error) {
-            console.error('fetchAllSalesCodeError: ', error);
+            console.error('fetchAllSalesCodeError:SALESCODE ', error);
         }
     }
 
     const handlePickerClick = async (itemValue) => {
+
+        console.log("handlePickerClick--->", itemValue)
         setSelectedSalesMan(itemValue.sales_man);
 
         fetchSalesmanDetailsOnClick(itemValue.sales_man)
@@ -265,21 +293,28 @@ const HomeNew = () => {
 
     const fetchSalesmanDetailsOnLoad = async (salesManId) => {
         try {
-            const response = await axios.get(`${appUrl}masterlist/${cmpCode}/salesman/${salesManId}`);
-            console.log("fetchSalesmanDetailsOnLoad Response:", response.data);
+            const apiUrl = `${appUrl}masterlist/${cmpCode}/salesman/${salesManId}`
+            console.log("apiUrl>> fetchSalesmanDetailsOnLoad", apiUrl)
+            const response = await axios.get(apiUrl);
+            console.log("fetchSalesmanDetailsOnLoad Response:>>", response.data);
             setVan(response.data[0].LOC_CODE)
             setLocName(response.data[0].LOC_Name)
 
             if (response.data[0].default_dept) {
+                console.log("response.data[0].default_dept")
                 setDeptNo(response.data[0].default_dept)
                 await AsyncStorage.setItem('DEPTNO', response.data[0].default_dept);
             } else {
-                setDeptNo(response.data[0].deptno)
-                await AsyncStorage.setItem('DEPTNO', response.data[0].deptno);
+
+                // if no dept comes in result then no need to set here because we already do this in Login screen ie setting first dept in userlogin array
+                // console.log("response.data[0].deptno>>++" , response.data[0])
+                // setDeptNo(response.data[0].deptno)
+                // await AsyncStorage.setItem('DEPTNO', response.data[0].deptno);
+                // because of this issue picker was not coming when we click on dropdown image 
             }
             setSelectedSalesName(response.data[0].Sman_Name)
 
-            // await AsyncStorage.setItem('DEPTNO', response.data[0].default_dept);
+
             await AsyncStorage.setItem('VAN', response.data[0].LOC_CODE);
             await AsyncStorage.setItem('sales_man', response.data[0].Sman_code);
             await AsyncStorage.setItem('salesman_name', response.data[0].Sman_Name);
@@ -299,13 +334,12 @@ const HomeNew = () => {
             setLocName(response.data[0].LOC_Name)
             setSelectedSalesName(response.data[0].Sman_Name)
 
-            // await AsyncStorage.setItem('DEPTNO', response.data[0].default_dept);
+
             await AsyncStorage.setItem('VAN', response.data[0].LOC_CODE);
             await AsyncStorage.setItem('sales_man', response.data[0].Sman_code);
             await AsyncStorage.setItem('salesman_name', response.data[0].Sman_Name);
 
 
-            // setDeptNo(response.data[0].default_dept)
             // Handle response data as needed
         } catch (error) {
             console.error('Error fetching data:', error);
@@ -333,6 +367,60 @@ const HomeNew = () => {
     }, [userLoginData, cmpCode, appUrl])
 
 
+    const getNotAllowedmenuListForThisCustomer = () => {
+
+        setCallingNotAvailableMenuList(true)
+
+        let apiUrl = `https://cubixweberp.com:301/api/ClientMenuControl/CUBOT/${cmpCode}/MENU/SALESDOOD`
+        console.log("apiUrl Menu", apiUrl)
+
+        axios.get(apiUrl).then((res) => {
+
+            setCallingNotAvailableMenuList(false)
+            setMenuNotAllowedToThisCompany(res.data)
+            console.log("apiUrl Menu res.data", res.data)
+
+        }).catch((err) => {
+
+            setCallingNotAvailableMenuList(false)
+        })
+
+    }
+
+    const getMenuAllowedToThisRole = async () => {
+
+        console.log("apiUrl Menu>>++>> getMenuAllowedToThisRole")
+
+        const baseUrl = await AsyncStorage.getItem('appUrl')
+        console.log("apiUrl Menu>>++>>++ baseUrl", baseUrl)
+        const accessgrp = await AsyncStorage.getItem('accessgrp')
+
+
+        setCallingMenuListAvailabletoThisRole(true)
+
+        let apiUrl = `https://cubixweberp.com:301/api/clientmenucontrol/cubot/${cmpCode}/rolemenu/${accessgrp}`
+        console.log("apiUrl Menu>>++>>]]]]", apiUrl)
+
+        axios.get(apiUrl).then((res) => {
+
+            setCallingMenuListAvailabletoThisRole(false)
+
+            setMenuAllowedToThisRole(res.data)
+
+
+            console.log("apiUrl Menu res.data", res.data)
+
+        }).catch((err) => {
+            console.log("apiUrl Menu>>++>>]]]] 500")
+
+            setMenuAllowedToThisRole([])
+            setCallingMenuListAvailabletoThisRole(false)
+        })
+    }
+
+
+
+
     useEffect(() => {
         const fetchData = async () => {
             try {
@@ -356,6 +444,7 @@ const HomeNew = () => {
 
                 if (loginData) {
                     const parserData = JSON.parse(loginData)
+                    console.log("loginData HomeNew", loginData)
                     setUserLoginData(parserData)
                 }
 
@@ -389,6 +478,7 @@ const HomeNew = () => {
         };
 
         fetchData();
+
     }, [])
 
     useEffect(() => {
@@ -415,67 +505,16 @@ const HomeNew = () => {
                 })
                 .catch(error => console.log('Error saving data', error));
         }
-        // if (selectedSalesMan[0].DEPTNO) {
-        //     AsyncStorage.setItem('DEPTNO', selectedSalesMan[0].DEPTNO)
-        //         .then(() => {
 
-        //             console.log('DEPTNO saved successfully')
-        //         })
-        //         .catch(error => console.log('Error saving data', error));
-        // }
-        // if (selectedSalesMan[0].VAN) {
-        //     AsyncStorage.setItem('VAN', selectedSalesMan[0].VAN)
-        //         .then(() => {
-
-        //             console.log('VAN saved successfully')
-        //         })
-        //         .catch(error => console.log('Error saving data', error));
-        // }
     }, [selectedSalesMan])
 
-
-    // useEffect(() => {
-    //     if (selectedSalesMan) {
-    //         const salesManName = masterList && masterList.filter((item) => item.Sman_code === selectedSalesMan)
-
-    //         // console.log('salesManNameFromFilter', salesManName[0].Sman_Name)
-
-    //         if (salesManName) {
-    //             setSelectedSalesName(salesManName[0].Sman_Name)
-    //             AsyncStorage.setItem('salesman_name_drop', salesManName[0].Sman_Name)
-    //                 .then(() => {
-
-    //                     console.log('selectedSalesMan Data saved successfully')
-    //                 })
-    //                 .catch(error => console.log('Error saving data', error));
-    //         }
-    //         if (salesManName) {
-    //             setDeptNo(salesManName[0].deptno)
-    //             AsyncStorage.setItem('DEPTNO', salesManName[0].deptno)
-    //                 .then(() => {
-
-    //                     console.log('DEPTNO Data saved successfully')
-    //                 })
-    //                 .catch(error => console.log('Error saving data', error));
-    //         }
-    //         if (salesManName) {
-    //             setVan(salesManName[0].VAN)
-    //             AsyncStorage.setItem('VAN', salesManName[0].VAN)
-    //                 .then(() => {
-
-    //                     console.log('VAN Data saved successfully')
-    //                 })
-    //                 .catch(error => console.log('Error saving data', error));
-    //         }
-
-    //     }
-    // }, [selectedSalesMan])
 
     useEffect(() => {
         if (cmpCode && salesMan && deptNo && appUrl) {
             fetchSalesCollection()
             fetchCashCollection()
             fetchChequeCollection()
+            getTargetAmount()
 
 
         }
@@ -487,6 +526,7 @@ const HomeNew = () => {
                 fetchSalesCollection()
                 fetchCashCollection()
                 fetchChequeCollection()
+                getTargetAmount()
             }
         }, [cmpCode, salesMan, deptNo, appUrl])
     );
@@ -500,6 +540,12 @@ const HomeNew = () => {
     useEffect(() => {
         fetchSalesManDrop()
     }, [])
+
+    useEffect(() => {
+
+        console.log("userLoginData>>", userLoginData)
+
+    }, [userLoginData])
 
     const checkNavigation = async () => {
         const gotoDriver = await AsyncStorage.getItem('gotoDriver');
@@ -587,236 +633,352 @@ const HomeNew = () => {
         // }
     }
 
+    useEffect(() => {
+
+        getNotAllowedmenuListForThisCustomer()
+
+        getMenuAllowedToThisRole()
+
+        if (cmpCode?.trim().toUpperCase() == "TASRA") {
+            // navigation.navigate("GoodsCollectionDeliveryPoolList")
+            navigation.navigate("HomeNewTasra")
+        }
+
+    }, [cmpCode])
+
+
+
+
+    const getTargetAmount = async () => {
+
+        console.log('getTargetAmount>>>>>> url ++', `${appUrl}MasterCount/${cmpCode}/SMAN_TARGET/${salesMan}/-`)
+
+        try {
+            const response = await axios.get(`${appUrl}MasterCount/${cmpCode}/SMAN_TARGET/${salesMan}/-`)
+
+            console.log("res----++++", response.data[0].TARGET)
+
+            if (response.status === 200) {
+                setSalesmanTarget(response.data[0].TARGET)
+
+
+            }
+
+        } catch (error) {
+            console.log('getTargetAmount', error)
+
+        }
+    }
+
     return (
+
         <>
-
             {
-                selectedBottomTab === 'Home' &&
-                <LinearGradient
-                    colors={['#E4DFD7', '#FFFFFF']}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 0.5, y: 0.5 }}
-                    style={{
-                        flexGrow: 1,
-                        // backgroundColor: '#EFECE7'
-                    }}>
+                cmpCode != "TASRA" &&
 
-                    <View
-                        style={styles.topCont}
-                    >
-                        {/* <View>
+                <>
+
+                    {
+                        selectedBottomTab === 'Home' &&
+                        <LinearGradient
+                            colors={['#E4DFD7', '#FFFFFF']}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 0.5, y: 0.5 }}
+                            style={{
+                                flexGrow: 1,
+                                // backgroundColor: '#EFECE7'
+                            }}>
+
+                            <View
+                                style={styles.topCont}
+                            >
+                                {/* <View>
                             <Button title='Send notification' onPress={()=>sendNotification()} />
                         </View> */}
 
-                        <View style={styles.TopSalesWrap}>
-                            <View style={{
-                                width: '96%',
-                                flexDirection: 'row',
-                                justifyContent: 'space-between',
-                                // paddingHorizontal: 12,
-                                // paddingVertical: 8
-                            }}>
-                                <View style={[styles.TopSalesBox, { backgroundColor: '#AEADB2' }]}>
-                                    <Text style={styles.TopBannerText}>Sales</Text>
-                                    {
-                                        showSalesCollLoader ?
-                                            <ActivityIndicator color={'white'} />
-                                            :
-                                            <Text style={[styles.TopBannerText, { color: 'white' }]}>{salesCollection && salesCollection[0].amount || 'nil'}</Text>
-                                    }
-                                </View>
-
-                                {
-                                    cmpCode !== "SUPERLAND" &&
-                                    <>
-                                        <View style={[styles.TopSalesBox, { backgroundColor: '#FF9501' }]}>
-                                            <Text style={styles.TopBannerText}>Cash Collection</Text>
+                                <View style={styles.TopSalesWrap}>
+                                    <View style={{
+                                        width: '96%',
+                                        flexDirection: 'row',
+                                        justifyContent: 'space-between',
+                                        // paddingHorizontal: 12,
+                                        // paddingVertical: 8
+                                    }}>
+                                        <View style={[styles.TopSalesBox, { backgroundColor: '#AEADB2' }]}>
+                                            <Text style={styles.TopBannerText}>Sales</Text>
                                             {
-                                                showCashCollLoader ?
+                                                showSalesCollLoader ?
                                                     <ActivityIndicator color={'white'} />
                                                     :
-                                                    <Text style={[styles.TopBannerText, { color: 'white' }]}>{cashCollection && cashCollection[0].amount || 'nil'}</Text>
+                                                    <Text style={[styles.TopBannerText, { color: 'white' }]}>{salesCollection && salesCollection[0].amount || 'nil'}</Text>
                                             }
                                         </View>
-                                        <View style={[styles.TopSalesBox, { backgroundColor: '#FF3B2F' }]}>
-                                            <Text style={styles.TopBannerText}>Cheque Collections</Text>
-                                            {
-                                                showChequeCollLoader ?
-                                                    <ActivityIndicator color={'white'} />
-                                                    :
-                                                    <Text style={[styles.TopBannerText, { color: 'white' }]}>{chequeCollection && chequeCollection[0].amount || 'nil'}</Text>
-                                            }
-                                        </View>
-                                    </>
-                                }
 
-                            </View>
-                        </View>
+                                        {
+                                            cmpCode !== "SUPERLAND" &&
+                                            <>
+                                                <View style={[styles.TopSalesBox, { backgroundColor: '#FF9501' }]}>
+                                                    <Text style={styles.TopBannerText}>Cash Collection</Text>
+                                                    {
+                                                        showCashCollLoader ?
+                                                            <ActivityIndicator color={'white'} />
+                                                            :
+                                                            <Text style={[styles.TopBannerText, { color: 'white' }]}>{cashCollection && cashCollection[0].amount || 'nil'}</Text>
+                                                    }
+                                                </View>
+                                                <View style={[styles.TopSalesBox, { backgroundColor: '#FF3B2F' }]}>
+                                                    <Text style={styles.TopBannerText}>Cheque Collections</Text>
+                                                    {
+                                                        showChequeCollLoader ?
+                                                            <ActivityIndicator color={'white'} />
+                                                            :
+                                                            <Text style={[styles.TopBannerText, { color: 'white' }]}>{chequeCollection && chequeCollection[0].amount || 'nil'}</Text>
+                                                    }
+                                                </View>
+                                            </>
+                                        }
 
-                        <View style={{
-                            width: '100%',
-                            flexDirection: 'row',
-                            justifyContent: 'center'
-                        }}>
-                            <Text style={[styles.cmpcodeText, { color: "grey" }]}>{cmpName}</Text>
-                        </View>
-
-                        <View style={styles.TopUserBanner}>
-
-                            <View style={styles.UserAvatarCont}>
-                                <Image source={require('../images/ic_user_placeholder.png')} style={styles.userAvatar}></Image>
-                                <Text style={styles.userNameText}>
-                                    {selectedSalesName ? selectedSalesName.toUpperCase() : salesManName.toUpperCase()}
-                                </Text>
-                            </View>
-
-                            <View style={styles.UserAvatarCont}>
-                                <Text style={styles.userNameText}>{formattedDate}</Text>
-                                <Text style={styles.userNameText}>{formattedTime}</Text>
-                            </View>
-
-                            <View style={{
-                                flexDirection: 'column'
-                            }}>
-                                {
-                                    userLoginData &&
-                                    // <View style={styles.PickerWrap}>
-                                    <View>
-                                        <Picker
-                                            // selectedValue={selectedSalesMan}
-                                            style={styles.picker}
-                                            onValueChange={(itemValue) => handlePickerClick(itemValue)}
-                                        >
-
-                                            {
-                                                userLoginData && userLoginData.map((item, index) => (
-                                                    <Picker.Item
-                                                        label={[item.DEPTNO, item.sales_man, item.salesman_name]}
-                                                        value={{ sales_man: item.sales_man, dept_no: item.DEPTNO }}
-                                                        key={index}
-                                                    />
-                                                ))
-                                            }
-                                        </Picker>
                                     </View>
-                                }
-                                <View style={styles.deptVan}>
-                                    <Text style={styles.userNameText}>{deptNo ? deptNo : ''}</Text>
-                                    <Text style={styles.userNameText}>-</Text>
-                                    <Text style={styles.userNameText}>{locName ? locName : ""}</Text>
                                 </View>
 
-                            </View>
+                                {/* <View style={{ width: "100%", paddingHorizontal: 10, marginTop: 5 }}>
 
-                        </View>
+                                    <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+                                        <Text style={{ fontSize: 14, color: "#000000" }}>
+                                            Achieved {salesCollection[0]?.amount}
+                                        </Text>
+                                        <Text style={{ fontSize: 14, color: "#000000" }}>
+                                            Target {salesmanTarget}
+                                        </Text>
+                                    </View>
 
-                        {/* <View style={styles.SalesManImgWrap}>
-                            <Image style={styles.SalesManImg} source={require('../images/salesmatenew.png')}></Image>
-                        </View> */}
+                                    <View style={{ width: "100%", height: 10, backgroundColor: "#f7f7f7", borderColor: "#D3D3D3", borderWidth: 1 }}>
+                                        <View style={{ width: (salesCollection[0]?.amount / salesmanTarget) * 100 + "%", height: 10, backgroundColor: "#ae3", }}>
 
+                                        </View>
+                                    </View>
+                                </View> */}
 
-                        {/* <View style={styles.topUserCont}>
-                            <View style={styles.TopLeftCont}>
                                 <View style={{
                                     width: '100%',
                                     flexDirection: 'row',
-                                    justifyContent: 'space-between',
-                                    alignItems: 'center'
+                                    justifyContent: 'center',
+                                    marginTop: 3
                                 }}>
-                                    <Image source={require('../images/ic_user_placeholder.png')} style={styles.userAvatar}></Image>
+                                    <Text style={[styles.cmpcodeText, { color: "grey" }]}>{cmpName}</Text>
+                                </View>
 
-                                    {
-                                        userLoginData &&
-                                        <View style={styles.PickerWrap}>
-                                            <Picker
-                                                selectedValue={selectedSalesMan}
-                                                style={styles.picker}
-                                                onValueChange={(itemValue) => handlePickerClick(itemValue)}
-                                            >
+                                <View style={styles.TopUserBanner}>
 
-                                                {
-                                                    userLoginData && userLoginData.map((item, index) => (
-                                                        <Picker.Item
-                                                            label={[item.DEPTNO, item.sales_man, item.salesman_name]}
-                                                            value={{ sales_man: item.sales_man, dept_no: item.DEPTNO }}
-                                                            key={index}
-                                                        />
-                                                    ))
-                                                }
-                                            </Picker>
+                                    <View style={styles.UserAvatarCont}>
+                                        <Image source={require('../images/ic_user_placeholder.png')} style={styles.userAvatar}></Image>
+                                        <Text style={styles.userNameText}>
+                                            {selectedSalesName ? selectedSalesName.toUpperCase() : salesManName.toUpperCase()}
+                                        </Text>
+                                    </View>
+
+                                    <View style={styles.UserAvatarCont}>
+                                        <Text style={styles.userNameText}>{formattedDate}</Text>
+                                        <Text style={styles.userNameText}>{formattedTime}</Text>
+                                    </View>
+
+                                    <View style={{
+                                        flexDirection: 'column'
+                                    }}>
+                                        {console.log("userlogindata --->", userLoginData)}
+                                        {
+                                            userLoginData &&
+                                            // <View style={styles.PickerWrap}>
+                                            <View style={{ backgroundColor: "#cdcdcd", borderWidth: 1, borderColor: "#a7a7a7", width: 40 }}>
+
+                                                <Picker
+                                                    // selectedValue={selectedSalesMan}
+                                                    style={styles.picker}
+                                                    onValueChange={(itemValue) => handlePickerClick(itemValue)}
+                                                >
+
+                                                    {
+                                                        userLoginData && userLoginData.map((item, index) => (
+                                                            <Picker.Item
+                                                                label={[item.DEPTNO ? item.DEPTNO : item.Column1, item.sales_man, item.salesman_name]}
+                                                                value={{ sales_man: item.sales_man, dept_no: item.DEPTNO }}
+                                                                key={index}
+                                                            />
+                                                        ))
+                                                    }
+                                                </Picker>
+                                            </View>
+                                        }
+                                        <View style={styles.deptVan}>
+                                            <Text style={styles.userNameText}>{deptNo ? deptNo : ''}</Text>
+                                            <Text style={styles.userNameText}>-</Text>
+                                            <Text style={styles.userNameText}>{locName ? locName : ""}</Text>
                                         </View>
-                                    }
+
+                                    </View>
 
                                 </View>
-                                <Text style={styles.userNameText}>
-                                    {selectedSalesName ? selectedSalesName.toUpperCase() : salesManName.toUpperCase()}
-                                </Text>
-                                <View style={styles.deptVan}>
-                                    <Text style={{ color: '#2B2B2B' }}>{deptNo ? deptNo : ''}</Text>
-                                    <Text>-</Text>
-                                    <Text style={{ color: '#2B2B2B' }}>{locName ? locName : ""}</Text>
-                                </View>
-
 
                             </View>
 
-
-
-                        </View> */}
-
-                    </View>
-
-                    <View
-                        // source={require('../images/bottom_slant.png')}
-                        style={styles.bottomCont}
-                    >
-
-
-                        {userDataArray && userDataArray[0].cmpcode.trim().toUpperCase() == 'SALESDOODDEMO' ?
-
-
-                            <ScrollView contentContainerStyle={{
-                                width: '100%',
-                                // marginTop: 20,
-                                paddingBottom: 300,
-                                paddingTop: 25,
-                                zIndex: 2,
-                            }}
-                                horizontal={false}
+                            <View
+                                // source={require('../images/bottom_slant.png')}
+                                style={styles.bottomCont}
                             >
 
-                              
+                                {
+                                    (
 
+                                        userDataArray && userDataArray[0].cmpcode.trim().toUpperCase() != 'AUTOMAX' &&
+                                        userDataArray && userDataArray[0].cmpcode.trim().toUpperCase() != 'MALBAR' &&
+                                        userDataArray && userDataArray[0].cmpcode.trim().toUpperCase() != 'SUPERLAND'
+                                    ) ?
 
-                                < View style={{
-                                    width: '100%',
-                                    flexDirection: 'row',
-                                    justifyContent: 'space-between',
-                                    flexWrap: 'wrap',
-                                    paddingHorizontal: 18
-                                }}>
-                                    {/* <View style={styles.optionsCont}> */}
-
-                                    <TouchableOpacity style={[styles.ItemCont, { backgroundColor: '#D4CFC5' }]} onPress={() => navigation.navigate('CheckStock')}>
-                                        <View style={styles.innerItem}>
-                                            <View style={styles.TouchablwWhiteBackg}>
-                                                <Image source={require('../images/srchDark.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}>
-                                                </Image>
-                                            </View>
-                                            <View style={styles.innerText}>
-                                                <Text style={styles.optionText}>Stock List</Text>
-                                            </View>
-                                        </View>
-                                    </TouchableOpacity>
+                                        <ScrollView contentContainerStyle={{
+                                            width: '100%',
+                                            // marginTop: 20,
+                                            paddingBottom: 300,
+                                            paddingTop: 25,
+                                            zIndex: 2,
+                                        }}
+                                            horizontal={false}
+                                        >
 
 
 
-                                    <>
-                                       
+                                            < View style={{
+                                                width: '100%',
+                                                flexDirection: 'row',
+                                                justifyContent: 'space-between',
+                                                flexWrap: 'wrap',
+                                                paddingHorizontal: 18
+                                            }}>
 
 
-                                            <>
-                                                
+
+
+                                                <Text>{console.log("refreshed menu list menuNotAllowedToThisCompany ", menuNotAllowedToThisCompany)}</Text>
+
+                                                {
+                                                    menuNotAllowedToThisCompany ?
+
+                                                        menuNotAllowedToThisCompany.some((itemSommy) => itemSommy.MENUID.trim().toUpperCase() == "Stock List".trim().toUpperCase()) ?
+                                                            null
+                                                            :
+
+                                                            menuAllowedToThisRole?.length == 0 || menuAllowedToThisRole?.some((itemSommy) => itemSommy.MENUID.trim().toUpperCase() == "Stock List".trim().toUpperCase()) ?
+                                                                <TouchableOpacity style={[styles.ItemCont, { backgroundColor: '#D4CFC5' }]} onPress={() => navigation.navigate('CheckStock')}>
+                                                                    <View style={styles.innerItem}>
+                                                                        <View style={styles.TouchablwWhiteBackg}>
+                                                                            <Image source={require('../images/srchDark.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}>
+                                                                            </Image>
+                                                                        </View>
+                                                                        <View style={styles.innerText}>
+                                                                            <Text style={styles.optionText}>Stock List</Text>
+                                                                        </View>
+                                                                    </View>
+                                                                </TouchableOpacity>
+                                                                :
+                                                                null
+                                                        :
+                                                        <TouchableOpacity style={[styles.ItemCont, { backgroundColor: '#D4CFC5' }]} onPress={() => navigation.navigate('CheckStock')}>
+                                                            <View style={styles.innerItem}>
+                                                                <View style={styles.TouchablwWhiteBackg}>
+                                                                    <Image source={require('../images/srchDark.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}>
+                                                                    </Image>
+                                                                </View>
+                                                                <View style={styles.innerText}>
+                                                                    <Text style={styles.optionText}>Stock List</Text>
+                                                                </View>
+                                                            </View>
+                                                        </TouchableOpacity>
+                                                }
+
+                                                {
+                                                    menuNotAllowedToThisCompany ?
+
+                                                        menuNotAllowedToThisCompany.some((itemSommy) => itemSommy.MENUID.trim().toUpperCase() == "Quotation".trim().toUpperCase()) ?
+                                                            null
+                                                            :
+                                                            menuAllowedToThisRole?.length == 0 || menuAllowedToThisRole?.some((itemSommy) => itemSommy.MENUID.trim().toUpperCase() == "Quotation".trim().toUpperCase()) ?
+                                                                <TouchableOpacity style={[styles.ItemCont, { backgroundColor: '#D4CFC5' }]} onPress={() => navigation.navigate('MakeQuotation')}>
+                                                                    <View style={styles.innerItem}>
+                                                                        <View style={styles.TouchablwWhiteBackg}>
+                                                                            <Image source={require('../images/listDark.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image>
+                                                                        </View>
+                                                                        <View style={styles.innerText}>
+                                                                            <Text style={styles.optionText}>Quotation</Text>
+                                                                        </View>
+                                                                    </View>
+                                                                </TouchableOpacity>
+                                                                :
+                                                                null
+                                                        :
+                                                        <TouchableOpacity style={[styles.ItemCont, { backgroundColor: '#D4CFC5' }]} onPress={() => navigation.navigate('MakeQuotation')}>
+                                                            <View style={styles.innerItem}>
+                                                                <View style={styles.TouchablwWhiteBackg}>
+                                                                    <Image source={require('../images/listDark.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image>
+                                                                </View>
+                                                                <View style={styles.innerText}>
+                                                                    <Text style={styles.optionText}>Quotation</Text>
+                                                                </View>
+                                                            </View>
+                                                        </TouchableOpacity>
+                                                }
+
+
+                                                {
+                                                    menuNotAllowedToThisCompany ?
+
+                                                        menuNotAllowedToThisCompany.some((itemSommy) => itemSommy.MENUID.trim().toUpperCase() == "Quotation List".trim().toUpperCase()) ?
+                                                            null
+                                                            :
+                                                            menuAllowedToThisRole?.length == 0 || menuAllowedToThisRole?.some((itemSommy) => itemSommy.MENUID.trim().toUpperCase() == "Quotation List".trim().toUpperCase()) ?
+                                                                <TouchableOpacity style={[styles.ItemCont, { backgroundColor: '#D4CFC5' }]} onPress={() => navigation.navigate('QuotationList')}>
+                                                                    <View style={styles.innerItem}>
+                                                                        <View style={styles.TouchablwWhiteBackg}>
+                                                                            <Image source={require('../images/listDark.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image>
+                                                                        </View>
+                                                                        <View style={styles.innerText}>
+                                                                            <Text style={styles.optionText}>Quotation List</Text>
+                                                                        </View>
+                                                                    </View>
+                                                                </TouchableOpacity>
+                                                                :
+                                                                null
+                                                        :
+                                                        <TouchableOpacity style={[styles.ItemCont, { backgroundColor: '#D4CFC5' }]} onPress={() => navigation.navigate('QuotationList')}>
+                                                            <View style={styles.innerItem}>
+                                                                <View style={styles.TouchablwWhiteBackg}>
+                                                                    <Image source={require('../images/listDark.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image>
+                                                                </View>
+                                                                <View style={styles.innerText}>
+                                                                    <Text style={styles.optionText}>Quotation List</Text>
+                                                                </View>
+                                                            </View>
+                                                        </TouchableOpacity>
+                                                }
+
+                                                {
+                                                    menuNotAllowedToThisCompany ?
+
+                                                        menuNotAllowedToThisCompany.some((itemSommy) => itemSommy.MENUID.trim().toUpperCase() == "Sales Order".trim().toUpperCase()) ?
+                                                            null
+                                                            :
+                                                            menuAllowedToThisRole?.length == 0 || menuAllowedToThisRole?.some((itemSommy) => itemSommy.MENUID.trim().toUpperCase() == "Sales Order".trim().toUpperCase()) ?
+                                                                <TouchableOpacity style={[styles.ItemCont, { backgroundColor: '#D4CFC5' }]} onPress={() => navigation.navigate('MakeOrder')}>
+                                                                    <View style={styles.innerItem}>
+                                                                        <View style={styles.TouchablwWhiteBackg}>
+                                                                            <Image source={require('../images/listDark.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image>
+                                                                        </View>
+                                                                        <View style={styles.innerText}>
+                                                                            <Text style={styles.optionText}>Sales Order</Text>
+                                                                        </View>
+                                                                    </View>
+                                                                </TouchableOpacity>
+                                                                :
+                                                                null
+                                                        :
                                                         <TouchableOpacity style={[styles.ItemCont, { backgroundColor: '#D4CFC5' }]} onPress={() => navigation.navigate('MakeOrder')}>
                                                             <View style={styles.innerItem}>
                                                                 <View style={styles.TouchablwWhiteBackg}>
@@ -827,147 +989,242 @@ const HomeNew = () => {
                                                                 </View>
                                                             </View>
                                                         </TouchableOpacity>
-                                                
-                                            </>
-                                        
-                                    </>
+                                                }
 
-                                    <>
-
-
-
-                                        <>
-                                           
-                                                    <TouchableOpacity style={[styles.ItemCont, { backgroundColor: '#D4CFC5' }]} onPress={() => navigation.navigate('PreviousOrders')}>
-                                                        <View style={styles.innerItem}>
-                                                            <View style={styles.TouchablwWhiteBackg}>
-                                                                <Image source={require('../images/clockDark.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image>
-                                                            </View>
-                                                            <View style={styles.innerText}>
-                                                                <Text style={styles.optionText}>Order List</Text></View>
-                                                        </View>
-                                                    </TouchableOpacity>
-                                            
-                                        </>
-
-                                    </>
-
-
-                                    {
-                                        (mobileUserType == "Picking Staff" || mobileUserType == "Checking Staff" || mobileUserType == "Delivery Staff") ?
-                                            (
-                                                <TouchableOpacity style={[styles.ItemContOverlay, { backgroundColor: '#D4CFC5' }]} onPress={() => Alert.alert("You don't have access")}>
-                                                    <View style={styles.innerItem}>
-                                                        <View style={styles.TouchablwWhiteBackg}>
-                                                            <Image source={require('../images/bagDark.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image>
-                                                        </View>
-                                                        <View style={styles.innerText}>
-                                                            <Text style={styles.optionText}>Customer</Text></View>
-                                                    </View>
-                                                    <View style={styles.TouchableBlackOverlay}>
-                                                        <Image source={require('../images/ic_locked.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image>
-                                                    </View>
-                                                </TouchableOpacity>
-                                            )
-                                            :
-                                            (
-                                                <TouchableOpacity style={[styles.ItemCont, { backgroundColor: '#D4CFC5' }]} onPress={() => navigation.navigate('CustomerDetails')}>
-                                                    <View style={styles.innerItem}>
-                                                        <View style={styles.TouchablwWhiteBackg}>
-                                                            <Image source={require('../images/bagDark.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image>
-                                                        </View>
-                                                        <View style={styles.innerText}>
-                                                            <Text style={styles.optionText}>Customer</Text></View>
-                                                    </View>
-                                                </TouchableOpacity>
-                                            )
-
-
-                                    }
-
-
-
-                                   
-
-                                    {
-                                        (mobileUserType == "Picking Staff" || mobileUserType == "Checking Staff" || mobileUserType == "Delivery Staff") ?
-
-                                            <TouchableOpacity style={[styles.ItemContOverlay, { backgroundColor: '#D4CFC5' }]} onPress={() => Alert.alert("You don't have access")}>
-                                                <View style={styles.innerItem}>
-                                                    <View style={styles.TouchablwWhiteBackg}>
-                                                        <Image source={require('../images/cashDark.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image>
-                                                    </View>
-                                                    <View style={styles.innerText}>
-                                                        <Text style={styles.optionText}>Collection</Text></View>
-                                                </View>
-                                                <View style={styles.TouchableBlackOverlay}>
-                                                    <Image source={require('../images/ic_locked.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image>
-                                                </View>
-                                            </TouchableOpacity>
-                                            :
-                                            <TouchableOpacity style={[styles.ItemCont, { backgroundColor: '#D4CFC5' }]} onPress={() => navigation.navigate('NewCollections')}>
-                                                <View style={styles.innerItem}>
-                                                    <View style={styles.TouchablwWhiteBackg}>
-                                                        <Image source={require('../images/cashDark.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image>
-                                                    </View>
-                                                    <View style={styles.innerText}>
-                                                        <Text style={styles.optionText}>Collection</Text></View>
-                                                </View>
-                                            </TouchableOpacity>
-                                    }
-
-                                   
-
-                                        <>
-                                           
-                                               
-                                                <>
-                                                    <TouchableOpacity style={[styles.ItemCont, { backgroundColor: '#D4CFC5' }]} onPress={() => salesInvoiceButtonClick()}>
-                                                        <View style={styles.innerItem}>
-                                                            <View style={styles.TouchablwWhiteBackg}>
-                                                                <Image source={require('../images/listDark.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image>
-                                                            </View>
-                                                            <View style={styles.innerText}>
-                                                                <Text style={styles.optionText}>Sales Invoice</Text></View>
-                                                        </View>
-                                                    </TouchableOpacity>
-                                                    <TouchableOpacity style={[styles.ItemCont, { backgroundColor: '#D4CFC5' }]} onPress={() => navigation.navigate('PreviousSalesInvoice')}>
-                                                        <View style={styles.innerItem}>
-                                                            <View style={styles.TouchablwWhiteBackg}>
-                                                                <Image source={require('../images/todoDark.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image>
-                                                            </View>
-                                                            <View style={styles.innerText}>
-                                                                <Text style={styles.optionText}>Invoice List</Text></View>
-                                                        </View>
-                                                    </TouchableOpacity>
-                                                </>
-                                            
-                                        </>
-                                    
-
-                                    {
-                                        userDataArray && userDataArray[0].cmpcode.trim().toUpperCase() != 'PREMIER' ?
-                                            <>
                                                 {
-                                                    userDataArray && userDataArray[0].cmpcode.trim().toUpperCase() === 'AUTOMAX' &&
-                                                    <>
+                                                    menuNotAllowedToThisCompany ?
 
-                                                        {
-                                                            (mobileUserType == "Checking Staff") ?
-                                                                <TouchableOpacity style={[styles.ItemContOverlay, { backgroundColor: '#D4CFC5' }]} onPress={() => Alert.alert("You don't have access")}>
+                                                        menuNotAllowedToThisCompany.some((itemSommy) => itemSommy.MENUID.trim().toUpperCase() == "Order List".trim().toUpperCase()) ?
+                                                            null
+                                                            :
+
+                                                            menuAllowedToThisRole?.length == 0 || menuAllowedToThisRole?.some((itemSommy) => itemSommy.MENUID.trim().toUpperCase() == "Order List".trim().toUpperCase()) ?
+                                                                <TouchableOpacity style={[styles.ItemCont, { backgroundColor: '#D4CFC5' }]} onPress={() => navigation.navigate('PreviousOrders')}>
+                                                                    <View style={styles.innerItem}>
+                                                                        <View style={styles.TouchablwWhiteBackg}>
+                                                                            <Image source={require('../images/clockDark.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image>
+                                                                        </View>
+                                                                        <View style={styles.innerText}>
+                                                                            <Text style={styles.optionText}>Order List</Text></View>
+                                                                    </View>
+                                                                </TouchableOpacity>
+                                                                :
+                                                                null
+                                                        :
+                                                        <TouchableOpacity style={[styles.ItemCont, { backgroundColor: '#D4CFC5' }]} onPress={() => navigation.navigate('PreviousOrders')}>
+                                                            <View style={styles.innerItem}>
+                                                                <View style={styles.TouchablwWhiteBackg}>
+                                                                    <Image source={require('../images/clockDark.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image>
+                                                                </View>
+                                                                <View style={styles.innerText}>
+                                                                    <Text style={styles.optionText}>Order List</Text></View>
+                                                            </View>
+                                                        </TouchableOpacity>
+                                                }
+
+
+                                                {
+                                                    menuNotAllowedToThisCompany ?
+
+                                                        menuNotAllowedToThisCompany.some((itemSommy) => itemSommy.MENUID.trim().toUpperCase() == "Customer".trim().toUpperCase()) ?
+                                                            null
+                                                            :
+                                                            menuAllowedToThisRole?.length == 0 || menuAllowedToThisRole?.some((itemSommy) => itemSommy.MENUID.trim().toUpperCase() == "Customer".trim().toUpperCase()) ?
+                                                                <TouchableOpacity style={[styles.ItemCont, { backgroundColor: '#D4CFC5' }]} onPress={() => navigation.navigate('CustomerDetails')}>
+                                                                    <View style={styles.innerItem}>
+                                                                        <View style={styles.TouchablwWhiteBackg}>
+                                                                            <Image source={require('../images/bagDark.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image>
+                                                                        </View>
+                                                                        <View style={styles.innerText}>
+                                                                            <Text style={styles.optionText}>Customer</Text></View>
+                                                                    </View>
+                                                                </TouchableOpacity>
+                                                                :
+                                                                null
+                                                        :
+                                                        <TouchableOpacity style={[styles.ItemCont, { backgroundColor: '#D4CFC5' }]} onPress={() => navigation.navigate('CustomerDetails')}>
+                                                            <View style={styles.innerItem}>
+                                                                <View style={styles.TouchablwWhiteBackg}>
+                                                                    <Image source={require('../images/bagDark.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image>
+                                                                </View>
+                                                                <View style={styles.innerText}>
+                                                                    <Text style={styles.optionText}>Customer</Text></View>
+                                                            </View>
+                                                        </TouchableOpacity>
+                                                }
+
+                                                {
+                                                    menuNotAllowedToThisCompany ?
+
+                                                        menuNotAllowedToThisCompany.some((itemSommy) => itemSommy.MENUID.trim().toUpperCase() == "Receipt".trim().toUpperCase()) ?
+                                                            null
+                                                            :
+                                                            menuAllowedToThisRole?.length == 0 || menuAllowedToThisRole?.some((itemSommy) => itemSommy.MENUID.trim().toUpperCase() == "Receipt".trim().toUpperCase()) ?
+                                                                <TouchableOpacity style={[styles.ItemCont, { backgroundColor: '#D4CFC5' }]} onPress={() => navigation.navigate('Receipt')}>
+                                                                    <View style={styles.innerItem}>
+                                                                        <View style={styles.TouchablwWhiteBackg}>
+                                                                            <Image source={require('../images/cashDark.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image>
+                                                                        </View>
+                                                                        <View style={styles.innerText}>
+                                                                            <Text style={styles.optionText}>Receipt</Text></View>
+                                                                    </View>
+                                                                </TouchableOpacity>
+                                                                :
+                                                                null
+
+
+                                                        :
+                                                        <TouchableOpacity style={[styles.ItemCont, { backgroundColor: '#D4CFC5' }]} onPress={() => navigation.navigate('Receipt')}>
+                                                            <View style={styles.innerItem}>
+                                                                <View style={styles.TouchablwWhiteBackg}>
+                                                                    <Image source={require('../images/cashDark.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image>
+                                                                </View>
+                                                                <View style={styles.innerText}>
+                                                                    <Text style={styles.optionText}>Receipt</Text></View>
+                                                            </View>
+                                                        </TouchableOpacity>
+
+                                                }
+
+                                                {
+                                                    menuNotAllowedToThisCompany ?
+
+                                                        menuNotAllowedToThisCompany.some((itemSommy) => itemSommy.MENUID.trim().toUpperCase() == "Material Request".trim().toUpperCase()) ?
+                                                            null
+                                                            :
+                                                            menuAllowedToThisRole?.length == 0 || menuAllowedToThisRole?.some((itemSommy) => itemSommy.MENUID.trim().toUpperCase() == "Material Request".trim().toUpperCase()) ?
+                                                                <TouchableOpacity style={[styles.ItemCont, { backgroundColor: '#D4CFC5' }]} onPress={() => navigation.navigate('MaterialRequest')}>
+                                                                    <View style={styles.innerItem}>
+                                                                        <View style={styles.TouchablwWhiteBackg}>
+                                                                            <Image source={require('../images/cashDark.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image>
+                                                                        </View>
+                                                                        <View style={styles.innerText}>
+                                                                            <Text style={styles.optionText}>Material Request</Text></View>
+                                                                    </View>
+                                                                </TouchableOpacity>
+                                                                :
+                                                                null
+
+
+                                                        :
+                                                        <TouchableOpacity style={[styles.ItemCont, { backgroundColor: '#D4CFC5' }]} onPress={() => navigation.navigate('MaterialRequest')}>
+                                                            <View style={styles.innerItem}>
+                                                                <View style={styles.TouchablwWhiteBackg}>
+                                                                    <Image source={require('../images/cashDark.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image>
+                                                                </View>
+                                                                <View style={styles.innerText}>
+                                                                    <Text style={styles.optionText}>Material Request</Text></View>
+                                                            </View>
+                                                        </TouchableOpacity>
+
+                                                }
+
+
+
+
+                                                {
+                                                    menuNotAllowedToThisCompany ?
+
+                                                        menuNotAllowedToThisCompany.some((itemSommy) => itemSommy.MENUID.trim().toUpperCase() == "Collection".trim().toUpperCase()) ?
+                                                            null
+                                                            :
+                                                            menuAllowedToThisRole?.length == 0 || menuAllowedToThisRole?.some((itemSommy) => itemSommy.MENUID.trim().toUpperCase() == "Collection".trim().toUpperCase()) ?
+                                                                <TouchableOpacity style={[styles.ItemCont, { backgroundColor: '#D4CFC5' }]} onPress={() => navigation.navigate('NewCollections')}>
+                                                                    <View style={styles.innerItem}>
+                                                                        <View style={styles.TouchablwWhiteBackg}>
+                                                                            <Image source={require('../images/cashDark.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image>
+                                                                        </View>
+                                                                        <View style={styles.innerText}>
+                                                                            <Text style={styles.optionText}>Collection</Text></View>
+                                                                    </View>
+                                                                </TouchableOpacity>
+                                                                :
+                                                                null
+
+
+                                                        :
+                                                        <TouchableOpacity style={[styles.ItemCont, { backgroundColor: '#D4CFC5' }]} onPress={() => navigation.navigate('NewCollections')}>
+                                                            <View style={styles.innerItem}>
+                                                                <View style={styles.TouchablwWhiteBackg}>
+                                                                    <Image source={require('../images/cashDark.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image>
+                                                                </View>
+                                                                <View style={styles.innerText}>
+                                                                    <Text style={styles.optionText}>Collection</Text></View>
+                                                            </View>
+                                                        </TouchableOpacity>
+
+                                                }
+
+                                                {
+                                                    menuNotAllowedToThisCompany ?
+
+                                                        menuNotAllowedToThisCompany.some((itemSommy) => itemSommy.MENUID.trim().toUpperCase() == "Sales Invoice".trim().toUpperCase()) ?
+                                                            null
+                                                            :
+                                                            menuAllowedToThisRole?.length == 0 || menuAllowedToThisRole?.some((itemSommy) => itemSommy.MENUID.trim().toUpperCase() == "Sales Invoice".trim().toUpperCase()) ?
+                                                                <TouchableOpacity style={[styles.ItemCont, { backgroundColor: '#D4CFC5' }]} onPress={() => salesInvoiceButtonClick()}>
+                                                                    <View style={styles.innerItem}>
+                                                                        <View style={styles.TouchablwWhiteBackg}>
+                                                                            <Image source={require('../images/listDark.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image>
+                                                                        </View>
+                                                                        <View style={styles.innerText}>
+                                                                            <Text style={styles.optionText}>Sales Invoice</Text></View>
+                                                                    </View>
+                                                                </TouchableOpacity>
+                                                                :
+                                                                null
+                                                        :
+
+                                                        <TouchableOpacity style={[styles.ItemCont, { backgroundColor: '#D4CFC5' }]} onPress={() => salesInvoiceButtonClick()}>
+                                                            <View style={styles.innerItem}>
+                                                                <View style={styles.TouchablwWhiteBackg}>
+                                                                    <Image source={require('../images/listDark.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image>
+                                                                </View>
+                                                                <View style={styles.innerText}>
+                                                                    <Text style={styles.optionText}>Sales Invoice</Text></View>
+                                                            </View>
+                                                        </TouchableOpacity>
+                                                }
+
+
+                                                {
+                                                    menuNotAllowedToThisCompany ?
+
+                                                        menuNotAllowedToThisCompany.some((itemSommy) => itemSommy.MENUID.trim().toUpperCase() == "Invoice List".trim().toUpperCase()) ?
+                                                            null
+                                                            :
+                                                            menuAllowedToThisRole?.length == 0 || menuAllowedToThisRole?.some((itemSommy) => itemSommy.MENUID.trim().toUpperCase() == "Invoice List".trim().toUpperCase()) ?
+                                                                <TouchableOpacity style={[styles.ItemCont, { backgroundColor: '#D4CFC5' }]} onPress={() => navigation.navigate('PreviousSalesInvoice')}>
                                                                     <View style={styles.innerItem}>
                                                                         <View style={styles.TouchablwWhiteBackg}>
                                                                             <Image source={require('../images/todoDark.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image>
                                                                         </View>
                                                                         <View style={styles.innerText}>
-                                                                            <Text style={styles.optionText}>Picking</Text>
-                                                                        </View>
-                                                                    </View>
-                                                                    <View style={styles.TouchableBlackOverlay}>
-                                                                        <Image source={require('../images/ic_locked.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image>
+                                                                            <Text style={styles.optionText}>Invoice List</Text></View>
                                                                     </View>
                                                                 </TouchableOpacity>
                                                                 :
+                                                                null
+                                                        :
+                                                        <TouchableOpacity style={[styles.ItemCont, { backgroundColor: '#D4CFC5' }]} onPress={() => navigation.navigate('PreviousSalesInvoice')}>
+                                                            <View style={styles.innerItem}>
+                                                                <View style={styles.TouchablwWhiteBackg}>
+                                                                    <Image source={require('../images/todoDark.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image>
+                                                                </View>
+                                                                <View style={styles.innerText}>
+                                                                    <Text style={styles.optionText}>Invoice List</Text></View>
+                                                            </View>
+                                                        </TouchableOpacity>
+                                                }
+
+
+                                                {
+                                                    menuNotAllowedToThisCompany ?
+
+                                                        menuNotAllowedToThisCompany.some((itemSommy) => itemSommy.MENUID.trim().toUpperCase() == "Picking".trim().toUpperCase()) ?
+                                                            null
+                                                            :
+                                                            menuAllowedToThisRole?.length == 0 || menuAllowedToThisRole?.some((itemSommy) => itemSommy.MENUID.trim().toUpperCase() == "Picking".trim().toUpperCase()) ?
                                                                 <TouchableOpacity style={[styles.ItemCont, { backgroundColor: '#D4CFC5' }]} onPress={() => navigation.navigate('PickListNew')}>
                                                                     <View style={styles.innerItem}>
                                                                         <View style={styles.TouchablwWhiteBackg}>
@@ -978,24 +1235,28 @@ const HomeNew = () => {
                                                                         </View>
                                                                     </View>
                                                                 </TouchableOpacity>
-                                                        }
-                                                      
-
-                                                        {
-                                                            (mobileUserType == "Picking Staff" || mobileUserType == "Sales Staff" || mobileUserType == "Delivery Staff") ?
-                                                                <TouchableOpacity style={[styles.ItemContOverlay, { backgroundColor: '#D4CFC5' }]} onPress={() => Alert.alert("You don't have access")}>
-                                                                    <View style={styles.innerItem}>
-                                                                        <View style={styles.TouchablwWhiteBackg}>
-                                                                            <Image source={require('../images/todoDark.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image></View>
-                                                                        <View style={styles.innerText}>
-                                                                            <Text style={styles.optionText}>Checking</Text>
-                                                                        </View>
-                                                                    </View>
-                                                                    <View style={styles.TouchableBlackOverlay}>
-                                                                        <Image source={require('../images/ic_locked.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image>
-                                                                    </View>
-                                                                </TouchableOpacity>
                                                                 :
+                                                                null
+                                                        :
+                                                        <TouchableOpacity style={[styles.ItemCont, { backgroundColor: '#D4CFC5' }]} onPress={() => navigation.navigate('PickListNew')}>
+                                                            <View style={styles.innerItem}>
+                                                                <View style={styles.TouchablwWhiteBackg}>
+                                                                    <Image source={require('../images/todoDark.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image>
+                                                                </View>
+                                                                <View style={styles.innerText}>
+                                                                    <Text style={styles.optionText}>Picking</Text>
+                                                                </View>
+                                                            </View>
+                                                        </TouchableOpacity>
+                                                }
+
+                                                {
+                                                    menuNotAllowedToThisCompany ?
+
+                                                        menuNotAllowedToThisCompany.some((itemSommy) => itemSommy.MENUID.trim().toUpperCase() == "Checking".trim().toUpperCase()) ?
+                                                            null
+                                                            :
+                                                            menuAllowedToThisRole?.length == 0 || menuAllowedToThisRole?.some((itemSommy) => itemSommy.MENUID.trim().toUpperCase() == "Checking".trim().toUpperCase()) ?
                                                                 <TouchableOpacity style={[styles.ItemCont, { backgroundColor: '#D4CFC5' }]} onPress={() => navigation.navigate('CheckingListNew')}>
                                                                     <View style={styles.innerItem}>
                                                                         <View style={styles.TouchablwWhiteBackg}>
@@ -1005,57 +1266,27 @@ const HomeNew = () => {
                                                                         </View>
                                                                     </View>
                                                                 </TouchableOpacity>
-                                                        }
-
-                                                        
-                                                    </>
-
+                                                                :
+                                                                null
+                                                        :
+                                                        <TouchableOpacity style={[styles.ItemCont, { backgroundColor: '#D4CFC5' }]} onPress={() => navigation.navigate('CheckingListNew')}>
+                                                            <View style={styles.innerItem}>
+                                                                <View style={styles.TouchablwWhiteBackg}>
+                                                                    <Image source={require('../images/todoDark.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image></View>
+                                                                <View style={styles.innerText}>
+                                                                    <Text style={styles.optionText}>Checking</Text>
+                                                                </View>
+                                                            </View>
+                                                        </TouchableOpacity>
                                                 }
-                                            </>
-                                            :
-                                            <TouchableOpacity style={[styles.ItemContOverlay, { backgroundColor: '#D4CFC5' }]} onPress={() => Alert.alert("You don't have access")}>
-                                                <View style={styles.innerItem}>
-                                                    <View style={styles.TouchablwWhiteBackg}>
-                                                        <Image source={require('../images/todoDark.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image>
-                                                    </View>
-                                                    <View style={styles.innerText}>
-                                                        <Text style={styles.optionText}>Picking</Text>
-                                                    </View>
-                                                </View>
-                                                <View style={styles.TouchableBlackOverlay}>
-                                                    <Image source={require('../images/ic_locked.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image>
-                                                </View>
-                                            </TouchableOpacity>
-                                    }
-
-                                    {
-                                        userDataArray && userDataArray[0].cmpcode.trim().toUpperCase() != 'PREMIER' ?
-                                            <>
 
                                                 {
-                                                    userDataArray && userDataArray[0].cmpcode.trim().toUpperCase() !== 'MALBAR' &&
+                                                    menuNotAllowedToThisCompany ?
 
-                                                    <>
-
-                                                        {
-                                                            userDataArray && userDataArray[0].cmpcode.trim().toUpperCase() !== 'MALBAR' &&
-
-
-                                                                (mobileUserType == "Picking Staff") ?
-                                                                <TouchableOpacity style={[styles.ItemContOverlay, { backgroundColor: '#D4CFC5' }]} onPress={() => Alert.alert("You don't have access")}>
-                                                                    <View style={styles.innerItem}>
-                                                                        <View style={styles.TouchablwWhiteBackg}>
-                                                                            <Image source={require('../images/driver.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image></View>
-                                                                        <View style={styles.innerText}>
-                                                                            <Text style={styles.optionText}>Delivery</Text>
-                                                                        </View>
-                                                                    </View>
-                                                                    <View style={styles.TouchableBlackOverlay}>
-                                                                        <Image source={require('../images/ic_locked.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image>
-                                                                    </View>
-                                                                </TouchableOpacity>
-                                                                :
-
+                                                        menuNotAllowedToThisCompany.some((itemSommy) => itemSommy.MENUID.trim().toUpperCase() == "Delivery".trim().toUpperCase()) ?
+                                                            null
+                                                            :
+                                                            menuAllowedToThisRole?.length == 0 || menuAllowedToThisRole?.some((itemSommy) => itemSommy.MENUID.trim().toUpperCase() == "Delivery".trim().toUpperCase()) ?
                                                                 <TouchableOpacity style={[styles.ItemCont, { backgroundColor: '#D4CFC5' }]} onPress={() => navigation.navigate('DriversApp')}>
                                                                     <View style={styles.innerItem}>
                                                                         <View style={styles.TouchablwWhiteBackg}>
@@ -1065,240 +1296,449 @@ const HomeNew = () => {
                                                                         </View>
                                                                     </View>
                                                                 </TouchableOpacity>
-                                                        }
-                                                    </>
+                                                                :
+                                                                null
+
+                                                        :
+                                                        <TouchableOpacity style={[styles.ItemCont, { backgroundColor: '#D4CFC5' }]} onPress={() => navigation.navigate('DriversApp')}>
+                                                            <View style={styles.innerItem}>
+                                                                <View style={styles.TouchablwWhiteBackg}>
+                                                                    <Image source={require('../images/driver.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image></View>
+                                                                <View style={styles.innerText}>
+                                                                    <Text style={styles.optionText}>Delivery</Text>
+                                                                </View>
+                                                            </View>
+                                                        </TouchableOpacity>
                                                 }
 
-                                            </>
-                                            :
-                                            <TouchableOpacity style={[styles.ItemContOverlay, { backgroundColor: '#D4CFC5' }]} onPress={() => Alert.alert("You don't have access")}>
-                                                <View style={styles.innerItem}>
-                                                    <View style={styles.TouchablwWhiteBackg}>
-                                                        <Image source={require('../images/driver.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image></View>
-                                                    <View style={styles.innerText}>
-                                                        <Text style={styles.optionText}>Delivery</Text>
-                                                    </View>
-                                                </View>
-                                                <View style={styles.TouchableBlackOverlay}>
-                                                    <Image source={require('../images/ic_locked.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image>
-                                                </View>
-                                            </TouchableOpacity>
-                                    }
 
-                                    {
-                                        (mobileUserType == "Picking Staff" || mobileUserType == "Checking Staff" || mobileUserType == "Delivery Staff") ?
-                                            <TouchableOpacity style={[styles.ItemContOverlay, { backgroundColor: '#D4CFC5' }]} onPress={() => Alert.alert("You don't have access")}>
-                                                <View style={styles.innerItem}>
-                                                    <View style={styles.TouchablwWhiteBackg}>
-                                                        <Image source={require('../images/todoDark.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image></View>
-                                                    <View style={styles.innerText}>
-                                                        <Text style={styles.optionText}>Collection Report</Text></View>
-                                                </View>
-                                                <View style={styles.TouchableBlackOverlay}>
-                                                    <Image source={require('../images/ic_locked.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image>
-                                                </View>
-                                            </TouchableOpacity>
-                                            :
-                                            <TouchableOpacity style={[styles.ItemCont, { backgroundColor: '#D4CFC5' }]} onPress={() => navigation.navigate('CollectionReport')}>
-                                                <View style={styles.innerItem}>
-                                                    <View style={styles.TouchablwWhiteBackg}>
-                                                        <Image source={require('../images/todoDark.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image></View>
-                                                    <View style={styles.innerText}>
-                                                        <Text style={styles.optionText}>Collection Report</Text></View>
-                                                </View>
-                                            </TouchableOpacity>
-                                    }
+                                                {
+                                                    menuNotAllowedToThisCompany ?
+
+                                                        menuNotAllowedToThisCompany.some((itemSommy) => itemSommy.MENUID.trim().toUpperCase() == "Collection Report".trim().toUpperCase()) ?
+                                                            null
+                                                            :
+
+                                                            menuAllowedToThisRole?.length == 0 || menuAllowedToThisRole?.some((itemSommy) => itemSommy.MENUID.trim().toUpperCase() == "Collection Report".trim().toUpperCase()) ?
+                                                                <TouchableOpacity style={[styles.ItemCont, { backgroundColor: '#D4CFC5' }]} onPress={() => navigation.navigate('CollectionReport')}>
+                                                                    <View style={styles.innerItem}>
+                                                                        <View style={styles.TouchablwWhiteBackg}>
+                                                                            <Image source={require('../images/todoDark.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image></View>
+                                                                        <View style={styles.innerText}>
+                                                                            <Text style={styles.optionText}>Collection Report</Text></View>
+                                                                    </View>
+                                                                </TouchableOpacity>
+                                                                :
+                                                                null
+                                                        :
+                                                        <TouchableOpacity style={[styles.ItemCont, { backgroundColor: '#D4CFC5' }]} onPress={() => navigation.navigate('CollectionReport')}>
+                                                            <View style={styles.innerItem}>
+                                                                <View style={styles.TouchablwWhiteBackg}>
+                                                                    <Image source={require('../images/todoDark.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image></View>
+                                                                <View style={styles.innerText}>
+                                                                    <Text style={styles.optionText}>Collection Report</Text></View>
+                                                            </View>
+                                                        </TouchableOpacity>
+                                                }
+
+                                                {
+                                                    menuNotAllowedToThisCompany ?
+
+                                                        menuNotAllowedToThisCompany.some((itemSommy) => itemSommy.MENUID.trim().toUpperCase() == "Lead Entry".trim().toUpperCase()) ?
+                                                            null
+                                                            :
+                                                            menuAllowedToThisRole?.length == 0 || menuAllowedToThisRole?.some((itemSommy) => itemSommy.MENUID.trim().toUpperCase() == "Lead Entry".trim().toUpperCase()) ?
+                                                                <TouchableOpacity style={[styles.ItemCont, { backgroundColor: '#D4CFC5' }]}
+                                                                    onPress={() => navigation.navigate('LeadEntry')}
+                                                                >
+                                                                    <View style={styles.innerItem}>
+                                                                        <View style={styles.TouchablwWhiteBackg}>
+                                                                            <Image source={require('../images/todoDark.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image></View>
+                                                                        <View style={styles.innerText}>
+                                                                            <Text style={styles.optionText}>Lead Entry</Text>
+                                                                        </View>
+                                                                    </View>
+                                                                </TouchableOpacity>
+                                                                :
+                                                                null
+                                                        :
+                                                        <TouchableOpacity style={[styles.ItemCont, { backgroundColor: '#D4CFC5' }]}
+                                                            onPress={() => navigation.navigate('LeadEntry')}
+                                                        >
+                                                            <View style={styles.innerItem}>
+                                                                <View style={styles.TouchablwWhiteBackg}>
+                                                                    <Image source={require('../images/todoDark.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image></View>
+                                                                <View style={styles.innerText}>
+                                                                    <Text style={styles.optionText}>Lead Entry</Text>
+                                                                </View>
+                                                            </View>
+                                                        </TouchableOpacity>
+                                                }
 
 
-                                </View>
+                                                {
+                                                    menuNotAllowedToThisCompany ?
+
+                                                        menuNotAllowedToThisCompany.some((itemSommy) => itemSommy.MENUID.trim().toUpperCase() == "Site Survey".trim().toUpperCase()) ?
+                                                            null
+                                                            :
+                                                            menuAllowedToThisRole?.length == 0 || menuAllowedToThisRole?.some((itemSommy) => itemSommy.MENUID.trim().toUpperCase() == "Site Survey".trim().toUpperCase()) ?
+                                                                <TouchableOpacity style={[styles.ItemCont, { backgroundColor: '#D4CFC5' }]}
+                                                                    onPress={() => navigation.navigate('SiteSurvey')}
+                                                                >
+                                                                    <View style={styles.innerItem}>
+                                                                        <View style={styles.TouchablwWhiteBackg}>
+                                                                            <Image source={require('../images/todoDark.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image></View>
+                                                                        <View style={styles.innerText}>
+                                                                            <Text style={styles.optionText}>Site Survey</Text>
+                                                                        </View>
+                                                                    </View>
+                                                                </TouchableOpacity>
+                                                                :
+                                                                null
+                                                        :
+                                                        <TouchableOpacity style={[styles.ItemCont, { backgroundColor: '#D4CFC5' }]}
+                                                            onPress={() => navigation.navigate('SiteSurvey')}
+                                                        >
+                                                            <View style={styles.innerItem}>
+                                                                <View style={styles.TouchablwWhiteBackg}>
+                                                                    <Image source={require('../images/todoDark.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image></View>
+                                                                <View style={styles.innerText}>
+                                                                    <Text style={styles.optionText}>Site Survey</Text>
+                                                                </View>
+                                                            </View>
+                                                        </TouchableOpacity>
+                                                }
 
 
-                            </ScrollView>
-                            :
-                            <ScrollView contentContainerStyle={{
-                                width: '100%',
-                                // marginTop: 20,
-                                paddingBottom: 300,
-                                paddingTop: 25,
-                                zIndex: 2,
-                            }}
-                                horizontal={false}
-                            >
-                                {
-                                    userDataArray && userDataArray[0].cmpcode.trim().toUpperCase() == 'SUPERLAND' ?
-                                        <View style={{
-                                            width: '100%',
-                                            flexDirection: 'row',
-                                            justifyContent: 'space-around',
-                                            flexWrap: 'wrap',
-                                            paddingHorizontal: 18
-                                        }}>
-                                            <TouchableOpacity style={[styles.ItemCont, { backgroundColor: '#D4CFC5' }]} onPress={() => navigation.navigate('MakeOrder')}>
-                                                <View style={styles.innerItem}>
-                                                    <View style={styles.TouchablwWhiteBackg}>
-                                                        <Image source={require('../images/listDark.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image>
-                                                    </View>
-                                                    <View style={styles.innerText}>
-                                                        <Text style={styles.optionText}>Sales Order</Text>
-                                                    </View>
-                                                </View>
-                                            </TouchableOpacity>
-                                            <TouchableOpacity style={[styles.ItemCont, { backgroundColor: '#D4CFC5' }]} onPress={() => navigation.navigate('PreviousOrders')}>
-                                                <View style={styles.innerItem}>
-                                                    <View style={styles.TouchablwWhiteBackg}>
-                                                        <Image source={require('../images/clockDark.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image>
-                                                    </View>
-                                                    <View style={styles.innerText}>
-                                                        <Text style={styles.optionText}>Order List</Text></View>
-                                                </View>
-                                            </TouchableOpacity>
-                                        </View>
+
+                                                {
+                                                    menuNotAllowedToThisCompany ?
+
+                                                        menuNotAllowedToThisCompany.some((itemSommy) => itemSommy.MENUID.trim().toUpperCase() == "WMS".trim().toUpperCase()) ?
+                                                            null
+                                                            :
+                                                            menuAllowedToThisRole?.length == 0 || menuAllowedToThisRole?.some((itemSommy) => itemSommy.MENUID.trim().toUpperCase() == "Site Survey".trim().toUpperCase()) ?
+                                                                <TouchableOpacity style={[styles.ItemCont, { backgroundColor: '#D4CFC5' }]}
+                                                                    onPress={() => navigation.navigate('SelectLocation')}
+                                                                >
+                                                                    <View style={styles.innerItem}>
+                                                                        <View style={styles.TouchablwWhiteBackg}>
+                                                                            <Image source={require('../images/todoDark.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image></View>
+                                                                        <View style={styles.innerText}>
+                                                                            <Text style={styles.optionText}>WMS</Text>
+                                                                        </View>
+                                                                    </View>
+                                                                </TouchableOpacity>
+                                                                :
+                                                                null
+                                                        :
+                                                        <TouchableOpacity style={[styles.ItemCont, { backgroundColor: '#D4CFC5' }]}
+                                                            onPress={() => navigation.navigate('SelectLocation')}
+                                                        >
+                                                            <View style={styles.innerItem}>
+                                                                <View style={styles.TouchablwWhiteBackg}>
+                                                                    <Image source={require('../images/todoDark.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image></View>
+                                                                <View style={styles.innerText}>
+                                                                    <Text style={styles.optionText}>WMS</Text>
+                                                                </View>
+                                                            </View>
+                                                        </TouchableOpacity>
+                                                }
+
+                                                {
+                                                    menuNotAllowedToThisCompany ?
+
+                                                        menuNotAllowedToThisCompany.some((itemSommy) => itemSommy.MENUID.trim().toUpperCase() == "Physical Stock".trim().toUpperCase()) ?
+                                                            null
+                                                            :
+                                                            menuAllowedToThisRole?.length == 0 || menuAllowedToThisRole?.some((itemSommy) => itemSommy.MENUID.trim().toUpperCase() == "Physical Stock".trim().toUpperCase()) ?
+                                                                <TouchableOpacity style={[styles.ItemCont, { backgroundColor: '#D4CFC5' }]}
+                                                                    onPress={() => navigation.navigate('PhysicalStock')}
+                                                                >
+                                                                    <View style={styles.innerItem}>
+                                                                        <View style={styles.TouchablwWhiteBackg}>
+                                                                            <Image source={require('../images/todoDark.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image></View>
+                                                                        <View style={styles.innerText}>
+                                                                            <Text style={styles.optionText}>Physical Stock</Text>
+                                                                        </View>
+                                                                    </View>
+                                                                </TouchableOpacity>
+                                                                :
+                                                                null
+                                                        :
+                                                        <TouchableOpacity style={[styles.ItemCont, { backgroundColor: '#D4CFC5' }]}
+                                                            onPress={() => navigation.navigate('PhysicalStock')}
+                                                        >
+                                                            <View style={styles.innerItem}>
+                                                                <View style={styles.TouchablwWhiteBackg}>
+                                                                    <Image source={require('../images/todoDark.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image></View>
+                                                                <View style={styles.innerText}>
+                                                                    <Text style={styles.optionText}>Physical Stock</Text>
+                                                                </View>
+                                                            </View>
+                                                        </TouchableOpacity>
+                                                }
+
+                                                {
+                                                    menuNotAllowedToThisCompany ?
+
+                                                        menuNotAllowedToThisCompany.some((itemSommy) => itemSommy.MENUID.trim().toUpperCase() == "Bin and Barcode Updater".trim().toUpperCase()) ?
+                                                            null
+                                                            :
+                                                            menuAllowedToThisRole?.length == 0 || menuAllowedToThisRole?.some((itemSommy) => itemSommy.MENUID.trim().toUpperCase() == "Bin and Barcode Updater".trim().toUpperCase()) ?
+                                                                <TouchableOpacity style={[styles.ItemCont, { backgroundColor: '#D4CFC5' }]}
+                                                                    onPress={() => navigation.navigate('BarcodeLinking')}
+                                                                >
+                                                                    <View style={styles.innerItem}>
+                                                                        <View style={styles.TouchablwWhiteBackg}>
+                                                                            <Image source={require('../images/todoDark.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image></View>
+                                                                        <View style={styles.innerText}>
+                                                                            <Text style={styles.optionText}>Bin & Barcode Updater</Text>
+                                                                        </View>
+                                                                    </View>
+                                                                </TouchableOpacity>
+                                                                :
+                                                                null
+                                                        :
+                                                        <TouchableOpacity style={[styles.ItemCont, { backgroundColor: '#D4CFC5' }]}
+                                                            onPress={() => navigation.navigate('BarcodeLinking')}
+                                                        >
+                                                            <View style={styles.innerItem}>
+                                                                <View style={styles.TouchablwWhiteBackg}>
+                                                                    <Image source={require('../images/todoDark.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image></View>
+                                                                <View style={styles.innerText}>
+                                                                    <Text style={styles.optionText}>Bin & Barcode Updater</Text>
+                                                                </View>
+                                                            </View>
+                                                        </TouchableOpacity>
+                                                }
+
+{
+                                                    menuNotAllowedToThisCompany ?
+
+                                                        menuNotAllowedToThisCompany.some((itemSommy) => itemSommy.MENUID.trim().toUpperCase() == "Invoice Vs Receipt".trim().toUpperCase()) ?
+                                                            null
+                                                            :
+                                                            menuAllowedToThisRole?.length == 0 || menuAllowedToThisRole?.some((itemSommy) => itemSommy.MENUID.trim().toUpperCase() == "Invoice Vs Receipt".trim().toUpperCase()) ?
+                                                                <TouchableOpacity style={[styles.ItemCont, { backgroundColor: '#D4CFC5' }]}
+                                                                    onPress={() => navigation.navigate('InvoiceVsReceipt')}
+                                                                >
+                                                                    <View style={styles.innerItem}>
+                                                                        <View style={styles.TouchablwWhiteBackg}>
+                                                                            <Image source={require('../images/todoDark.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image></View>
+                                                                        <View style={styles.innerText}>
+                                                                            <Text style={styles.optionText}>Invoice Vs Receipt</Text>
+                                                                        </View>
+                                                                    </View>
+                                                                </TouchableOpacity>
+                                                                :
+                                                                null
+                                                        :
+                                                        <TouchableOpacity style={[styles.ItemCont, { backgroundColor: '#D4CFC5' }]}
+                                                            onPress={() => navigation.navigate('InvoiceVsReceipt')}
+                                                        >
+                                                            <View style={styles.innerItem}>
+                                                                <View style={styles.TouchablwWhiteBackg}>
+                                                                    <Image source={require('../images/todoDark.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image></View>
+                                                                <View style={styles.innerText}>
+                                                                    <Text style={styles.optionText}>Invoice Vs Receipt</Text>
+                                                                </View>
+                                                            </View>
+                                                        </TouchableOpacity>
+                                                }
+
+
+                                            </View>
+
+                                        </ScrollView>
                                         :
-
-                                        < View style={{
-                                            width: '100%',
-                                            flexDirection: 'row',
-                                            justifyContent: 'space-between',
-                                            flexWrap: 'wrap',
-                                            paddingHorizontal: 18
-                                        }}>
-                                            {/* <View style={styles.optionsCont}> */}
-
-                                            <TouchableOpacity style={[styles.ItemCont, { backgroundColor: '#D4CFC5' }]} onPress={() => navigation.navigate('CheckStock')}>
-                                                <View style={styles.innerItem}>
-                                                    <View style={styles.TouchablwWhiteBackg}>
-                                                        <Image source={require('../images/srchDark.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}>
-                                                        </Image>
-                                                    </View>
-                                                    <View style={styles.innerText}>
-                                                        <Text style={styles.optionText}>Stock List</Text>
-                                                    </View>
-                                                </View>
-                                            </TouchableOpacity>
-
-                                            {
-                                                userDataArray && userDataArray[0].cmpcode.trim().toUpperCase() !== 'MALBAR' &&
-
-                                                <>
+                                        <>
+                                            {!callingNotAvailableMenuList && !isCallingMenuListAvailabletoThisRole &&
+                                                <ScrollView contentContainerStyle={{
+                                                    width: '100%',
+                                                    // marginTop: 20,
+                                                    paddingBottom: 300,
+                                                    paddingTop: 25,
+                                                    zIndex: 2,
+                                                }}
+                                                    horizontal={false}
+                                                >
                                                     {
-
-                                                        (salesType == "ORDER" || userDataArray && userDataArray[0].cmpcode.trim().toUpperCase() == 'AUTOMAX') &&
-
-
-                                                        <>
-                                                            {
-                                                                (userDataArray && userDataArray[0].cmpcode.trim().toUpperCase() == 'AUTOMAX' &&
-
-                                                                    (mobileUserType == "Checking Staff" || mobileUserType == "Delivery Staff")) ?
-                                                                    <TouchableOpacity style={[styles.ItemContOverlay, { backgroundColor: '#D4CFC5' }]} onPress={() => Alert.alert("You don't have access")}>
-                                                                        <View style={styles.innerItem}>
-                                                                            <View style={styles.TouchablwWhiteBackg}>
-                                                                                <Image source={require('../images/listDark.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image>
-                                                                            </View>
-                                                                            <View style={styles.innerText}>
-                                                                                <Text style={styles.optionText}>Sales Order</Text>
-                                                                            </View>
+                                                        userDataArray && userDataArray[0].cmpcode.trim().toUpperCase() == 'SUPERLAND' ?
+                                                            <View style={{
+                                                                width: '100%',
+                                                                flexDirection: 'row',
+                                                                justifyContent: 'space-around',
+                                                                flexWrap: 'wrap',
+                                                                paddingHorizontal: 18
+                                                            }}>
+                                                                <TouchableOpacity style={[styles.ItemCont, { backgroundColor: '#D4CFC5' }]} onPress={() => navigation.navigate('MakeOrder')}>
+                                                                    <View style={styles.innerItem}>
+                                                                        <View style={styles.TouchablwWhiteBackg}>
+                                                                            <Image source={require('../images/listDark.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image>
                                                                         </View>
-                                                                        <View style={styles.TouchableBlackOverlay}>
-                                                                            <Image source={require('../images/ic_locked.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image>
+                                                                        <View style={styles.innerText}>
+                                                                            <Text style={styles.optionText}>Sales Order</Text>
                                                                         </View>
-                                                                    </TouchableOpacity>
-                                                                    :
-                                                                    <TouchableOpacity style={[styles.ItemCont, { backgroundColor: '#D4CFC5' }]} onPress={() => navigation.navigate('MakeOrder')}>
-                                                                        <View style={styles.innerItem}>
-                                                                            <View style={styles.TouchablwWhiteBackg}>
-                                                                                <Image source={require('../images/listDark.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image>
-                                                                            </View>
-                                                                            <View style={styles.innerText}>
-                                                                                <Text style={styles.optionText}>Sales Order</Text>
-                                                                            </View>
+                                                                    </View>
+                                                                </TouchableOpacity>
+                                                                <TouchableOpacity style={[styles.ItemCont, { backgroundColor: '#D4CFC5' }]} onPress={() => navigation.navigate('PreviousOrders')}>
+                                                                    <View style={styles.innerItem}>
+                                                                        <View style={styles.TouchablwWhiteBackg}>
+                                                                            <Image source={require('../images/clockDark.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image>
                                                                         </View>
-                                                                    </TouchableOpacity>
-                                                            }
-                                                        </>
-                                                    }
-                                                </>
-                                            }
-
-                                            {
-                                                userDataArray && userDataArray[0].cmpcode.trim().toUpperCase() !== 'MALBAR' &&
-
-                                                <>
-
-                                                    {
-
-                                                        (salesType == "ORDER" || userDataArray && userDataArray[0].cmpcode.trim().toUpperCase() == 'AUTOMAX') &&
-
-                                                        <>
-                                                            {
-                                                                (userDataArray && userDataArray[0].cmpcode.trim().toUpperCase() == 'AUTOMAX' &&
-
-                                                                    (mobileUserType == "Checking Staff" || mobileUserType == "Delivery Staff")) ?
-
-
-                                                                    <TouchableOpacity style={[styles.ItemContOverlay, { backgroundColor: '#D4CFC5' }]} onPress={() => Alert.alert("You don't have access")}>
-                                                                        <View style={styles.innerItem}>
-                                                                            <View style={styles.TouchablwWhiteBackg}>
-                                                                                <Image source={require('../images/clockDark.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image>
-                                                                            </View>
-                                                                            <View style={styles.innerText}>
-                                                                                <Text style={styles.optionText}>Order List</Text></View>
-                                                                        </View>
-                                                                        <View style={styles.TouchableBlackOverlay}>
-                                                                            <Image source={require('../images/ic_locked.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image>
-                                                                        </View>
-                                                                    </TouchableOpacity>
-                                                                    :
-                                                                    <TouchableOpacity style={[styles.ItemCont, { backgroundColor: '#D4CFC5' }]} onPress={() => navigation.navigate('PreviousOrders')}>
-                                                                        <View style={styles.innerItem}>
-                                                                            <View style={styles.TouchablwWhiteBackg}>
-                                                                                <Image source={require('../images/clockDark.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image>
-                                                                            </View>
-                                                                            <View style={styles.innerText}>
-                                                                                <Text style={styles.optionText}>Order List</Text></View>
-                                                                        </View>
-                                                                    </TouchableOpacity>
-                                                            }
-                                                        </>
-                                                    }
-                                                </>
-                                            }
-
-                                            {
-                                                (mobileUserType == "Picking Staff" || mobileUserType == "Checking Staff" || mobileUserType == "Delivery Staff") ?
-                                                    (
-                                                        <TouchableOpacity style={[styles.ItemContOverlay, { backgroundColor: '#D4CFC5' }]} onPress={() => Alert.alert("You don't have access")}>
-                                                            <View style={styles.innerItem}>
-                                                                <View style={styles.TouchablwWhiteBackg}>
-                                                                    <Image source={require('../images/bagDark.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image>
-                                                                </View>
-                                                                <View style={styles.innerText}>
-                                                                    <Text style={styles.optionText}>Customer</Text></View>
+                                                                        <View style={styles.innerText}>
+                                                                            <Text style={styles.optionText}>Order List</Text></View>
+                                                                    </View>
+                                                                </TouchableOpacity>
                                                             </View>
-                                                            <View style={styles.TouchableBlackOverlay}>
-                                                                <Image source={require('../images/ic_locked.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image>
-                                                            </View>
-                                                        </TouchableOpacity>
-                                                    )
-                                                    :
-                                                    (
-                                                        <TouchableOpacity style={[styles.ItemCont, { backgroundColor: '#D4CFC5' }]} onPress={() => navigation.navigate('CustomerDetails')}>
-                                                            <View style={styles.innerItem}>
-                                                                <View style={styles.TouchablwWhiteBackg}>
-                                                                    <Image source={require('../images/bagDark.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image>
-                                                                </View>
-                                                                <View style={styles.innerText}>
-                                                                    <Text style={styles.optionText}>Customer</Text></View>
-                                                            </View>
-                                                        </TouchableOpacity>
-                                                    )
+                                                            :
+
+                                                            < View style={{
+                                                                width: '100%',
+                                                                flexDirection: 'row',
+                                                                justifyContent: 'space-between',
+                                                                flexWrap: 'wrap',
+                                                                paddingHorizontal: 18
+                                                            }}>
+                                                                {/* <View style={styles.optionsCont}> */}
+
+                                                                <TouchableOpacity style={[styles.ItemCont, { backgroundColor: '#D4CFC5' }]} onPress={() => navigation.navigate('CheckStock')}>
+                                                                    <View style={styles.innerItem}>
+                                                                        <View style={styles.TouchablwWhiteBackg}>
+                                                                            <Image source={require('../images/srchDark.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}>
+                                                                            </Image>
+                                                                        </View>
+                                                                        <View style={styles.innerText}>
+                                                                            <Text style={styles.optionText}>Stock List</Text>
+                                                                        </View>
+                                                                    </View>
+                                                                </TouchableOpacity>
+
+                                                                {
+                                                                    userDataArray && userDataArray[0].cmpcode.trim().toUpperCase() !== 'MALBAR' &&
+
+                                                                    <>
+                                                                        {
+
+                                                                            (salesType == "ORDER" || userDataArray && userDataArray[0].cmpcode.trim().toUpperCase() == 'AUTOMAX') &&
 
 
-                                            }
+                                                                            <>
+                                                                                {
+                                                                                    (userDataArray && userDataArray[0].cmpcode.trim().toUpperCase() == 'AUTOMAX' &&
+
+                                                                                        (mobileUserType == "Checking Staff" || mobileUserType == "Delivery Staff")) ?
+                                                                                        <TouchableOpacity style={[styles.ItemContOverlay, { backgroundColor: '#D4CFC5' }]} onPress={() => Alert.alert("You don't have access")}>
+                                                                                            <View style={styles.innerItem}>
+                                                                                                <View style={styles.TouchablwWhiteBackg}>
+                                                                                                    <Image source={require('../images/listDark.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image>
+                                                                                                </View>
+                                                                                                <View style={styles.innerText}>
+                                                                                                    <Text style={styles.optionText}>Sales Order</Text>
+                                                                                                </View>
+                                                                                            </View>
+                                                                                            <View style={styles.TouchableBlackOverlay}>
+                                                                                                <Image source={require('../images/ic_locked.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image>
+                                                                                            </View>
+                                                                                        </TouchableOpacity>
+                                                                                        :
+                                                                                        <TouchableOpacity style={[styles.ItemCont, { backgroundColor: '#D4CFC5' }]} onPress={() => navigation.navigate('MakeOrder')}>
+                                                                                            <View style={styles.innerItem}>
+                                                                                                <View style={styles.TouchablwWhiteBackg}>
+                                                                                                    <Image source={require('../images/listDark.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image>
+                                                                                                </View>
+                                                                                                <View style={styles.innerText}>
+                                                                                                    <Text style={styles.optionText}>Sales Order</Text>
+                                                                                                </View>
+                                                                                            </View>
+                                                                                        </TouchableOpacity>
+                                                                                }
+                                                                            </>
+                                                                        }
+                                                                    </>
+                                                                }
+
+                                                                {
+                                                                    userDataArray && userDataArray[0].cmpcode.trim().toUpperCase() !== 'MALBAR' &&
+
+                                                                    <>
+
+                                                                        {
+
+                                                                            (salesType == "ORDER" || userDataArray && userDataArray[0].cmpcode.trim().toUpperCase() == 'AUTOMAX') &&
+
+                                                                            <>
+                                                                                {
+                                                                                    (userDataArray && userDataArray[0].cmpcode.trim().toUpperCase() == 'AUTOMAX' &&
+
+                                                                                        (mobileUserType == "Checking Staff" || mobileUserType == "Delivery Staff")) ?
+
+
+                                                                                        <TouchableOpacity style={[styles.ItemContOverlay, { backgroundColor: '#D4CFC5' }]} onPress={() => Alert.alert("You don't have access")}>
+                                                                                            <View style={styles.innerItem}>
+                                                                                                <View style={styles.TouchablwWhiteBackg}>
+                                                                                                    <Image source={require('../images/clockDark.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image>
+                                                                                                </View>
+                                                                                                <View style={styles.innerText}>
+                                                                                                    <Text style={styles.optionText}>Order List</Text></View>
+                                                                                            </View>
+                                                                                            <View style={styles.TouchableBlackOverlay}>
+                                                                                                <Image source={require('../images/ic_locked.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image>
+                                                                                            </View>
+                                                                                        </TouchableOpacity>
+                                                                                        :
+                                                                                        <TouchableOpacity style={[styles.ItemCont, { backgroundColor: '#D4CFC5' }]} onPress={() => navigation.navigate('PreviousOrders')}>
+                                                                                            <View style={styles.innerItem}>
+                                                                                                <View style={styles.TouchablwWhiteBackg}>
+                                                                                                    <Image source={require('../images/clockDark.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image>
+                                                                                                </View>
+                                                                                                <View style={styles.innerText}>
+                                                                                                    <Text style={styles.optionText}>Order List</Text></View>
+                                                                                            </View>
+                                                                                        </TouchableOpacity>
+                                                                                }
+                                                                            </>
+                                                                        }
+                                                                    </>
+                                                                }
+
+                                                                {
+                                                                    (mobileUserType == "Picking Staff" || mobileUserType == "Checking Staff" || mobileUserType == "Delivery Staff") ?
+                                                                        (
+                                                                            <TouchableOpacity style={[styles.ItemContOverlay, { backgroundColor: '#D4CFC5' }]} onPress={() => Alert.alert("You don't have access")}>
+                                                                                <View style={styles.innerItem}>
+                                                                                    <View style={styles.TouchablwWhiteBackg}>
+                                                                                        <Image source={require('../images/bagDark.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image>
+                                                                                    </View>
+                                                                                    <View style={styles.innerText}>
+                                                                                        <Text style={styles.optionText}>Customer</Text></View>
+                                                                                </View>
+                                                                                <View style={styles.TouchableBlackOverlay}>
+                                                                                    <Image source={require('../images/ic_locked.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image>
+                                                                                </View>
+                                                                            </TouchableOpacity>
+                                                                        )
+                                                                        :
+                                                                        (
+                                                                            <TouchableOpacity style={[styles.ItemCont, { backgroundColor: '#D4CFC5' }]} onPress={() => navigation.navigate('CustomerDetails')}>
+                                                                                <View style={styles.innerItem}>
+                                                                                    <View style={styles.TouchablwWhiteBackg}>
+                                                                                        <Image source={require('../images/bagDark.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image>
+                                                                                    </View>
+                                                                                    <View style={styles.innerText}>
+                                                                                        <Text style={styles.optionText}>Customer</Text></View>
+                                                                                </View>
+                                                                            </TouchableOpacity>
+                                                                        )
+
+
+                                                                }
 
 
 
-                                            {/* {
+                                                                {/* {
                                     userDataArray && userDataArray[0].cmpcode.trim().toUpperCase() === 'AUTOMAX' &&
                                     <TouchableOpacity style={[styles.ItemCont, { backgroundColor: '#D4CFC5' }]} onPress={() => navigation.navigate('PickingList')}>
                                         <View style={styles.innerItem}>
@@ -1310,269 +1750,234 @@ const HomeNew = () => {
                                 }
                                  */}
 
-                                            {
-                                                (mobileUserType == "Picking Staff" || mobileUserType == "Checking Staff" || mobileUserType == "Delivery Staff") ?
+                                                                {
+                                                                    (mobileUserType == "Picking Staff" || mobileUserType == "Checking Staff" || mobileUserType == "Delivery Staff") ?
 
-                                                    <TouchableOpacity style={[styles.ItemContOverlay, { backgroundColor: '#D4CFC5' }]} onPress={() => Alert.alert("You don't have access")}>
-                                                        <View style={styles.innerItem}>
-                                                            <View style={styles.TouchablwWhiteBackg}>
-                                                                <Image source={require('../images/cashDark.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image>
+                                                                        <TouchableOpacity style={[styles.ItemContOverlay, { backgroundColor: '#D4CFC5' }]} onPress={() => Alert.alert("You don't have access")}>
+                                                                            <View style={styles.innerItem}>
+                                                                                <View style={styles.TouchablwWhiteBackg}>
+                                                                                    <Image source={require('../images/cashDark.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image>
+                                                                                </View>
+                                                                                <View style={styles.innerText}>
+                                                                                    <Text style={styles.optionText}>Collection</Text></View>
+                                                                            </View>
+                                                                            <View style={styles.TouchableBlackOverlay}>
+                                                                                <Image source={require('../images/ic_locked.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image>
+                                                                            </View>
+                                                                        </TouchableOpacity>
+                                                                        :
+                                                                        <TouchableOpacity style={[styles.ItemCont, { backgroundColor: '#D4CFC5' }]} onPress={() => navigation.navigate('NewCollections')}>
+                                                                            <View style={styles.innerItem}>
+                                                                                <View style={styles.TouchablwWhiteBackg}>
+                                                                                    <Image source={require('../images/cashDark.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image>
+                                                                                </View>
+                                                                                <View style={styles.innerText}>
+                                                                                    <Text style={styles.optionText}>Collection</Text></View>
+                                                                            </View>
+                                                                        </TouchableOpacity>
+                                                                }
+
+                                                                {(userDataArray && userDataArray[0].cmpcode.trim().toUpperCase() !== 'AUTOMAX') &&
+
+                                                                    <>
+                                                                        {
+
+                                                                            (salesType == "SALES" || (userDataArray && userDataArray[0].cmpcode.trim().toUpperCase() == 'MALBAR')) &&
+                                                                            // <TouchableOpacity style={[styles.ItemCont, { backgroundColor: '#D4CFC5' }]} onPress={() => navigation.navigate('SalesInvoice')}>
+                                                                            <>
+                                                                                <TouchableOpacity style={[styles.ItemCont, { backgroundColor: '#D4CFC5' }]} onPress={() => salesInvoiceButtonClick()}>
+                                                                                    <View style={styles.innerItem}>
+                                                                                        <View style={styles.TouchablwWhiteBackg}>
+                                                                                            <Image source={require('../images/listDark.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image>
+                                                                                        </View>
+                                                                                        <View style={styles.innerText}>
+                                                                                            <Text style={styles.optionText}>Sales Invoice</Text></View>
+                                                                                    </View>
+                                                                                </TouchableOpacity>
+                                                                                <TouchableOpacity style={[styles.ItemCont, { backgroundColor: '#D4CFC5' }]} onPress={() => navigation.navigate('PreviousSalesInvoice')}>
+                                                                                    <View style={styles.innerItem}>
+                                                                                        <View style={styles.TouchablwWhiteBackg}>
+                                                                                            <Image source={require('../images/todoDark.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image>
+                                                                                        </View>
+                                                                                        <View style={styles.innerText}>
+                                                                                            <Text style={styles.optionText}>Invoice List</Text></View>
+                                                                                    </View>
+                                                                                </TouchableOpacity>
+                                                                            </>
+                                                                        }
+                                                                    </>
+                                                                }
+
+                                                                {
+
+                                                                    <>
+                                                                        {
+                                                                            userDataArray && userDataArray[0].cmpcode.trim().toUpperCase() === 'AUTOMAX' &&
+                                                                            <>
+
+                                                                                {
+                                                                                    (mobileUserType == "Checking Staff") ?
+                                                                                        <TouchableOpacity style={[styles.ItemContOverlay, { backgroundColor: '#D4CFC5' }]} onPress={() => Alert.alert("You don't have access")}>
+                                                                                            <View style={styles.innerItem}>
+                                                                                                <View style={styles.TouchablwWhiteBackg}>
+                                                                                                    <Image source={require('../images/todoDark.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image>
+                                                                                                </View>
+                                                                                                <View style={styles.innerText}>
+                                                                                                    <Text style={styles.optionText}>Picking</Text>
+                                                                                                </View>
+                                                                                            </View>
+                                                                                            <View style={styles.TouchableBlackOverlay}>
+                                                                                                <Image source={require('../images/ic_locked.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image>
+                                                                                            </View>
+                                                                                        </TouchableOpacity>
+                                                                                        :
+                                                                                        <TouchableOpacity style={[styles.ItemCont, { backgroundColor: '#D4CFC5' }]} onPress={() => navigation.navigate('PickListNew')}>
+                                                                                            <View style={styles.innerItem}>
+                                                                                                <View style={styles.TouchablwWhiteBackg}>
+                                                                                                    <Image source={require('../images/todoDark.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image>
+                                                                                                </View>
+                                                                                                <View style={styles.innerText}>
+                                                                                                    <Text style={styles.optionText}>Picking</Text>
+                                                                                                </View>
+                                                                                            </View>
+                                                                                        </TouchableOpacity>
+                                                                                }
+
+
+                                                                                {
+                                                                                    (mobileUserType == "Picking Staff" || mobileUserType == "Sales Staff" || mobileUserType == "Delivery Staff") ?
+                                                                                        <TouchableOpacity style={[styles.ItemContOverlay, { backgroundColor: '#D4CFC5' }]} onPress={() => Alert.alert("You don't have access")}>
+                                                                                            <View style={styles.innerItem}>
+                                                                                                <View style={styles.TouchablwWhiteBackg}>
+                                                                                                    <Image source={require('../images/todoDark.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image></View>
+                                                                                                <View style={styles.innerText}>
+                                                                                                    <Text style={styles.optionText}>Checking</Text>
+                                                                                                </View>
+                                                                                            </View>
+                                                                                            <View style={styles.TouchableBlackOverlay}>
+                                                                                                <Image source={require('../images/ic_locked.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image>
+                                                                                            </View>
+                                                                                        </TouchableOpacity>
+                                                                                        :
+                                                                                        <TouchableOpacity style={[styles.ItemCont, { backgroundColor: '#D4CFC5' }]} onPress={() => navigation.navigate('CheckingListNew')}>
+                                                                                            <View style={styles.innerItem}>
+                                                                                                <View style={styles.TouchablwWhiteBackg}>
+                                                                                                    <Image source={require('../images/todoDark.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image></View>
+                                                                                                <View style={styles.innerText}>
+                                                                                                    <Text style={styles.optionText}>Checking</Text>
+                                                                                                </View>
+                                                                                            </View>
+                                                                                        </TouchableOpacity>
+                                                                                }
+
+
+                                                                            </>
+
+                                                                        }
+                                                                    </>
+
+                                                                }
+
+                                                                {
+
+                                                                    <>
+
+                                                                        {
+                                                                            userDataArray && userDataArray[0].cmpcode.trim().toUpperCase() !== 'MALBAR' &&
+
+                                                                            <>
+
+                                                                                {
+                                                                                    userDataArray && userDataArray[0].cmpcode.trim().toUpperCase() !== 'MALBAR' &&
+
+
+                                                                                        (mobileUserType == "Picking Staff") ?
+                                                                                        <TouchableOpacity style={[styles.ItemContOverlay, { backgroundColor: '#D4CFC5' }]} onPress={() => Alert.alert("You don't have access")}>
+                                                                                            <View style={styles.innerItem}>
+                                                                                                <View style={styles.TouchablwWhiteBackg}>
+                                                                                                    <Image source={require('../images/driver.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image></View>
+                                                                                                <View style={styles.innerText}>
+                                                                                                    <Text style={styles.optionText}>Delivery</Text>
+                                                                                                </View>
+                                                                                            </View>
+                                                                                            <View style={styles.TouchableBlackOverlay}>
+                                                                                                <Image source={require('../images/ic_locked.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image>
+                                                                                            </View>
+                                                                                        </TouchableOpacity>
+                                                                                        :
+
+                                                                                        <TouchableOpacity style={[styles.ItemCont, { backgroundColor: '#D4CFC5' }]} onPress={() => navigation.navigate('DriversApp')}>
+                                                                                            <View style={styles.innerItem}>
+                                                                                                <View style={styles.TouchablwWhiteBackg}>
+                                                                                                    <Image source={require('../images/driver.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image></View>
+                                                                                                <View style={styles.innerText}>
+                                                                                                    <Text style={styles.optionText}>Delivery</Text>
+                                                                                                </View>
+                                                                                            </View>
+                                                                                        </TouchableOpacity>
+                                                                                }
+                                                                            </>
+                                                                        }
+
+                                                                    </>
+
+
+                                                                }
+
+                                                                {
+                                                                    (mobileUserType == "Picking Staff" || mobileUserType == "Checking Staff" || mobileUserType == "Delivery Staff") ?
+                                                                        <TouchableOpacity style={[styles.ItemContOverlay, { backgroundColor: '#D4CFC5' }]} onPress={() => Alert.alert("You don't have access")}>
+                                                                            <View style={styles.innerItem}>
+                                                                                <View style={styles.TouchablwWhiteBackg}>
+                                                                                    <Image source={require('../images/todoDark.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image></View>
+                                                                                <View style={styles.innerText}>
+                                                                                    <Text style={styles.optionText}>Collection Report</Text></View>
+                                                                            </View>
+                                                                            <View style={styles.TouchableBlackOverlay}>
+                                                                                <Image source={require('../images/ic_locked.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image>
+                                                                            </View>
+                                                                        </TouchableOpacity>
+                                                                        :
+                                                                        <TouchableOpacity style={[styles.ItemCont, { backgroundColor: '#D4CFC5' }]} onPress={() => navigation.navigate('CollectionReport')}>
+                                                                            <View style={styles.innerItem}>
+                                                                                <View style={styles.TouchablwWhiteBackg}>
+                                                                                    <Image source={require('../images/todoDark.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image></View>
+                                                                                <View style={styles.innerText}>
+                                                                                    <Text style={styles.optionText}>Collection Report</Text></View>
+                                                                            </View>
+                                                                        </TouchableOpacity>
+                                                                }
+
+
                                                             </View>
-                                                            <View style={styles.innerText}>
-                                                                <Text style={styles.optionText}>Collection</Text></View>
-                                                        </View>
-                                                        <View style={styles.TouchableBlackOverlay}>
-                                                            <Image source={require('../images/ic_locked.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image>
-                                                        </View>
-                                                    </TouchableOpacity>
-                                                    :
-                                                    <TouchableOpacity style={[styles.ItemCont, { backgroundColor: '#D4CFC5' }]} onPress={() => navigation.navigate('NewCollections')}>
-                                                        <View style={styles.innerItem}>
-                                                            <View style={styles.TouchablwWhiteBackg}>
-                                                                <Image source={require('../images/cashDark.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image>
-                                                            </View>
-                                                            <View style={styles.innerText}>
-                                                                <Text style={styles.optionText}>Collection</Text></View>
-                                                        </View>
-                                                    </TouchableOpacity>
-                                            }
 
-                                            {(userDataArray && userDataArray[0].cmpcode.trim().toUpperCase() !== 'AUTOMAX') &&
-
-                                                <>
-                                                    {
-
-                                                        (salesType == "SALES" || (userDataArray && userDataArray[0].cmpcode.trim().toUpperCase() == 'MALBAR')) &&
-                                                        // <TouchableOpacity style={[styles.ItemCont, { backgroundColor: '#D4CFC5' }]} onPress={() => navigation.navigate('SalesInvoice')}>
-                                                        <>
-                                                            <TouchableOpacity style={[styles.ItemCont, { backgroundColor: '#D4CFC5' }]} onPress={() => salesInvoiceButtonClick()}>
-                                                                <View style={styles.innerItem}>
-                                                                    <View style={styles.TouchablwWhiteBackg}>
-                                                                        <Image source={require('../images/listDark.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image>
-                                                                    </View>
-                                                                    <View style={styles.innerText}>
-                                                                        <Text style={styles.optionText}>Sales Invoice</Text></View>
-                                                                </View>
-                                                            </TouchableOpacity>
-                                                            <TouchableOpacity style={[styles.ItemCont, { backgroundColor: '#D4CFC5' }]} onPress={() => navigation.navigate('PreviousSalesInvoice')}>
-                                                                <View style={styles.innerItem}>
-                                                                    <View style={styles.TouchablwWhiteBackg}>
-                                                                        <Image source={require('../images/todoDark.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image>
-                                                                    </View>
-                                                                    <View style={styles.innerText}>
-                                                                        <Text style={styles.optionText}>Invoice List</Text></View>
-                                                                </View>
-                                                            </TouchableOpacity>
-                                                        </>
                                                     }
-                                                </>
+                                                </ScrollView>
                                             }
-
-                                            {
-                                                userDataArray && userDataArray[0].cmpcode.trim().toUpperCase() != 'PREMIER' ?
-                                                    <>
-                                                        {
-                                                            userDataArray && userDataArray[0].cmpcode.trim().toUpperCase() === 'AUTOMAX' &&
-                                                            <>
-
-                                                                {
-                                                                    (mobileUserType == "Checking Staff") ?
-                                                                        <TouchableOpacity style={[styles.ItemContOverlay, { backgroundColor: '#D4CFC5' }]} onPress={() => Alert.alert("You don't have access")}>
-                                                                            <View style={styles.innerItem}>
-                                                                                <View style={styles.TouchablwWhiteBackg}>
-                                                                                    <Image source={require('../images/todoDark.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image>
-                                                                                </View>
-                                                                                <View style={styles.innerText}>
-                                                                                    <Text style={styles.optionText}>Picking</Text>
-                                                                                </View>
-                                                                            </View>
-                                                                            <View style={styles.TouchableBlackOverlay}>
-                                                                                <Image source={require('../images/ic_locked.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image>
-                                                                            </View>
-                                                                        </TouchableOpacity>
-                                                                        :
-                                                                        <TouchableOpacity style={[styles.ItemCont, { backgroundColor: '#D4CFC5' }]} onPress={() => navigation.navigate('PickListNew')}>
-                                                                            <View style={styles.innerItem}>
-                                                                                <View style={styles.TouchablwWhiteBackg}>
-                                                                                    <Image source={require('../images/todoDark.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image>
-                                                                                </View>
-                                                                                <View style={styles.innerText}>
-                                                                                    <Text style={styles.optionText}>Picking</Text>
-                                                                                </View>
-                                                                            </View>
-                                                                        </TouchableOpacity>
-                                                                }
-                                                                {/* <TouchableOpacity style={[styles.ItemCont, { backgroundColor: '#D4CFC5' }]} onPress={() => navigation.navigate('MyPickingList')}>
-                                            <View style={styles.innerItem}>
-                                                <Image source={require('../images/todoDark.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image>
-                                                <View style={styles.innerText}>
-                                                    <Text style={styles.optionText}>My Picking List</Text>
-                                                </View>
-                                            </View>
-                                        </TouchableOpacity> */}
-
-                                                                {
-                                                                    (mobileUserType == "Picking Staff" || mobileUserType == "Sales Staff" || mobileUserType == "Delivery Staff") ?
-                                                                        <TouchableOpacity style={[styles.ItemContOverlay, { backgroundColor: '#D4CFC5' }]} onPress={() => Alert.alert("You don't have access")}>
-                                                                            <View style={styles.innerItem}>
-                                                                                <View style={styles.TouchablwWhiteBackg}>
-                                                                                    <Image source={require('../images/todoDark.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image></View>
-                                                                                <View style={styles.innerText}>
-                                                                                    <Text style={styles.optionText}>Checking</Text>
-                                                                                </View>
-                                                                            </View>
-                                                                            <View style={styles.TouchableBlackOverlay}>
-                                                                                <Image source={require('../images/ic_locked.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image>
-                                                                            </View>
-                                                                        </TouchableOpacity>
-                                                                        :
-                                                                        <TouchableOpacity style={[styles.ItemCont, { backgroundColor: '#D4CFC5' }]} onPress={() => navigation.navigate('CheckingListNew')}>
-                                                                            <View style={styles.innerItem}>
-                                                                                <View style={styles.TouchablwWhiteBackg}>
-                                                                                    <Image source={require('../images/todoDark.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image></View>
-                                                                                <View style={styles.innerText}>
-                                                                                    <Text style={styles.optionText}>Checking</Text>
-                                                                                </View>
-                                                                            </View>
-                                                                        </TouchableOpacity>
-                                                                }
-
-                                                                {/* <TouchableOpacity style={[styles.ItemCont, { backgroundColor: '#D4CFC5' }]} onPress={() => navigation.navigate('MyCheckingList')}>
-                                            <View style={styles.innerItem}>
-                                                <Image source={require('../images/todoDark.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image>
-                                                <View style={styles.innerText}>
-                                                    <Text style={styles.optionText}>My Checking  List</Text>
-                                                </View>
-                                            </View>
-                                        </TouchableOpacity> */}
-                                                            </>
-
-                                                        }
-                                                    </>
-                                                    :
-                                                    <TouchableOpacity style={[styles.ItemContOverlay, { backgroundColor: '#D4CFC5' }]} onPress={() => Alert.alert("You don't have access")}>
-                                                        <View style={styles.innerItem}>
-                                                            <View style={styles.TouchablwWhiteBackg}>
-                                                                <Image source={require('../images/todoDark.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image>
-                                                            </View>
-                                                            <View style={styles.innerText}>
-                                                                <Text style={styles.optionText}>Picking</Text>
-                                                            </View>
-                                                        </View>
-                                                        <View style={styles.TouchableBlackOverlay}>
-                                                            <Image source={require('../images/ic_locked.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image>
-                                                        </View>
-                                                    </TouchableOpacity>
-                                            }
-
-                                            {
-                                                userDataArray && userDataArray[0].cmpcode.trim().toUpperCase() != 'PREMIER' ?
-                                                    <>
-
-                                                        {
-                                                            userDataArray && userDataArray[0].cmpcode.trim().toUpperCase() !== 'MALBAR' &&
-
-                                                            <>
-
-                                                                {
-                                                                    userDataArray && userDataArray[0].cmpcode.trim().toUpperCase() !== 'MALBAR' &&
-
-
-                                                                        (mobileUserType == "Picking Staff") ?
-                                                                        <TouchableOpacity style={[styles.ItemContOverlay, { backgroundColor: '#D4CFC5' }]} onPress={() => Alert.alert("You don't have access")}>
-                                                                            <View style={styles.innerItem}>
-                                                                                <View style={styles.TouchablwWhiteBackg}>
-                                                                                    <Image source={require('../images/driver.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image></View>
-                                                                                <View style={styles.innerText}>
-                                                                                    <Text style={styles.optionText}>Delivery</Text>
-                                                                                </View>
-                                                                            </View>
-                                                                            <View style={styles.TouchableBlackOverlay}>
-                                                                                <Image source={require('../images/ic_locked.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image>
-                                                                            </View>
-                                                                        </TouchableOpacity>
-                                                                        :
-
-                                                                        <TouchableOpacity style={[styles.ItemCont, { backgroundColor: '#D4CFC5' }]} onPress={() => navigation.navigate('DriversApp')}>
-                                                                            <View style={styles.innerItem}>
-                                                                                <View style={styles.TouchablwWhiteBackg}>
-                                                                                    <Image source={require('../images/driver.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image></View>
-                                                                                <View style={styles.innerText}>
-                                                                                    <Text style={styles.optionText}>Delivery</Text>
-                                                                                </View>
-                                                                            </View>
-                                                                        </TouchableOpacity>
-                                                                }
-                                                            </>
-                                                        }
-
-                                                    </>
-                                                    :
-                                                    <TouchableOpacity style={[styles.ItemContOverlay, { backgroundColor: '#D4CFC5' }]} onPress={() => Alert.alert("You don't have access")}>
-                                                        <View style={styles.innerItem}>
-                                                            <View style={styles.TouchablwWhiteBackg}>
-                                                                <Image source={require('../images/driver.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image></View>
-                                                            <View style={styles.innerText}>
-                                                                <Text style={styles.optionText}>Delivery</Text>
-                                                            </View>
-                                                        </View>
-                                                        <View style={styles.TouchableBlackOverlay}>
-                                                            <Image source={require('../images/ic_locked.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image>
-                                                        </View>
-                                                    </TouchableOpacity>
-                                            }
-
-                                            {
-                                                (mobileUserType == "Picking Staff" || mobileUserType == "Checking Staff" || mobileUserType == "Delivery Staff") ?
-                                                    <TouchableOpacity style={[styles.ItemContOverlay, { backgroundColor: '#D4CFC5' }]} onPress={() => Alert.alert("You don't have access")}>
-                                                        <View style={styles.innerItem}>
-                                                            <View style={styles.TouchablwWhiteBackg}>
-                                                                <Image source={require('../images/todoDark.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image></View>
-                                                            <View style={styles.innerText}>
-                                                                <Text style={styles.optionText}>Collection Report</Text></View>
-                                                        </View>
-                                                        <View style={styles.TouchableBlackOverlay}>
-                                                            <Image source={require('../images/ic_locked.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image>
-                                                        </View>
-                                                    </TouchableOpacity>
-                                                    :
-                                                    <TouchableOpacity style={[styles.ItemCont, { backgroundColor: '#D4CFC5' }]} onPress={() => navigation.navigate('CollectionReport')}>
-                                                        <View style={styles.innerItem}>
-                                                            <View style={styles.TouchablwWhiteBackg}>
-                                                                <Image source={require('../images/todoDark.png')} style={[styles.optionIcon, { resizeMode: 'contain' }]}></Image></View>
-                                                            <View style={styles.innerText}>
-                                                                <Text style={styles.optionText}>Collection Report</Text></View>
-                                                        </View>
-                                                    </TouchableOpacity>
-                                            }
-
-
-                                        </View>
-
+                                        </>
                                 }
-                            </ScrollView>
-                        }
 
 
-                    </View >
 
-                    {/* bottomGlobe */}
-                    < View style={styles.BottomImgCont} >
-                        <Image style={styles.GlobeImg} source={require('../images/mapHome.png')} />
-                    </View >
-                    {/* bottomGlobe */}
+                            </View >
 
-                    < View style={styles.CBXImgWrap} >
-                        {/* <View>
+                            {/* bottomGlobe */}
+                            < View style={styles.BottomImgCont} >
+                                <Image style={styles.GlobeImg} source={require('../images/mapHome.png')} />
+                            </View >
+                            {/* bottomGlobe */}
+
+                            < View style={styles.CBXImgWrap} >
+                                {/* <View>
                             <Text style={[styles.cmpcodeText, { color: "grey" }]}>{cmpName}</Text>
                         </View> */}
-                        < View style={styles.SalesManImgWrap} >
-                            <Image style={styles.SalesManImg} source={require('../images/salesDoodS.png')}></Image>
-                        </View >
+                                < View style={styles.SalesManImgWrap} >
+                                    <Image style={styles.SalesManImg} source={require('../images/salesDoodS.png')}></Image>
+                                </View >
 
-                        <Image style={styles.CBXImg} source={require('../images/pwrByBg.png')}></Image>
+                                <Image style={styles.CBXImg} source={require('../images/pwrByBg.png')}></Image>
 
-                        {/* <View style={{
+                                {/* <View style={{
                             flexDirection: 'column',
                             alignItems: 'center'
                         }}>
@@ -1581,88 +1986,88 @@ const HomeNew = () => {
                             }}>POWERED BY</Text>
                             <Image style={styles.CBXImg} source={require('../images/cbxLogoN.png')}></Image>
                         </View> */}
-                        {/* <Image style={styles.CBXImgBottomRound} source={require('../images/ic_footer_round.png')}></Image> */}
+                                {/* <Image style={styles.CBXImgBottomRound} source={require('../images/ic_footer_round.png')}></Image> */}
 
-                    </View >
+                            </View >
 
 
-                </LinearGradient >
-            }
-
-            {
-                selectedBottomTab === 'DashBoard' &&
-                <Home />
-            }
-
-            <View style={styles.BottomTab}>
-                {/* <TouchableOpacity onPress={() => setSelecetdBottomTab('DashBoard')}> */}
-                <TouchableOpacity>
-                    {
-                        selectedBottomTab === 'DashBoard' ?
-                            <Image style={styles.BottomTabImg} source={require('../images/ic_dashboard_filled.png')} />
-                            :
-                            <Image style={styles.BottomTabImg} source={require('../images/ic_dashboard_outline.png')} />
-
+                        </LinearGradient >
                     }
-                </TouchableOpacity>
 
-                <TouchableOpacity onPress={() => setSelecetdBottomTab('Home')}>
                     {
-                        selectedBottomTab === 'Home' ?
-                            <Image style={styles.BottomTabImg} source={require('../images/ic_home_filled.png')} />
-                            :
-                            <Image style={styles.BottomTabImg} source={require('../images/ic_home_outline.png')} />
+                        selectedBottomTab === 'DashBoard' &&
+                        <Home />
                     }
-                </TouchableOpacity>
 
-                <TouchableOpacity onPress={() => setShowSidePanel(!showSidePanel)}>
+                    <View style={styles.BottomTab}>
+                        {/* <TouchableOpacity onPress={() => setSelecetdBottomTab('DashBoard')}> */}
+                        <TouchableOpacity>
+                            {
+                                selectedBottomTab === 'DashBoard' ?
+                                    <Image style={styles.BottomTabImg} source={require('../images/ic_dashboard_filled.png')} />
+                                    :
+                                    <Image style={styles.BottomTabImg} source={require('../images/ic_dashboard_outline.png')} />
+
+                            }
+                        </TouchableOpacity>
+
+                        <TouchableOpacity onPress={() => setSelecetdBottomTab('Home')}>
+                            {
+                                selectedBottomTab === 'Home' ?
+                                    <Image style={styles.BottomTabImg} source={require('../images/ic_home_filled.png')} />
+                                    :
+                                    <Image style={styles.BottomTabImg} source={require('../images/ic_home_outline.png')} />
+                            }
+                        </TouchableOpacity>
+
+                        <TouchableOpacity onPress={() => setShowSidePanel(!showSidePanel)}>
+                            {
+                                showSidePanel ?
+                                    <Image style={styles.BottomTabImg} source={require('../images/ic_settings_filled.png')} />
+                                    :
+                                    <Image style={styles.BottomTabImg} source={require('../images/ic_settings_outline.png')} />
+
+                            }
+                        </TouchableOpacity>
+                    </View>
+
                     {
-                        showSidePanel ?
-                            <Image style={styles.BottomTabImg} source={require('../images/ic_settings_filled.png')} />
-                            :
-                            <Image style={styles.BottomTabImg} source={require('../images/ic_settings_outline.png')} />
+                        showSidePanel &&
+                        <View style={styles.sidePanelWrapper}>
 
-                    }
-                </TouchableOpacity>
-            </View>
+                            <TouchableOpacity style={styles.sidePanelLeft} onPress={() => setShowSidePanel(!showSidePanel)}>
+                                {/* <Text>sideleft</Text> */}
+                            </TouchableOpacity>
 
-            {
-                showSidePanel &&
-                <View style={styles.sidePanelWrapper}>
+                            <View style={styles.sidePanelRight}>
 
-                    <TouchableOpacity style={styles.sidePanelLeft} onPress={() => setShowSidePanel(!showSidePanel)}>
-                        {/* <Text>sideleft</Text> */}
-                    </TouchableOpacity>
+                                <View style={{
+                                    width: '100%',
+                                    justifyContent: 'center',
+                                    alignItems: 'center',
+                                    marginVertical: 12,
+                                    paddingVertical: 12,
 
-                    <View style={styles.sidePanelRight}>
+                                }}>
 
-                        <View style={{
-                            width: '100%',
-                            justifyContent: 'center',
-                            alignItems: 'center',
-                            marginVertical: 12,
-                            paddingVertical: 12,
-
-                        }}>
-
-                            <View style={{
-                                backgroundColor: 'white',
-                                borderRadius: 50
-                            }}>
-                                <Image source={require('../images/userAvatar.png')} />
-                            </View>
-                            <View style={{ padding: 8 }}>
-                                <Text style={{ fontSize: 16, color: 'black', fontFamily: 'Lexend-Bold' }}>
-                                    {selectedSalesName ? selectedSalesName.toUpperCase() : salesManName.toUpperCase()}
-                                </Text>
-                            </View>
-                            {/* <View style={styles.CompanyTag}>
+                                    <View style={{
+                                        backgroundColor: 'white',
+                                        borderRadius: 50
+                                    }}>
+                                        <Image source={require('../images/userAvatar.png')} />
+                                    </View>
+                                    <View style={{ padding: 8 }}>
+                                        <Text style={{ fontSize: 16, color: 'black', fontFamily: 'Lexend-Bold' }}>
+                                            {selectedSalesName ? selectedSalesName.toUpperCase() : salesManName.toUpperCase()}
+                                        </Text>
+                                    </View>
+                                    {/* <View style={styles.CompanyTag}>
                                 <Text style={{ fontSize: 14, fontWeight: 'bold', color: 'black' }}>eee</Text>
                             </View> */}
 
-                        </View>
+                                </View>
 
-                        {/* <TouchableOpacity onPress={() => navigation.navigate('EmployeeHome')}>
+                                {/* <TouchableOpacity onPress={() => navigation.navigate('EmployeeHome')}>
                             <View style={{
                                 padding: 8,
                                 margin: 4,
@@ -1673,95 +2078,98 @@ const HomeNew = () => {
                             </View>
                         </TouchableOpacity> */}
 
-                        <View style={{
-                            marginTop: 'auto',
-                            marginBottom: 25,
-                            alignItems: 'center'
-                        }}>
-                            <TouchableOpacity style={styles.LogoutButton} onPress={() => setshowLogoutPoP(!showLogOutPoP)}>
-                                <Text style={{ color: 'white', marginRight: 6, fontFamily: 'Lexend-Regular' }}>LogOut</Text>
-                                {/* <Image style={{ width: 20, height: 20 }} source={require('../images/logOutLight.png')} /> */}
-                            </TouchableOpacity>
+                                <View style={{
+                                    marginTop: 'auto',
+                                    marginBottom: 25,
+                                    alignItems: 'center'
+                                }}>
+                                    <TouchableOpacity style={styles.LogoutButton} onPress={() => setshowLogoutPoP(!showLogOutPoP)}>
+                                        <Text style={{ color: 'white', marginRight: 6, fontFamily: 'Lexend-Regular' }}>LogOut</Text>
+                                        {/* <Image style={{ width: 20, height: 20 }} source={require('../images/logOutLight.png')} /> */}
+                                    </TouchableOpacity>
+                                </View>
+
+                                <View style={{
+                                    marginTop: 'auto', paddingBottom: 50,
+                                    justifyContent: 'center', width: '100%', flexDirection: 'row'
+                                }}>
+                                    <Text style={{ color: 'black', marginRight: 6, fontFamily: 'Lexend-Regular' }}>version 5.82_v2</Text>
+                                </View>
+
+                            </View>
                         </View>
+                    }
 
-                        <View style={{
-                            marginTop: 'auto', paddingBottom: 50,
-                            justifyContent: 'center', width: '100%', flexDirection: 'row'
-                        }}>
-                            <Text style={{ color: 'black', marginRight: 6, fontFamily: 'Lexend-Regular' }}>version 4</Text>
+                    {
+                        showLogOutPoP &&
+                        <View style={styles.LogOutModalWrapper}>
+
+                            <View style={styles.LogOutModal}>
+                                <View>
+                                    <Text style={{ color: 'red', fontSize: 18, fontWeight: 'bold', padding: 8, margin: 4, fontFamily: 'Lexend-Regular' }}>LogOut</Text>
+                                </View>
+                                <View>
+                                    <Text style={{ color: 'black', fontSize: 16, padding: 8, margin: 4, fontFamily: 'Lexend-Regular' }}>Are you sure ?</Text>
+                                </View>
+
+                                <View style={{
+                                    // width: '100%',
+                                    padding: 8, margin: 4,
+                                    paddingLeft: 12,
+                                    paddingRight: 12,
+                                    flexDirection: 'row',
+                                    justifyContent: 'space-between'
+                                }}>
+                                    <TouchableOpacity style={{
+                                        backgroundColor: 'grey',
+                                        padding: 8,
+                                        borderRadius: 4
+                                    }}
+                                        onPress={() => setshowLogoutPoP(!showLogOutPoP)}
+                                    >
+                                        <Text style={{
+                                            color: 'white',
+                                            fontFamily: 'Lexend-Regular'
+                                        }}>Cancel</Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity style={{
+                                        backgroundColor: 'red',
+                                        padding: 8,
+                                        borderRadius: 4
+                                    }}
+                                        onPress={() => handleLogout()}
+                                    >
+                                        <Text style={{
+                                            color: 'white',
+                                            fontFamily: 'Lexend-Regular'
+                                        }}>LogOut</Text>
+                                    </TouchableOpacity>
+                                </View>
+                            </View>
+                        </View >
+                    }
+
+                    {
+                        msgModal &&
+                        <View
+                            // visible={modalVisible}
+                            // animationType="slide"
+                            // onRequestClose={closeModal}
+                            style={styles.mapmodalContainer}
+                        >
+                            {/* <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}> */}
+                            <View style={styles.mapmodalContent}>
+                                <Text style={{ fontWeight: 'bold', fontSize: 16 }}>New Item Added to Delivery !</Text>
+
+                                <TouchableOpacity style={styles.AcceptButton} onPress={() => navigateToTaskDetails()}>
+                                    <Text style={styles.AcceptText}>Delivery</Text>
+                                </TouchableOpacity>
+
+                            </View>
                         </View>
+                    }
+                </>
 
-                    </View>
-                </View>
-            }
-
-            {
-                showLogOutPoP &&
-                <View style={styles.LogOutModalWrapper}>
-
-                    <View style={styles.LogOutModal}>
-                        <View>
-                            <Text style={{ color: 'red', fontSize: 18, fontWeight: 'bold', padding: 8, margin: 4, fontFamily: 'Lexend-Regular' }}>LogOut</Text>
-                        </View>
-                        <View>
-                            <Text style={{ color: 'black', fontSize: 16, padding: 8, margin: 4, fontFamily: 'Lexend-Regular' }}>Are you sure ?</Text>
-                        </View>
-
-                        <View style={{
-                            // width: '100%',
-                            padding: 8, margin: 4,
-                            paddingLeft: 12,
-                            paddingRight: 12,
-                            flexDirection: 'row',
-                            justifyContent: 'space-between'
-                        }}>
-                            <TouchableOpacity style={{
-                                backgroundColor: 'grey',
-                                padding: 8,
-                                borderRadius: 4
-                            }}
-                                onPress={() => setshowLogoutPoP(!showLogOutPoP)}
-                            >
-                                <Text style={{
-                                    color: 'white',
-                                    fontFamily: 'Lexend-Regular'
-                                }}>Cancel</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity style={{
-                                backgroundColor: 'red',
-                                padding: 8,
-                                borderRadius: 4
-                            }}
-                                onPress={() => handleLogout()}
-                            >
-                                <Text style={{
-                                    color: 'white',
-                                    fontFamily: 'Lexend-Regular'
-                                }}>LogOut</Text>
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-                </View >
-            }
-
-            {
-                msgModal &&
-                <View
-                    // visible={modalVisible}
-                    // animationType="slide"
-                    // onRequestClose={closeModal}
-                    style={styles.mapmodalContainer}
-                >
-                    {/* <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}> */}
-                    <View style={styles.mapmodalContent}>
-                        <Text style={{ fontWeight: 'bold', fontSize: 16 }}>New Item Added to Delivery !</Text>
-
-                        <TouchableOpacity style={styles.AcceptButton} onPress={() => navigateToTaskDetails()}>
-                            <Text style={styles.AcceptText}>Delivery</Text>
-                        </TouchableOpacity>
-
-                    </View>
-                </View>
             }
         </>
     )
@@ -1938,7 +2346,7 @@ const styles = StyleSheet.create({
         width: '32%',
         marginBottom: 8,
         zIndex: 2,
-        height: 110,
+        height: 120,
 
         shadowColor: '#000', // Shadow color for iOS
         shadowOffset: { width: 0, height: 2 }, // Shadow offset for iOS

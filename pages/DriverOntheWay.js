@@ -19,8 +19,8 @@ const DriverOntheWay = ({
     const fetchOnTheWayTask = async () => {
         setShowLoader(true)
         try {
-            console.log('fetchOnTheWayTaskurl', `https://cubixweberp.com:${portNo}/${cmpCode}/ONTHEWAY/${areaCode}/${loginUser}/${deptno}/-/`)
-            const response = await axios.get(`https://cubixweberp.com:${portNo}/${cmpCode}/ONTHEWAY/${areaCode}/${loginUser}/${deptno}/-/`)
+            console.log('fetchOnTheWayTaskurl', `${appUrl}/${cmpCode}/ONTHEWAY/${areaCode}/${loginUser}/${deptno}/-/`)
+            const response = await axios.get(`${appUrl}/${cmpCode}/ONTHEWAY/${areaCode}/${loginUser}/${deptno}/-/`)
 
             if (response.status === 200) {
                 setOnTheWayList(response.data)
@@ -54,7 +54,7 @@ const DriverOntheWay = ({
             const postData = JSON.stringify(data)
             console.log('postData', postData)
 
-            const response = await axios.post(`${appUrl}Delivery`, postData, {
+            const response = await axios.post(`${appUrl}/api/Delivery`, postData, {
                 headers: {
                     'Content-Type': 'application/json',
                 }

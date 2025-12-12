@@ -19,6 +19,7 @@ const QuotationPop = ({
     payment,
     delivery,
     validity,
+    lponumber,
     savedItemData,
     totalUnitPrice,
     cashCustomerName,
@@ -60,9 +61,47 @@ const QuotationPop = ({
     page
 }) => {
 
-    const logoUri = Image.resolveAssetSource(
-        require("../images/premier_letterhead.jpeg")
-        ).uri;
+
+    console.log("van in Quotation Popup page >>", van)
+
+    const getLetterheadBase64 = async () => new Promise((resolve, reject) => {
+
+        RNFS.readFileAssets('premier_letterhead_text.txt').then(result => {
+            console.log(result);
+            resolve(result)
+        }).catch(err => {
+            console.log(err);
+        })
+
+
+    })
+
+
+
+    const getCustomerCashAccount = async () => {
+
+
+        const appUrl = await AsyncStorage.getItem('appUrl')
+
+        const appUrlpath = `${appUrl}GetGl/${cmpcode}?deptno=${deptNo}&glcode=SI&filterCode=SI-CA-D`;
+
+        console.log("appUrlpath getcashcustomer ", appUrlpath)
+
+        // currently SI and SI-CA-D is hardcode SI menasn saels invoice no problem as Sales Order Sales invoice same in case of cash customer CA means Cash D means Debit side 
+        // now hardcoded in future if needed we can make it dynamic by selecting from another api that we have to create  as abhilash sir said
+
+        let resultOfCashAccount = await axios.get(appUrlpath)
+
+        console.log("resultOfCashAccount ---->>+--+", resultOfCashAccount, resultOfCashAccount.data)
+
+        if (resultOfCashAccount.status == "200") {
+            return resultOfCashAccount.data + ""
+        } else {
+            return ""
+        }
+
+
+    }
 
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState(null)
@@ -101,12 +140,12 @@ const QuotationPop = ({
         }
     }, [cmpcode])
 
-    const getTRNnumber = (companyCodeToCheck)=>{
+    const getTRNnumber = (companyCodeToCheck) => {
 
-        switch(companyCodeToCheck){
-            case "MALBAR" : return "100335207500003";
-            case "PREMIER" : return "10027835690000"
-            default : return "-"
+        switch (companyCodeToCheck) {
+            case "MALBAR": return "100335207500003";
+            case "PREMIER": return "10027835690000"
+            default: return "-"
         }
 
     }
@@ -136,6 +175,8 @@ const QuotationPop = ({
                 console.warn('Permission request error:', err);
             }
         }
+
+        const logoUri = await getLetterheadBase64()
 
         const htmlNew = `
 <html>
@@ -443,6 +484,8 @@ const QuotationPop = ({
     <body>
     <div class="InvCard">
 
+    
+
     ${cmpcode.toLowerCase().trim() == 'premier' ? `<div>
     <img class="image_letterhead" src=${logoUri}
     </div>` : ""}
@@ -456,7 +499,7 @@ const QuotationPop = ({
         <div class="content">
 
             <div class="our_trn_number">
-                <div class="label">TRN:${ getTRNnumber(cmpcode?.toUpperCase().trim()) }</div>
+                <div class="label">TRN:${getTRNnumber(cmpcode?.toUpperCase().trim())}</div>
             </div>
 
             <div class="our_company_name_panel">
@@ -612,452 +655,440 @@ const QuotationPop = ({
         </html>`
 
         const htmlNewMalbar = `
-<html>
-
-<head>
-
-    <style>
-        body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            margin: 0;
-            padding: 0;
-            background-color: #f0f0f0;
-        }
-
-        .InvCard {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            width: 100%;
-            height: 98%;
-            background-color: white;
-            border-radius: 12px;
-           padding: 18px;
-        }
-
-        .header {
-            /* background-color: #12151C; */
-            display: flex;
-            flex-direction: row;
-            align-items: center;
-            justify-content: center;
-            width: 100%;
-            padding: 8px 0;
-            color: black;
-            border-top: 1px solid gray;
-            border-bottom: 1px solid gray;
-            margin-top: 90px;
-        }
-
-        .header_without_top_margin {
-            /* background-color: #12151C; */
-            display: flex;
-            flex-direction: row;
-            align-items: center;
-             justify-content: center;
-            width: 100%;
-            padding: 8px 0;
-            color: black;
-            border-top: 1px solid gray;
-            border-bottom: 1px solid gray;
-             margin-top: 2px;
-        }
-
-        .HeadTop {
-            display: flex;
-            flex-direction: row;
-            justify-content: center;
-            width: 100%;
-            padding: 0 24px;
-        }
-
-        .LogoContent {
-            font-weight: bold;
-            font-family: 'Calibri', 'InriaSans-Regular', sans-serif;
-            font-size: 24px;
-        }
-
-        .CmpnyLogo {
-            width: 80%;
-            height: 150px;
-        }
-
-        .HeadInvoiceData {
-            width: 40%;
-            text-align: right;
-        }
-
-        .InvcData {
-            display: flex;
-            flex-direction: row;
-            justify-content: flex-end;
-            /* margin: 12px 0; */
-            font-weight: bold;
-            font-family: 'Calibri', 'InriaSans-Regular', sans-serif;
-            width: 100%;
-        }
-
-        .HeadBottom {
-            display: flex;
-            flex-direction: row;
-            width: 100%;
-        }
-
-        .ContactItem {
-            display: flex;
-            flex-direction: row;
-            padding: 24px;
-            align-items: center;
-            font-size: 14px;
-            margin-right: 12px;
-            font-family: 'Calibri', 'InriaSans-Regular', sans-serif;
-        }
-
-        .ContactItemImg {
-            width: 25px;
-            height: 25px;
-            margin-right: 8px;
-        }
-
-        .content {
-            display: flex;
-            flex-direction: column;
-            width: 100%;
-        }
-
-        .topSection {
-            display: flex;
-            flex-wrap: wrap;
-            flex-direction: row;
-            justify-content: space-between;
-        }
-
-        .section {
-            margin: 8px 0;
-            width: 30%;
-        }
-
-        .label {
-            font-size: 14px;
-            font-weight: bold;
-            font-family: 'Calibri', 'InriaSans-Regular', sans-serif;
-        }
-
-        .labelValue {
-            font-size: 14px;
-            margin: 4px 0;
-            font-family: 'Calibri', 'InriaSans-Regular', sans-serif;
-        }
-
-        .tableCont {
-            /* width: 100%; */
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            padding: 12px;
-            flex-grow: 1;
-        }
-
-        table {
-            border-collapse: collapse;
-            width: 100%;
-        }
-
-        td {
-            border-bottom: 1px solid gray;
-            padding: 8px;
-            text-align: left;
-            color: rgb(75, 75, 75);
-            font-size: 14px;
-            font-family: 'Calibri', 'InriaSans-Regular', sans-serif;
-        }
-
-        thead tr {
-            border-top: 1px solid black;
-            border-bottom: 1px solid black;
-        }
-
-        th {
-            text-align: left;
-        }
-
-        .BottomTotalCont {
-            width: 100%;
-            display: flex;
-            justify-content: flex-end;
-            flex-direction: row;
-        }
-
-        .TotalValues {
-            width: 45%;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .subtotal,
-        .vat,
-        .grandTotal {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px;
-            font-size: 14px;
-            font-family: 'Calibri', 'InriaSans-Regular', sans-serif;
-        }
-
-        .grandTotal {
-            font-size: 16px;
-            font-weight: bold;
-            color: blue;
-            font-family: 'Calibri', 'InriaSans-Regular', sans-serif;
-        }
-
-        .netTotal {
-            font-size: 16px;
-            font-weight: bold;
-            font-family: 'Calibri', 'InriaSans-Regular', sans-serif;
-        }
-
-        .our_trn_number {
-            display: flex;
-            justify-content: center;
-            margin: 8px 0;
-        }
-
-        .our_company_name_panel {
-            display: flex;
-            justify-content: space-between;
-            padding: 0px 8px;
-        }
-
-        .horizontal {
-            display: flex;
-            align-items: center;
-        }
-
-        .marginLefTen {
-            margin-left: 10px;
-        }
-
-        .footer-received-panel {
-            display: flex;
-            justify-content: space-between;
-            padding-right: 12px;
-        }
-
-        .footer {
-            width: 100%;
-            display: flex;
-            flex-direction: column;
-            margin-top: 18px;
-            padding: 0px 8px;
-        }
-
-        .declarations {
-            width: 100%;
-            flex-direction: column;
-            justify-content: flex-start;
-            border-top: 1px solid gray;
-            border-bottom: 1px solid gray;
-        }
-
-        .small-text {
-            font-size: 12px;
-            margin-top: 4px;
-        }
-
-        .loginUserLabel {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .Pagefooter {
-            display: flex;
-            flex-direction: row;
-            justify-content: center;
-            position: absolute;
-            bottom: 0px;
-            width: 100%;
-        }
-
-        .TopRightItemCont {
-            display: flex;
-            flex-direction: row;
-            justify-content: space-between;
-        }
-
-        .TopRightLables {
-            font-size: 14px;
-            font-weight: bold;
-            font-family: 'Calibri', 'InriaSans-Regular', sans-serif;
-            padding: 2px 0px;
-        }
-
-        .TrnTop {
-            display: flex;
-            flex-direction: row;
-            justify-content: space-between;
-            align-items: center;
-            width: max-content;
-            padding: 0px 8px;
-        }
-
-          .footer {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            width: 100%;
-            padding-top: 10px;
-            font-size: 12px;
-            border-top: 1px solid gray;
-            position: absolute;
-            bottom: 0;
-        }
-
+        <html>
         
-        .BottomSignSection {
-            width: 100%;
-            display: flex;
-            flex-direction: row;
-            justify-content: space-between;
-            align-items: center;
-            padding-bottom: 50px;
-        }
-
-    </style>
-</head>
-
-<body>
-    <div class="InvCard">
-        <div class="header">
-            <div class="LogoContent">
-                <div>TAX INVOICE</div>
-            </div>
-        </div>
-
-        <div class="content">
-
-            <div class="our_trn_number">
-                <div class="label">TRN:100335207500003</div>
-            </div>
-
-            <div class="our_company_name_panel">
-
-                <div class="section">
-                    <div class="label">Invoice To:</div>
-                    <div class="labelValue" style="font-weight: bold;">${selectedCustomer ? selectedCustomer.Custname :
+        <head>
+        
+            <style>
+                body {
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    margin: 0;
+                    padding: 0;
+                    background-color: #f0f0f0;
+                }
+        
+                .InvCard {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    width: 100%;
+                    height: 100%;
+                    background-color: white;
+                    border-radius: 12px;
+                    overflow: hidden;
+                   padding: 18px;
+                }
+        
+                .header {
+                    /* background-color: #12151C; */
+                    display: flex;
+                    flex-direction: row;
+                    align-items: center;
+                    justify-content: center;
+                    width: 100%;
+                    padding: 8px 0;
+                    color: black;
+                    border-top: 1px solid gray;
+                    border-bottom: 1px solid gray;
+                    margin-top: 90px;
+                }
+        
+                .HeadTop {
+                    display: flex;
+                    flex-direction: row;
+                    justify-content: center;
+                    width: 100%;
+                    padding: 0 24px;
+                }
+        
+                .LogoContent {
+                    font-weight: bold;
+                    font-family: 'Calibri', 'InriaSans-Regular', sans-serif;
+                    font-size: 24px;
+                }
+        
+                .CmpnyLogo {
+                    width: 80%;
+                    height: 150px;
+                }
+        
+                .HeadInvoiceData {
+                    width: 40%;
+                    text-align: right;
+                }
+        
+                .InvcData {
+                    display: flex;
+                    flex-direction: row;
+                    justify-content: flex-end;
+                    /* margin: 12px 0; */
+                    font-weight: bold;
+                    font-family: 'Calibri', 'InriaSans-Regular', sans-serif;
+                    width: 100%;
+                }
+        
+                .HeadBottom {
+                    display: flex;
+                    flex-direction: row;
+                    width: 100%;
+                }
+        
+                .ContactItem {
+                    display: flex;
+                    flex-direction: row;
+                    padding: 24px;
+                    align-items: center;
+                    font-size: 14px;
+                    margin-right: 12px;
+                    font-family: 'Calibri', 'InriaSans-Regular', sans-serif;
+                }
+        
+                .ContactItemImg {
+                    width: 25px;
+                    height: 25px;
+                    margin-right: 8px;
+                }
+        
+                .content {
+                    display: flex;
+                    flex-direction: column;
+                    width: 100%;
+                }
+        
+                .topSection {
+                    display: flex;
+                    flex-wrap: wrap;
+                    flex-direction: row;
+                    justify-content: space-between;
+                }
+        
+                .section {
+                    margin: 8px 0;
+                    width: 30%;
+                }
+        
+                .label {
+                    font-size: 14px;
+                    font-weight: bold;
+                    font-family: 'Calibri', 'InriaSans-Regular', sans-serif;
+                }
+        
+                .labelValue {
+                    font-size: 14px;
+                    margin: 4px 0;
+                    font-family: 'Calibri', 'InriaSans-Regular', sans-serif;
+                }
+        
+                .tableCont {
+                    /* width: 100%; */
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: center;
+                    align-items: center;
+                    padding: 12px;
+                    flex-grow: 1;
+                }
+        
+                table {
+                    border-collapse: collapse;
+                    width: 100%;
+                }
+        
+                td {
+                    border-bottom: 1px solid gray;
+                    padding: 8px;
+                    text-align: left;
+                    color: rgb(75, 75, 75);
+                    font-size: 14px;
+                    font-family: 'Calibri', 'InriaSans-Regular', sans-serif;
+                }
+        
+                thead tr {
+                    border-top: 1px solid black;
+                    border-bottom: 1px solid black;
+                }
+        
+                th {
+                    text-align: left;
+                }
+        
+                .BottomTotalCont {
+                    width: 100%;
+                    display: flex;
+                    justify-content: flex-end;
+                    flex-direction: row;
+                }
+        
+                .TotalValues {
+                    width: 45%;
+                    display: flex;
+                    flex-direction: column;
+                }
+        
+                .subtotal,
+                .vat,
+                .grandTotal {
+                    display: flex;
+                    justify-content: space-between;
+                    padding: 8px;
+                    font-size: 14px;
+                    font-family: 'Calibri', 'InriaSans-Regular', sans-serif;
+                }
+        
+                .grandTotal {
+                    font-size: 16px;
+                    font-weight: bold;
+                    color: blue;
+                    font-family: 'Calibri', 'InriaSans-Regular', sans-serif;
+                }
+        
+                .netTotal {
+                    font-size: 16px;
+                    font-weight: bold;
+                    font-family: 'Calibri', 'InriaSans-Regular', sans-serif;
+                }
+        
+                .our_trn_number {
+                    display: flex;
+                    justify-content: center;
+                    margin: 8px 0;
+                }
+        
+                .our_company_name_panel {
+                    display: flex;
+                    justify-content: space-between;
+                    padding: 0px 8px;
+                }
+        
+                .horizontal {
+                    display: flex;
+                    align-items: center;
+                }
+        
+                .marginLefTen {
+                    margin-left: 10px;
+                }
+        
+                .footer-received-panel {
+                    display: flex;
+                    justify-content: space-between;
+                    padding-right: 12px;
+                }
+        
+                .footer {
+                    width: 100%;
+                    display: flex;
+                    flex-direction: column;
+                    margin-top: 18px;
+                    padding: 0px 8px;
+                }
+        
+                .declarations {
+                    width: 100%;
+                    flex-direction: column;
+                    justify-content: flex-start;
+                    border-top: 1px solid gray;
+                    border-bottom: 1px solid gray;
+                }
+        
+                .small-text {
+                    font-size: 12px;
+                    margin-top: 4px;
+                }
+        
+                .loginUserLabel {
+                    display: flex;
+                    flex-direction: column;
+                }
+        
+                .Pagefooter {
+                    display: flex;
+                    flex-direction: row;
+                    justify-content: center;
+                    position: absolute;
+                    bottom: 0px;
+                    width: 100%;
+                }
+        
+                .TopRightItemCont {
+                    display: flex;
+                    flex-direction: row;
+                    justify-content: space-between;
+                }
+        
+                .TopRightLables {
+                    font-size: 14px;
+                    font-weight: bold;
+                    font-family: 'Calibri', 'InriaSans-Regular', sans-serif;
+                    padding: 2px 0px;
+                }
+        
+                .TrnTop {
+                    display: flex;
+                    flex-direction: row;
+                    justify-content: space-between;
+                    align-items: center;
+                    width: max-content;
+                    padding: 0px 8px;
+                }
+        
+                  .footer {
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    width: 100%;
+                    padding-top: 10px;
+                    font-size: 12px;
+                    border-top: 1px solid gray;
+                    position: absolute;
+                    bottom: 0;
+                }
+        
+                
+                .BottomSignSection {
+                    width: 100%;
+                    flex-direction: row;
+                    justify-content: space-between;
+                    align-items: center;
+                    padding-bottom: 50px;
+                    padding-left:12px;
+                    padding-top: 30px;
+                }
+        
+            </style>
+        </head>
+        
+        <body>
+            <div class="InvCard">
+                <div class="header">
+                    <div class="LogoContent">
+                        <div>TAX INVOICE</div>
+                    </div>
+                </div>
+        
+                <div class="content">
+        
+                    <div class="our_trn_number">
+                        <div class="label">TRN:100335207500003</div>
+                    </div>
+        
+                    <div class="our_company_name_panel">
+        
+                        <div class="section">
+                            <div class="label">Invoice To:</div>
+                            <div class="labelValue" style="font-weight: bold;">${selectedCustomer ? selectedCustomer.Custname :
                 cashCustomerName ?
                     cashCustomerName : ''}
-                    </div>
-                    <div class="labelValue">${selectedCustomer ? selectedCustomer.address1 : cashCustomerAddress ?
+                            </div>
+                            <div class="labelValue">${selectedCustomer ? selectedCustomer.address1 : cashCustomerAddress ?
                 cashCustomerAddress : ""}
-                    </div>
-                    <div class="labelValue">${selectedCustomer ? selectedCustomer.address2 : ''}</div>
-                    <div class="labelValue">${selectedCustomer ? selectedCustomer.address3 : ''}</div>
-                </div>
-
-                <div class="TopRightItemCont">
-
-                    <div>
-                        <div class="TopRightLables">Invoice No</div>
-                        <div class="TopRightLables">Date</div>
-                        <div class="TopRightLables">${selectedRadio === 'CREDIT' ? `Payment Terms` : selectedRadio === 'CASH' ? `CASH` : ''}</div>
-                    </div>
-                    <div style="margin-left: 8px; margin-right: 8px;">
-                        <div style="font-weight: bold;">:</div>
-                        <div style="font-weight: bold;">:</div>
-                        <div style="font-weight: bold;">:</div>
-                    </div>
-                    <div>
-                        <div style="font-weight: bold;">MFS-${result.invoiceNo ? result.invoiceNo : ""}
+                            </div>
+                            <div class="labelValue">${selectedCustomer ? selectedCustomer.address2 : ''}</div>
+                            <div class="labelValue">${selectedCustomer ? selectedCustomer.address3 : ''}</div>
                         </div>
-                        <div style="padding-top:1px">${new Date().toJSON().slice(0, 10).split('-').reverse().join('/')}
+        
+                        <div class="TopRightItemCont">
+        
+                            <div>
+                                <div class="TopRightLables">Invoice No</div>
+                                <div class="TopRightLables">Date</div>
+                                <div class="TopRightLables">${selectedRadio === 'CREDIT' ? `Payment Terms` : selectedRadio === 'CASH' ? `CASH` : ''}</div>
+                            </div>
+                            <div style="margin-left: 8px; margin-right: 8px;">
+                                <div style="font-weight: bold;">:</div>
+                                <div style="font-weight: bold;">:</div>
+                                <div style="font-weight: bold;">:</div>
+                            </div>
+                            <div>
+                                <div style="font-weight: bold;">MFS-${result.invoiceNo ? result.invoiceNo : ""}
+                                </div>
+                                <div style="padding-top:1px">${new Date().toJSON().slice(0, 10).split('-').reverse().join('/')}
+                                </div>
+                                <div style="padding-top:1px">${payment ? payment : ""}</div>
+                            </div>
                         </div>
-                        <div style="padding-top:1px">${payment ? payment : ""}</div>
+        
                     </div>
-                </div>
-
-            </div>
-
-            <div class="TrnTop">
-                <div class="label">TRN Number:</div>
-                <div class="labelValue">${trn ? trn : ''}</div>
-            </div>
-
-
-            <div class="tableCont">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Sl.No</th>
-                            <th>Item</th>
-                            <th>Qty</th>
-                            <th>Unit</th>
-                            <th style="text-align: right;">Price</th>
-                            <th style="text-align: right;">Total</th>
-
-                        </tr>
-                    </thead>
-
-                    <tbody>
-
-                        ${savedItemData.map((item, index) => `
-                        <tr>
-                            <td>${index + 1}</td>
-                            <td>${item.Description}</td>
-                            <td>${item.quantity}</td>
-                            <td>${item.unit}</td>
-                            <td style="text-align: right;">${new Intl.NumberFormat('en-US', {
+        
+                    <div class="TrnTop">
+                        <div class="label">TRN Number:</div>
+                        <div class="labelValue">${trn ? trn : ''}</div>
+                    </div>
+        
+        
+                    <div class="tableCont">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Sl.No</th>
+                                    <th>Item</th>
+                                    <th>Qty</th>
+                                    <th>Unit</th>
+                                    <th style="text-align: right;">Price</th>
+                                    <th style="text-align: right;">Total</th>
+        
+                                </tr>
+                            </thead>
+        
+                            <tbody>
+        
+                                ${savedItemData.map((item, index) => `
+                                <tr>
+                                    <td>${index + 1}</td>
+                                    <td>${item.Description}</td>
+                                    <td>${item.quantity}</td>
+                                    <td>${item.unit}</td>
+                                    <td style="text-align: right;">${new Intl.NumberFormat('en-US', {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2
                 }).format(item.unitPrice)}</td>
-                            <td style="text-align: right;">${new Intl.NumberFormat('en-US', {
+                                    <td style="text-align: right;">${new Intl.NumberFormat('en-US', {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2
                 }).format(item.unitPrice * item.quantity)}</td>
-
-
-                        </tr>
-                        `).join('')}
-                        <tr style="border:none; font-weight: bold; margin-top:12px">
-                            <td colspan="4" style="border:none; padding:4px;">Terms:</td>
-                            <td style="border-top: 1px solid black; border-bottom: 1px solid black; padding:4px;">
-                                Discount:</td>
-                            <td
-                                style="border-top: 1px solid black; border-bottom: 1px solid black; padding:4px; text-align: right;">
-                                ${discount !== 0 ? (discount ? discount : '0.00') : '0.00'}</td>
-                        </tr>
-                        <tr style="border:none; font-weight: bold;">
-                            <td colspan="4" style="border:none; padding:4px;">1. Goods received in good condition.</td>
-                            <td style="border-top: 1px solid black; border-bottom: 1px solid black; padding:4px;">
-                                Subtotal:</td>
-                            <td
-                                style="border-top: 1px solid black; border-bottom: 1px solid black; padding:4px; text-align: right;">
-                                ${totalUnitPrice ? new Intl.NumberFormat('en-US', {
+        
+        
+                                </tr>
+                                `).join('')}
+                                <tr style="border:none; font-weight: bold; margin-top:12px">
+                                    <td colspan="4" style="border:none; padding:4px;">Terms:</td>
+                                    <td style="border-top: 1px solid black; border-bottom: 1px solid black; padding:4px;">
+                                        Discount:</td>
+                                    <td
+                                        style="border-top: 1px solid black; border-bottom: 1px solid black; padding:4px; text-align: right;">
+                                        ${discount !== 0 ? (discount ? discount : '0.00') : '0.00'}</td>
+                                </tr>
+                                <tr style="border:none; font-weight: bold;">
+                                    <td colspan="4" style="border:none; padding:4px;">1. Goods received in good condition.</td>
+                                    <td style="border-top: 1px solid black; border-bottom: 1px solid black; padding:4px;">
+                                        Subtotal:</td>
+                                    <td
+                                        style="border-top: 1px solid black; border-bottom: 1px solid black; padding:4px; text-align: right;">
+                                        ${totalUnitPrice ? new Intl.NumberFormat('en-US', {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2
                 }).format(totalUnitPrice) : ''}</td>
-                        </tr>
-                        <tr style="border:none; font-weight: bold;">
-                            <td colspan="4" style="border:none; padding:4px;">2. Expired goods will not be taken back
-                                under any circumstances.</td>
-                            <td style="border-top: 1px solid black; border-bottom: 1px solid black; padding:4px;">VAT
-                                (5%):</td>
-                            <td
-                                style="border-top: 1px solid black; border-bottom: 1px solid black; padding:4px; text-align: right;">
-                                ${discount !== 0 ? (discountedTotal ? (discountedTotal * (VAT_RATE / 100)).toFixed(2) :
+                                </tr>
+                                <tr style="border:none; font-weight: bold;">
+                                    <td colspan="4" style="border:none; padding:4px;">2. Expired goods will not be taken back
+                                        under any circumstances.</td>
+                                    <td style="border-top: 1px solid black; border-bottom: 1px solid black; padding:4px;">VAT
+                                        (5%):</td>
+                                    <td
+                                        style="border-top: 1px solid black; border-bottom: 1px solid black; padding:4px; text-align: right;">
+                                        ${discount !== 0 ? (discountedTotal ? (discountedTotal * (VAT_RATE / 100)).toFixed(2) :
                 '') : (totalUnitPrice ? (totalUnitPrice * (VAT_RATE / 100)).toFixed(2) : '')}</td>
-                        </tr>
-                        <tr style="border:none; font-weight: bold;">
-                            <td colspan="4" style="border:none; padding:4px;">3. Goods once sold will not be taken back
-                                or exchanged.</td>
-                            <td style="border-top: 1px solid black; border-bottom: 1px solid black; padding:4px;">Amount
-                                Incl. VAT:</td>
-                            <td
-                                style="border-top: 1px solid black; border-bottom: 1px solid black; padding:4px; text-align: right;">
-                                ${discount !== 0
+                                </tr>
+                                <tr style="border:none; font-weight: bold;">
+                                    <td colspan="4" style="border:none; padding:4px;">3. Goods once sold will not be taken back
+                                        or exchanged.</td>
+                                    <td style="border-top: 1px solid black; border-bottom: 1px solid black; padding:4px;">Amount
+                                        Incl. VAT:</td>
+                                    <td
+                                        style="border-top: 1px solid black; border-bottom: 1px solid black; padding:4px; text-align: right;">
+                                        ${discount !== 0
                 ? (discountedTotal
                     ? new Intl.NumberFormat('en-US', {
                         minimumFractionDigits: 2, maximumFractionDigits: 2
@@ -1068,33 +1099,33 @@ const QuotationPop = ({
                         minimumFractionDigits: 2, maximumFractionDigits: 2
                     }).format(totalUnitPrice + totalUnitPrice * (VAT_RATE / 100))
                     : '')}</td>
-                        </tr>
-
-                    </tbody>
-                </table>
-            </div>
-            
-            <div class="BottomSignSection">
-
-                <div class="footer-received-panel">
-                    <label class="loginUserLabel">
-                        <div style="font-weight: bold;">For ${cmpcode} </div>
-                        <div>${loginUser ? loginUser : ''}</div>
-                    </label>
-                    <label class="loginUserLabel" style="margin-right:12px;">
-                        <div style="font-weight: bold;">For ${selectedCustomer ? selectedCustomer.Custname :
+                                </tr>
+        
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="BottomSignSection">
+        
+                        <div class="footer-received-panel">
+                            <label class="loginUserLabel">
+                                <div style="font-weight: bold;">For Malbar Stars Food Stuff TR.LLC</div>
+                                <div>${loginUser ? loginUser : ''}</div>
+                            </label>
+                            <label class="loginUserLabel" style="margin-right:12px;">
+                                <div style="font-weight: bold;">For ${selectedCustomer ? selectedCustomer.Custname :
                 cashCustomerName ? cashCustomerName : ''}</div>
-                        <div>Received By,</div>
-                    </label>
+                                <div>Received By,</div>
+                            </label>
+                        </div>
+        
+                    </div>
                 </div>
-
             </div>
-        </div>
-    </div>
-</body>
-
-</html>
-  `
+        </body>
+        
+        </html>
+          `
 
         const addPageNumbersToHTML = (html, totalPages) => {
             let pageNumberHTML = '';
@@ -1111,7 +1142,7 @@ const QuotationPop = ({
 
         const cmpcodeChk = cmpcode.toUpperCase();
         // const initialHTML = cmpcodeChk === 'MALBAR' ? htmlNewMalbar : htmlNew;
-        const initialHTML = cmpcodeChk === 'MALBAR' ? htmlNew : htmlNew;
+        const initialHTML = cmpcodeChk === 'MALBAR' ? htmlNewMalbar : htmlNew;
 
         console.log('cmpcodeChk', cmpcodeChk)
 
@@ -1205,23 +1236,99 @@ const QuotationPop = ({
         setLoading(true);
         if (transformData.length > 0) {
             console.log('makeOrderApi', `${appUrl}Sales_Order`)
+
+            let companyCode = ""
+            const portNoData = await AsyncStorage.getItem('portNoData')
+            if (portNoData) {
+
+                const dataArray = JSON.parse(portNoData);
+                companyCode = dataArray[0].COMPID
+
+                console.log('makeOrderApi cmpcode', `${dataArray[0].COMPID}`)
+            }
+
+
+
+            let usernametosend = await AsyncStorage.getItem('loginUserName')
+
+            let salesman_to_send = salesMan
+
+            if (companyCode == "MOUNT") {
+                console.log("selectedCustomer ++", selectedCustomer?.sale_man)
+                salesman_to_send = selectedCustomer?.sale_man
+            }
+
+            let cash_customer_account_number = ""
+
+            if (selectedUserType != 'reg') {
+
+                cash_customer_account_number = await getCustomerCashAccount()
+
+            }
+
+            console.log("cash_customer_account_number ---->>>>>",cashCustomerName,  cash_customer_account_number)
+
+            
+
+
+            let standardizedObject = {
+                deptno: deptNo ? deptNo : '',
+                operation: type && type === 'edit' ? 'edit' : 'save',
+                soNo: 0,
+                soDate: currentDate, // pass date here correctly  yyyy-mm-dd
+                custName: selectedUserType === 'reg' && selectedCustomer ? selectedCustomer.Custname : cashCustomerName,
+                custAcc: selectedUserType === 'reg' && selectedCustomer ? selectedCustomer.account : cash_customer_account_number,
+                comments: "",
+                saleMan: salesman_to_send ? salesman_to_send : '',
+                lpo: lponumber,
+                fc: "AED",
+                bcAmt: (calculatedValue ? calculatedValue : '0') + "",
+                fcamt: (calculatedValue ? calculatedValue : '0') + "", // foreign currency since AED rate also same
+                fcRate: "1",
+                qbDisc: discount + "",
+                terms: "", // if text box good
+                transferType: "", // origin comes here like if it is from quote
+                address: selectedUserType === 'reg' && selectedCustomer ? selectedCustomer.address1 + selectedCustomer.address2 + selectedCustomer.address3 : "",
+                cargo: "",
+                delivery: "",
+                mark: "",
+                commission: "0",
+                trn: "",
+                orderStatus: "ONLINE",
+                rcvCard: "0",
+                vat: vatValue + "", // full item total vat string
+                orderType: "",
+                qtnNo: "0",
+                tel: "",
+                rcvCash: "0",
+                jcode: "",
+                euser: usernametosend,// logged in users name from username 
+                items: transformedData
+            }
             try {
-                const postData = JSON.stringify(transformedData)
+                const postData = JSON.stringify(standardizedObject)
 
                 console.log('MKOpostData', postData)
 
-                const response = await axios.post(`${appUrl}Sales_Order`, postData, {
+                // previously `${appUrl}Sales_Order`
+                let newStandardisedSalesOrder = `${appUrl}SalesOrder?CmpCode=${cmpcode}`
+
+                console.log('makeOrderapi>>+++}}}', newStandardisedSalesOrder, postData)
+
+                
+
+                const response = await axios.post(`${newStandardisedSalesOrder}`, postData, {
                     headers: {
                         'Content-Type': 'application/json',
                     }
                 });
                 // setResponse(response.data);
-                console.log('makeOrderapi', `${appUrl}Sales_Order`)
+                console.log('makeOrderapi>>+++', newStandardisedSalesOrder)
                 // console.log('api', 'https://cubixweberp.com:203/api/Sales_Order')
                 console.log('reqData', transformedData)
                 console.log('Order created successfully', response.data);
 
-                if (response.status === 200) {
+                if (response.data.message === "Sales order processed successfully") {
                     showMakeOrderSuccess()
                     setSelectedCustomer(null)
                     setOrderRemark('')
@@ -1241,9 +1348,10 @@ const QuotationPop = ({
                     setShowCartPanel(false)
                     // setSelectedUserType('reg')
                 }
+
             } catch (error) {
                 setError('Error creating order');
-                console.error('Error creating order', error);
+                console.error('Error creating order}}}}}++', error.message);
                 showMakeOrderError()
                 setShowQuotationPop(false)
                 setShowSelectedStockPop(false)
@@ -1256,10 +1364,37 @@ const QuotationPop = ({
 
 
     const makeInvoice = async () => {
+
+        let companyCode = ""
+        const portNoData = await AsyncStorage.getItem('portNoData')
+        if (portNoData) {
+
+            const dataArray = JSON.parse(portNoData);
+            companyCode = dataArray[0].COMPID
+
+            console.log('makeOrderApi cmpcode', `${dataArray[0].COMPID}`)
+        }
+
+        let salesman_to_send = salesMan
+
+        if (companyCode == "MOUNT") {
+            console.log("selectedCustomer ++", selectedCustomer?.sale_man)
+            salesman_to_send = selectedCustomer?.sale_man
+        }
+
         setLoading(true);
         if (transformedDataInv.length > 0) {
             try {
-                const postData = JSON.stringify(transformedDataInv)
+
+                console.log("transformedDataInv in makeinvoice", transformedDataInv)
+
+                let newJsonWithSalesManChanged = transformedDataInv?.map((item) => {
+                    return { ...item, sale_man: salesman_to_send }
+                })
+
+                console.log("transformedDataInv in makeinvoice after", newJsonWithSalesManChanged)
+
+                const postData = JSON.stringify(newJsonWithSalesManChanged)
 
                 console.log('postData', postData)
 
@@ -1268,21 +1403,23 @@ const QuotationPop = ({
                 const appUrlpath = `${appUrl}SalesInvoice`;
                 console.log("appurl before sending", appUrlpath)
 
-
+                console.log('reqData +++', transformedDataInv)
+                
                 const response = await axios.post(appUrlpath, postData, {
                     headers: {
                         'Content-Type': 'application/json',
                     }
                 });
-                // setResponse(response.data);
-                // console.log('api', 'https://cubixweberp.com:203/api/Sales_Order')
-                // console.log('api', 'https://cubixweberp.com:203/api/Sales_Order')
-                console.log('reqData', transformedDataInv)
+
+                
+                console.log('Invoice created successfully', response);
                 console.log('Invoice created successfully', response.data);
 
-                if (response.status === 200) {
-                    // showMakeOrderSuccess()
+                if (response.data.result === "Saved") {
+
                     setResult(response.data)
+
+                    console.log("response.data.result ", response.data.result);
                     // setSelectedCustomer(null)
                     // setOrderRemark('')
                     // setTrn('')
@@ -1300,6 +1437,8 @@ const QuotationPop = ({
                     // setTotalCostAvg(0)
                     // setShowCartPanel(false)
                 }
+
+
             } catch (error) {
                 setError('Error creating Invoice');
                 console.error('Error creating Invoice', error);
@@ -1353,7 +1492,7 @@ const QuotationPop = ({
             qno: 0,
             oem: item.OEM,
             vat_percentage: 5,
-            Vatamt: vatValue ? vatValue : '',
+            Vatamt: vatValue ? vatValue : '0',
             total: totalUnitPrice,
             UPrice_VInc: 0,
             Curstk: 0,
@@ -1375,48 +1514,79 @@ const QuotationPop = ({
     };
 
     const transformData = (data, customer, orderRemark, payment, delivery, validity, totalUnitPrice, cashCustomerName, cashCustomerAddress, cashCustomerPhone) => {
+
+        // old way before standardisation
+        // return data.map((item, index) => ({
+        //     cmpcode: cmpcode,
+        //     // so_no: "1001",
+        //     // so_date: "2023-01-12",
+        //     Cust_Acc: selectedUserType === 'reg' && customer ? customer.account : '',
+        //     Acc_Descr: selectedUserType === 'reg' && customer ? customer.Custname : '',
+        //     Total_Amt: calculatedValue ? calculatedValue : '0',
+        //     Slno: index + 1,
+        //     code: item.Code?.trim(),
+        //     description: item.Description?.trim(),
+        //     locn: van,
+        //     unit: unitValue,
+        //     qty: item.quantity,
+        //     unit_price: item.unitPrice,
+        //     disc_percentage: "0",
+        //     Amount: item.total,
+        //     x: "",
+        //     cntrl: "8C846C86-19D2-4FB6-AF18-D5E067357423",
+        //     fraction: "1",
+        //     qno: "0",
+        //     oem: item.OEM,
+        //     vat_percentage: 5,
+        //     Vatamt: vatValue ? vatValue : '0',
+        //     total: totalUnitPrice,
+        //     UPrice_VIncl: "0",
+        //     Curstk: "0",
+        //     sales_man: salesMan ? salesMan : '',
+        //     itemwiseRemark: highPriority ? 'high' : '',
+        //     BarcodeRemark: selectedRadio,
+        //     // add radio cash/credit
+        //     OrderRemark: orderRemark,
+        //     cash_customer: selectedUserType === 'unreg' ? "yes" : "no",
+        //     cash_customer_company_address: cashCustomerAddress,
+        //     cash_customer_company_name: cashCustomerName,
+        //     cash_customer_company_phone_number: cashCustomerPhone,
+        //     quotationNotes_Delivery: delivery,
+        //     quotationNotes_Validity: validity,
+        //     quotationNotes_payment: payment,
+        //     quotation_number: "0",
+        //     operation: type && type === 'edit' ? 'edit' : 'save',
+        //     disc_amt: discount,
+        //     deptNo: deptNo ? deptNo : '',
+
+        // }));
+
+        console.log("van and data item array  ", van, data
+        )
         return data.map((item, index) => ({
-            cmpcode: cmpcode,
-            // so_no: "1001",
-            // so_date: "2023-01-12",
-            Cust_Acc: selectedUserType === 'reg' && customer ? customer.account : '',
-            Acc_Descr: selectedUserType === 'reg' && customer ? customer.Custname : '',
-            Total_Amt: calculatedValue ? calculatedValue : '',
-            Slno: index + 1,
+
+            slno: (index + 1) + "",
             code: item.Code?.trim(),
             description: item.Description?.trim(),
-            locn: van,
+            locn: van?.trim(),
             unit: unitValue,
             qty: item.quantity,
-            unit_price: item.unitPrice,
-            disc_percentage: "0",
-            Amount: item.total,
+            unitPrice: item.unitPrice,
+            discPercent: 0,
+            amount: item.total,
             x: "",
             cntrl: "8C846C86-19D2-4FB6-AF18-D5E067357423",
-            fraction: "1",
-            qno: "0",
-            oem: item.OEM,
-            vat_percentage: 5,
-            Vatamt: vatValue ? vatValue : '',
+            fraction: 1,// here we have to pass number per box if it is coming from master ie multiunit if unit selected from dropdown put that count here , if box it will have for example 10 
+            qno: 0,
+            oem: item.OEM ? item.OEM : "",
+            vatPercent: 5,
+            vatamt: vatValue ? vatValue : '0',
             total: totalUnitPrice,
-            UPrice_VIncl: "0",
-            Curstk: "0",
-            sales_man: salesMan ? salesMan : '',
-            itemwiseRemark: highPriority ? 'high' : '',
-            BarcodeRemark: selectedRadio,
-            // add radio cash/credit
-            OrderRemark: orderRemark,
-            cash_customer: selectedUserType === 'unreg' ? "yes" : "no",
-            cash_customer_company_address: cashCustomerAddress,
-            cash_customer_company_name: cashCustomerName,
-            cash_customer_company_phone_number: cashCustomerPhone,
-            quotationNotes_Delivery: delivery,
-            quotationNotes_Validity: validity,
-            quotationNotes_payment: payment,
-            quotation_number: "0",
-            operation: type && type === 'edit' ? 'edit' : 'save',
-            disc_amt: discount,
-            deptNo: deptNo ? deptNo : '',
+            unitPriceVatIncl: 0,
+            curstk: 0,
+            remarks: "",
+            unitCost: 0,
+            blkPrice: 0
 
         }));
     };
@@ -1426,7 +1596,10 @@ const QuotationPop = ({
         return data.map((item, index) => ({
             cmpcode: cmpcode,
             modeop: "SAVE",
-            cashcustomer: selectedUserType === 'unreg' ? "yes" : "no",
+            cashcustomer: selectedUserType === 'unreg' ?
+                "yes"
+                :
+                selectedRadio == "CASH" ? "yes" : "no",
             inv_no: "68435",
             cust_acc: selectedUserType === 'reg' && customer ? customer.account : '',
             inv_total: String(calculatedValue),
@@ -1540,7 +1713,7 @@ const QuotationPop = ({
             cntrl: "",
             Fraction: "1",
             "vat%": "5",
-            "Unit Cost": item.Cost_Avg,
+            "Unit Cost": String(item.Cost_Avg),
             dono: "0",
             sono: "0",
             quotno: "0",
@@ -1613,7 +1786,7 @@ const QuotationPop = ({
     //     showFormEmptyToast()
     // }, [])
     // console.log('transformedData', JSON.stringify(transformedData, null, 2));
-    console.log('transformedDataInv', JSON.stringify(transformedDataInv, null, 2));
+    // console.log('transformedDataInv', JSON.stringify(transformedDataInv, null, 2));
 
     console.log('selectedCustomer', selectedCustomer)
     console.log('savedItemData', savedItemData)
@@ -1704,6 +1877,13 @@ const QuotationPop = ({
                                     <View style={styles.CustomerItemWrap}>
                                         <Text style={styles.CustomerValueText}>{selectedCustomer ? selectedCustomer.phone : ""}</Text>
                                     </View>
+
+                                    <View style={styles.CustomerItemWrap}>
+                                        <Text style={styles.CustomerTagText}>LPO Number</Text>
+                                    </View>
+                                    <View style={styles.CustomerItemWrap}>
+                                        <Text style={styles.CustomerValueText}>{lponumber ? lponumber : ""}</Text>
+                                    </View>
                                 </>
                             }
 
@@ -1728,6 +1908,7 @@ const QuotationPop = ({
                                     <View style={styles.CustomerItemWrap}>
                                         <Text style={styles.CustomerValueText}>{cashCustomerPhone ? cashCustomerPhone : ""}</Text>
                                     </View>
+
                                 </>
                             }
                         </View>
@@ -1742,6 +1923,9 @@ const QuotationPop = ({
                                 <Text style={styles.CustomerValueText}>{orderRemark ? orderRemark : '---'}</Text>
                             </View> */}
                         </View>
+
+
+
 
                         <View style={styles.CustomerSection}>
                             <View style={styles.CustomerItemWrap}>

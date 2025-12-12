@@ -38,7 +38,26 @@ import SalesInvoiceNew from './pages/SalesInvoiceNew';
 import InvoiceList from './pages/InvoiceList';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import RenderDataApp from './pages/RenderDataApp';
+import LeadEntryForm from './pages/Lead/LeadEntryForm';
+import LeadList from './pages/Lead/LeadList';
+import MakeQuotation from './pages/MakeQuotation';
+import QuotationList from './pages/QuotationList';
+import QuotationDetails from './pages/QuotationDetails';
+import Receipt from './pages/Receipt';
+import MaterialRequest from './pages/MaterialRequest';
+import GoodsCollectionDelivery from './pages/GoodsCollectionDelivery';
+import GoodsCollectionDeliveryPoolList from './pages/GoodsCollectionDeliveryPoolList';
+import SiteSurvey from './pages/SiteSurvey';
+import InspectionMaintenanceReport from './pages/InspectionMaintenanceReport';
 
+import ScopeAndBOQ from './pages/ScopeAndBOQ';
+import HomeNewTasra from './pages/HomeNewTasra';
+import PhysicalStock from "./pages/PhysicalStock"
+import BarcodeLinking from './pages/BarcodeLinking';
+import InvoiceVsReceipt from './pages/InvoiceVsReceipt';
+import WarehouseList from './pages/WarehouseList';
+import WarehousePoolList from './pages/WarehousePoolList';
+import WarehouseListItemDetails from './pages/WarehouseListItemDetails';
 
 
 
@@ -217,8 +236,12 @@ const MainApp = () => {
                 <Stack.Screen name='LoginPage' component={Login} options={{ headerShown: false }} />
                 {/* <Stack.Screen name='Home' component={Home} options={{ headerShown: false }} /> */}
                 <Stack.Screen name='Home' component={HomeNew} options={{ headerShown: false }} />
+                <Stack.Screen name='HomeNewTasra' component={HomeNewTasra} options={{ headerShown: false }} />
                 <Stack.Screen name='CheckStock' component={CheckStock} options={{ headerShown: false }} />
                 <Stack.Screen name='CustomerDetails' component={CustomerDetails} options={{ headerShown: false }} />
+                <Stack.Screen name='MakeQuotation' component={MakeQuotation} options={{ headerShown: false }} />
+                <Stack.Screen name='QuotationList' component={QuotationList} options={{ headerShown: false }} />
+                <Stack.Screen name='QuotationDetails' component={QuotationDetails} options={{ headerShown: false }} />
                 <Stack.Screen name='MakeOrder' component={SalesOrder} options={{ headerShown: false }} />
                 <Stack.Screen name='PreviousOrders' component={PreviousOrde} options={{ headerShown: false }} />
                 <Stack.Screen name='OrderDetails' component={OrderDetails} options={{ headerShown: false }} />
@@ -226,6 +249,9 @@ const MainApp = () => {
                 <Stack.Screen name='PickingList' component={PickingList} options={{ headerShown: false }} />
                 <Stack.Screen name='PdfTest' component={PdfTest} options={{ headerShown: false }} />
                 <Stack.Screen name='PickingListDetails' component={PickingListDetailPage} options={{ headerShown: false }} />
+
+                <Stack.Screen name='Receipt' component={Receipt} options={{ headerShown: false }} />
+                <Stack.Screen name='MaterialRequest' component={MaterialRequest} options={{ headerShown: false }} />
                 <Stack.Screen name='Collections' component={Collections} options={{ headerShown: false }} />
                 <Stack.Screen name='NewCollections' component={NewCollections} options={{ headerShown: false }} />
                 <Stack.Screen name='SalesInvoice' component={SalesInvoiceNew} options={{ headerShown: false }} />
@@ -240,6 +266,8 @@ const MainApp = () => {
 
                 <Stack.Screen name='DriversApp' component={DriverHome} options={{ headerShown: false }} />
 
+                <Stack.Screen name='LeadEntry' component={LeadEntryForm} options={{ headerShown: false }} />
+                <Stack.Screen name='LeadList' component={LeadList} options={{ headerShown: false }} />
 
                 {/* dashboard */}
 
@@ -253,6 +281,33 @@ const MainApp = () => {
 
 
                 <Stack.Screen name='QrCodeScanner' component={QrCodeScanner} options={{ headerShown: false }} />
+
+                <Stack.Screen name='GoodsCollectionDelivery' component={GoodsCollectionDelivery} options={{ headerShown: false }} />
+                
+                <Stack.Screen name='WarehouseListItemDetails' component={WarehouseListItemDetails} options={{ headerShown: false }} />
+                <Stack.Screen name='GoodsCollectionDeliveryPoolList' component={GoodsCollectionDeliveryPoolList} options={{ headerShown: false }} />
+                <Stack.Screen name='WarehouseList' component={WarehouseList} options={{ headerShown: false }} />
+                <Stack.Screen name='WarehousePoolList' component={WarehousePoolList} options={{ headerShown: false }} />
+
+                
+                
+                <Stack.Screen name='SiteSurvey' component={SiteSurvey} options={{ headerShown: false }} />
+                <Stack.Screen name='InspectionMaintenanceReport' component={InspectionMaintenanceReport} options={{ headerShown: false }} />
+                <Stack.Screen name='ScopeAndBOQ' component={ScopeAndBOQ} options={{ headerShown: false }} />
+                <Stack.Screen name='PhysicalStock' component={PhysicalStock} options={{ headerShown: false }} />
+                <Stack.Screen name='BarcodeLinking' component={BarcodeLinking} options={{ headerShown: false }} />
+                <Stack.Screen name='InvoiceVsReceipt' component={InvoiceVsReceipt} options={{ headerShown: false }} />
+               
+
+                
+
+                
+            
+                {/* <Stack.Screen name='SelectLocation' component={SelectLocation} options={{ headerShown: false }} />
+                <Stack.Screen name='WmsHome' component={WmsHome} options={{ headerShown: false }} />
+                
+                <Stack.Screen name='PickingList' component={PickingList} options={{ headerShown: false }} />
+                <Stack.Screen name='BinToBin' component={BinToBin} options={{ headerShown: false }} /> */}
 
             </Stack.Navigator>
         </NavigationContainer>

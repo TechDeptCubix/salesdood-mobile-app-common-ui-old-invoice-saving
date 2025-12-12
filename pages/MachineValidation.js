@@ -43,9 +43,9 @@ const MachineValidation = () => {
 
     const handleGetPortNo = async () => {
 
-        console.log("calling port no ",`https://cubixweberp.com:301/api/clientmanager/${cmpCode}`)
+        console.log("calling port no ",`https://cubixweberp.com:301/api/clientmanager/${cmpCode?.trim()}`)
         try {
-            const response = await axios.get(`https://cubixweberp.com:301/api/clientmanager/${cmpCode}`)
+            const response = await axios.get(`https://cubixweberp.com:301/api/clientmanager/${cmpCode?.trim()}`)
             if (response.status === 200) {
                 setPortNoData(response.data)
             }
@@ -56,7 +56,9 @@ const MachineValidation = () => {
 
     const handleGetPortNoWithCmpcode = async (cmpCode) => {
         try {
-            const response = await axios.get(`https://cubixweberp.com:301/api/clientmanager/${cmpCode}`)
+
+            console.log("handleGetPortNoWithCmpcode url", `https://cubixweberp.com:301/api/clientmanager/${cmpCode?.trim()}`)
+            const response = await axios.get(`https://cubixweberp.com:301/api/clientmanager/${cmpCode?.trim()}`)
             if (response.status === 200) {
                 setPortNoData(response.data)
 
@@ -79,7 +81,7 @@ const MachineValidation = () => {
             //     username: "",
             // });
 
-            const url = `https://cubixweberp.com:199/GetPublicKey?cmpcode=${cmpCode}`;
+            const url = `https://cubixweberp.com:199/GetPublicKey?cmpcode=${cmpCode?.trim()}`;
 
             console.log(url);
             fetch(url)
@@ -118,7 +120,7 @@ const MachineValidation = () => {
                 const storedUserDataArrayJson = await AsyncStorage.getItem("userDataArray");
                 const storedUserDataArray = storedUserDataArrayJson ? JSON.parse(storedUserDataArrayJson) : [];
 
-                const url = `https://cubixweberp.com:199/CheckStatus?cmpcode=${cmpCode}&publick=${pubKey}&privatek=${privateKey}`;
+                const url = `https://cubixweberp.com:199/CheckStatus?cmpcode=${cmpCode?.trim()}&publick=${pubKey}&privatek=${privateKey}`;
 
                 console.log(url);
                 const response = await fetch(url);
@@ -127,10 +129,11 @@ const MachineValidation = () => {
 
                 if (data[0].Column1 === 'REGISTERED') {
                     const newCompanyData = {
-                        cmpcode: cmpCode,
+                        cmpcode: cmpCode?.trim(),
                         publick: pubKey,
                         privatek: privateKey,
-                        portNo: portNoData[0].PORTNO
+                        portNo: portNoData[0].PORTNO,
+                        api_config: portNoData[0].API_CONFIG
                     };
                     storedUserDataArray.push(newCompanyData);
 
@@ -160,7 +163,9 @@ const MachineValidation = () => {
     const validateCompany = async (company) => {
         console.log('validateCmp')
         if (company.cmpcode && company.publick && company.privatek) {
-            const result = await fetch(`https://cubixweberp.com:199/CheckStatus?cmpcode=${company.cmpcode}&publick=${company.publick}&privatek=${company.privatek}`)
+
+            console.log("machine validation url", `https://cubixweberp.com:199/CheckStatus?cmpcode=${company.cmpcode?.trim()}&publick=${company.publick}&privatek=${company.privatek}`)
+            const result = await fetch(`https://cubixweberp.com:199/CheckStatus?cmpcode=${company.cmpcode?.trim()}&publick=${company.publick}&privatek=${company.privatek}`)
             const data = await result.json()
 
             // handleGetPortNoWithCmpcode(company.cmpcode)
@@ -172,10 +177,12 @@ const MachineValidation = () => {
             if (data[0].Column1 === 'VALIDATED') {
 
                 const newCompanyData = {
-                    cmpcode: company.cmpcode,
+                    cmpcode: company.cmpcode?.trim(),
                     publick: company.publick,
                     privatek: company.privatek,
-                    portNo: portNoData[0].PORTNO
+                    portNo: portNoData[0].PORTNO,
+                    api_config: portNoData[0].API_CONFIG
+
                 };
 
                 console.log('newCompanyData', newCompanyData)
@@ -202,12 +209,12 @@ const MachineValidation = () => {
     const validateCompanyList = async (company) => {
         console.log('validateCmp');
         if (company.cmpcode && company.publick && company.privatek) {
-            const result = await fetch(`https://cubixweberp.com:199/CheckStatus?cmpcode=${company.cmpcode}&publick=${company.publick}&privatek=${company.privatek}`);
+            const result = await fetch(`https://cubixweberp.com:199/CheckStatus?cmpcode=${company.cmpcode?.trim()}&publick=${company.publick}&privatek=${company.privatek}`);
             const data = await result.json();
             // console.log(data)
             const status = data[0].Column1;
             // Set the status for the company
-            const companyData = { cmpcode: company.cmpcode, status };
+            const companyData = { cmpcode: company.cmpcode?.trim(), status };
             // Push the company's data object into the array
             setCompanyStatus(prevArray => [...prevArray, companyData]);
         }
@@ -245,7 +252,7 @@ const MachineValidation = () => {
                                 const company = storedUserDataArray[0];
                                 setSelectedCompany(company);
                                 setCmpnyDataForUseFocus(company)
-                                handleGetPortNoWithCmpcode(company.cmpcode)
+                                handleGetPortNoWithCmpcode(company.cmpcode?.trim())
                                 // Save the selected company in local storage
                                 // localStorage.setItem("selectedCompany", JSON.stringify(company));
                                 // Validate the selected company
@@ -372,7 +379,7 @@ const MachineValidation = () => {
                                             </TouchableOpacity>
 
                                             {companyList && companyList.map((item, index) => {
-                                                const companyData = companyStatus.find(data => data.cmpcode === item.cmpcode);
+                                                const companyData = companyStatus.find(data => data.cmpcode?.trim() === item.cmpcode?.trim());
                                                 return (
                                                     <TouchableOpacity key={index} style={styles.cmpnyListCard} onPress={() => handleCmpnyListClick(item)}>
                                                         <Text>{item.cmpcode}</Text>

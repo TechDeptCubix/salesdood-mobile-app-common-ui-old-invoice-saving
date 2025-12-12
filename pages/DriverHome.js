@@ -55,7 +55,7 @@ const DriverHome = () => {
 
         const deptno = await AsyncStorage.getItem('DEPTNO')
         const loginUser = await AsyncStorage.getItem('loginUserName')
-        const appUrl = await AsyncStorage.getItem('appUrl')
+        const appUrlFromStorage = await AsyncStorage.getItem('appUrl')
         const van = await AsyncStorage.getItem('VAN')
 
         const fleetName = await AsyncStorage.getItem('Fleet_Name')
@@ -91,25 +91,33 @@ const DriverHome = () => {
             setCmpCode(parsedUserDataArray[0].cmpcode.trim())
         }
 
-        if (appUrl) {
-            setAppUrl(appUrl)
+        if (appUrlFromStorage) {
+
+            let apiUrlEdited = appUrlFromStorage.replace("/api/", '');
+            console.log("apiUrlEdited ", apiUrlEdited)
+            setAppUrl(apiUrlEdited)
         }
 
     }
 
-    const fetchDeliveryData = async () => {
+    const fetchDeliveryData = () => {
         setShowLoader(true)
         try {
-            console.log('fetchDeliveryDataUrl', `https://cubixweberp.com:${portNo}/${cmpCode}/OPENDELIVERY/-/-/${deptno}/-/`)
-            const response = await axios.get(`https://cubixweberp.com:${portNo}/${cmpCode}/OPENDELIVERY/-/-/${deptno}/-/`)
-            console.log(response.data)
-            if (response.status === 200) {
-                setDeliveryData(response.data)
-                setShowLoader(false)
 
-            }
+
+            let apiLink = `${appUrl}/${cmpCode}/OPENDELIVERY/-/-/${deptno}/-/`
+            console.log('fetchDeliveryDataUrl>>+++', apiLink)
+            axios.get(apiLink).then((res) => {
+                console.log("fetchDeliveryDataUrl>> res++", res.data)
+                setShowLoader(false)
+                setDeliveryData(res.data)
+            }).catch((err) => {
+                setShowLoader(false)
+            })
+
+
         } catch (error) {
-            console.log('fetchDeliveryDataError', error)
+            console.log('fetchDeliveryDataError>>', error)
             setShowLoader(false)
         }
     }
@@ -148,7 +156,7 @@ const DriverHome = () => {
         setAcceptDono(item.do_no)
         setItemdeptno(item.deptno)
 
-        const itemDeptno = item.deptno
+        const itemDeptno = item.deptno?.trim()
 
         const itemDono = item.do_no
 
@@ -157,13 +165,14 @@ const DriverHome = () => {
             // const postData = JSON.stringify(data)
             // console.log('postData', postData)
 
-            console.log('postUrl', `https://cubixweberp.com:${portNo}/${cmpCode}/ACCEPTED_CHECKING/-/-/${itemDeptno}/${itemDono}/`)
+            let apilink = `${appUrl}/${cmpCode}/ACCEPTED_CHECKING/-/-/${itemDeptno}/${itemDono}/`
+            console.log('postUrl',apilink )
 
-            const response = await axios.get(`https://cubixweberp.com:${portNo}/${cmpCode}/ACCEPTED_CHECKING/-/-/${itemDeptno}/${itemDono}/`)
+            const response = await axios.get(apilink)
 
-            console.log(response.data)
+            console.log("response data >> acdept check", response.data)
 
-            if (response.data[0].Status === 'OPEN') {
+            if (response.data[0].Status?.trim().toUpperCase() === 'OPEN') {
                 AcceptDelivery(itemDono, itemDeptno)
             }
             else {
@@ -171,7 +180,7 @@ const DriverHome = () => {
 
             }
         } catch (error) {
-            console.log('AcceptCheckError', error)
+            console.log('AcceptCheckError>>', error)
             showAcceptCheckError()
             setShowAcceptLoader(false)
 
@@ -189,17 +198,18 @@ const DriverHome = () => {
                     "do_no": dono,
                     "user": loginUser,
                     "vehicleno": van,
-                    "deptno": itemDeptno,
+                    "deptno": itemDeptno?.trim(),
                     "status": "-"
                 }
             ]
 
             const postData = JSON.stringify(data)
-            console.log('postData', postData)
+            console.log('postData>>', postData)
 
-            console.log('postUrl', `${appUrl}Delivery`)
+            let apiLink = `${appUrl}/api/Delivery`
+            console.log('postUrl>uuuuu', apiLink)
 
-            const response = await axios.post(`${appUrl}Delivery`, postData, {
+            const response = await axios.post(apiLink, postData, {
                 headers: {
                     'Content-Type': 'application/json',
                 }
@@ -220,7 +230,7 @@ const DriverHome = () => {
 
             }
         } catch (error) {
-            console.log('AcceptDeliveryError', error)
+            console.log('AcceptDeliveryError>>++', error)
             showAcceptDeliveryError()
             setShowAcceptLoader(false)
             setAcceptDono('')
@@ -331,10 +341,10 @@ const DriverHome = () => {
     }, [appUrl, cmpCode])
 
     useEffect(() => {
-        if (cmpCode && deptno && portNo) {
+        if (appUrl && cmpCode && deptno && portNo) {
             fetchDeliveryData()
         }
-    }, [cmpCode, deptno, portNo])
+    }, [appUrl,cmpCode, deptno, portNo])
 
     useEffect(() => {
         if (cmpCode && deptno && portNo && selectedValue) {
@@ -549,6 +559,7 @@ const DriverHome = () => {
                             showDeliveredError={showDeliveredError}
                             showLoader={showLoader}
                             showDetailsPopItem={showDetailsPopItem}
+                            
 
 
                         />
@@ -567,6 +578,8 @@ const DriverHome = () => {
                     selectedValue={selectedValue}
                     loginUser={loginUser}
                     deptno={deptno}
+                    appUrl={appUrl}
+                    driverCompletedTab={{status:selectedButton}}
 
                 />
             }

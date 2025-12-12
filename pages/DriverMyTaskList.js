@@ -12,6 +12,7 @@ const DriverMyTaskList = ({
     showStartJobSuccess, showStartJobError, showLoader, showDetailsPopItem, fetchOnTheWayTaskCount
 }) => {
 
+    console.log("appurl my list", appUrl)
 
     const [myTaskList, setMyTaskList] = useState('')
 
@@ -20,8 +21,8 @@ const DriverMyTaskList = ({
     const fetchMyTask = async () => {
         setShowLoader(true)
         try {
-            console.log('fetchMyTaskurl', `https://cubixweberp.com:${portNo}/${cmpCode}/MYLIST/${areaCode}/${loginUser}/${deptno}/-/`)
-            const response = await axios.get(`https://cubixweberp.com:${portNo}/${cmpCode}/MYLIST/${areaCode}/${loginUser}/${deptno}/-/`)
+            console.log('fetchMyTaskurl', `${appUrl}/${cmpCode}/MYLIST/${areaCode}/${loginUser}/${deptno}/-/`)
+            const response = await axios.get(`${appUrl}/${cmpCode}/MYLIST/${areaCode}/${loginUser}/${deptno}/-/`)
 
             if (response.status === 200) {
                 setMyTaskList(response.data)
@@ -55,7 +56,7 @@ const DriverMyTaskList = ({
             const postData = JSON.stringify(data)
             console.log('postData', postData)
 
-            const response = await axios.post(`${appUrl}Delivery`, postData, {
+            const response = await axios.post(`${appUrl}/api/Delivery`, postData, {
                 headers: {
                     'Content-Type': 'application/json',
                 }

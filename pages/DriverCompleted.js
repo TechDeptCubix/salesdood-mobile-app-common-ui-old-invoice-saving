@@ -16,8 +16,8 @@ const DriverCompleted = ({
     const fetchCompletdtask = async () => {
         setShowLoader(true)
         try {
-            console.log('fetchCompletdtaskurl', `https://cubixweberp.com:${portNo}/${cmpCode}/DELIVERED/${areaCode}/${loginUser}/${deptno}/-/`)
-            const response = await axios.get(`https://cubixweberp.com:${portNo}/${cmpCode}/DELIVERED/${areaCode}/${loginUser}/${deptno}/-/`)
+            console.log('fetchCompletdtaskurl', `${appUrl}/${cmpCode}/DELIVERED/${areaCode}/${loginUser}/${deptno}/-/`)
+            const response = await axios.get(`${appUrl}/${cmpCode}/DELIVERED/${areaCode}/${loginUser}/${deptno}/-/`)
 
             if (response.status === 200) {
                 setCompletedList(response.data)
