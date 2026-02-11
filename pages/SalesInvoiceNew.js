@@ -19,6 +19,8 @@ import { Checkbox } from 'react-native-paper'
 const SalesInvoiceNew = ({ route }) => {
 
 
+    const [vanFromLocalStorage, setVanFromLocalStorage] = useState(null)
+
     const [unitPriceToShowUser, setUnitPriceToShowUser] = useState('')
 
     const [checked, setChecked] = useState(false)
@@ -148,6 +150,8 @@ const SalesInvoiceNew = ({ route }) => {
 
     const [blocknextButtonView, setBlockNextButtonView] = useState(false)
 
+    const [lastSellingPrice, setLastSellingPrice] = useState(null)
+
 
     console.log('customerCreditBlocked', customerCreditBlocked)
 
@@ -178,12 +182,14 @@ const SalesInvoiceNew = ({ route }) => {
             label: 'CASH',
             value: 'CASH',
             disabled: selectedUserType === 'unreg',
+            labelStyle: { color: '#000000', fontSize: 16 }
         },
         {
             id: 'CREDIT',
             label: 'CREDIT',
             value: 'CREDIT',
             disabled: selectedUserType === 'unreg',
+            labelStyle: { color: '#000000', fontSize: 16 }
         }
     ]), [selectedUserType]);
 
@@ -192,12 +198,25 @@ const SalesInvoiceNew = ({ route }) => {
             id: 'reg',
             label: 'Registered',
             value: 'reg',
+            labelStyle: { color: '#000000', fontSize: 16 }
+
 
         },
         {
             id: 'unreg',
             label: 'Un-Registered',
             value: 'unreg',
+            labelStyle: { color: '#000000', fontSize: 16 }
+
+        }
+    ]), []);
+
+    const regUnregUserRadioOnlyRegistered = useMemo(() => ([
+        {
+            id: 'reg',
+            label: 'Registered',
+            value: 'reg',
+            labelStyle: { color: '#000000', fontSize: 16 }
 
         }
     ]), []);
@@ -228,6 +247,8 @@ const SalesInvoiceNew = ({ route }) => {
         const appUrl = await AsyncStorage.getItem('appUrl')
 
         const van = await AsyncStorage.getItem('VAN')
+
+        setVanFromLocalStorage(van)
 
         const storedUserDataArray = await AsyncStorage.getItem("userDataArray");
         const parsedUserDataArray = storedUserDataArray && JSON.parse(storedUserDataArray) || [];
@@ -457,8 +478,18 @@ const SalesInvoiceNew = ({ route }) => {
         setShowItemSrchAct(true)
         setStockSearchError('')
         try {
-            console.log(`${appUrl}Search_Items/${cmpcode}/Sitem/${value} `)
-            await axios.get(`${appUrl}Search_Items/${cmpcode}/Sitem/${value}`)
+
+            let encodedvalue = encodeURIComponent(value)
+            let locationToPassToApiBasedOnVan = vanFromLocalStorage == '----' ? "MASTER" : vanFromLocalStorage
+            let modeToPassToApiBasedOnVan = vanFromLocalStorage == '----' ? "MOBILE" : "all_top1000"
+
+            let apiUrl = `${appUrl}Search_Items/InventoryList?cmpcode=${cmpcode}&guid=F4369B5E-8E23-4BCF-AC82-76C977991728&mod=${modeToPassToApiBasedOnVan}&Loc=${locationToPassToApiBasedOnVan}&searchKey=${encodedvalue}`
+
+            // earlier like  this api console.log(`${appUrl}Search_Items/${cmpcode}/Sitem/${value} `)
+
+         
+
+            await axios.get(apiUrl)
                 .then((res) => {
                     setStockData(res.data)
                 })
@@ -488,18 +519,21 @@ const SalesInvoiceNew = ({ route }) => {
         console.log("selectedStock >> []", selectedStock)
 
         if (selectedStock) {
+
+            getLastCustomerSellingPrice(selectedStock.Code);
+
             setSearchItem('')
-            if(unitPrice){
-                
+            if (unitPrice) {
+
                 setUnitPrice(unitPrice)
                 setUnitPriceToShowUser(unitPriceToShowUser)
 
-                if(unitPrice != unitPriceToShowUser){
+                if (unitPrice != unitPriceToShowUser) {
                     setChecked(true)
                 }
 
 
-            }else{
+            } else {
 
                 setUnitPrice((selectedStock.price).toString())
                 setUnitPriceToShowUser((selectedStock.price).toString())
@@ -527,23 +561,23 @@ const SalesInvoiceNew = ({ route }) => {
             }
             if (selectedUserType === 'reg') {
                 await AsyncStorage.setItem('selectedCustomer', JSON.stringify(selectedCustomer))
-                await AsyncStorage.setItem('orderRemark', orderRemark)
-                await AsyncStorage.setItem('payment', payment)
-                await AsyncStorage.setItem('delivery', delivery)
-                await AsyncStorage.setItem('validity', validity)
-                await AsyncStorage.setItem('trn', trn)
+                await AsyncStorage.setItem('orderRemark', orderRemark ? orderRemark :"")
+                await AsyncStorage.setItem('payment', payment ? payment :"")
+                await AsyncStorage.setItem('delivery', delivery ? delivery :"")
+                await AsyncStorage.setItem('validity', validity ? validity :"")
+                await AsyncStorage.setItem('trn', trn ? trn:"")
                 setShowCartPanel(true)
             }
 
             if (selectedUserType === 'unreg') {
-                await AsyncStorage.setItem('cashCustomerName', cashCustomerName)
-                await AsyncStorage.setItem('cashCustomerAddress', cashCustomerAddress)
-                await AsyncStorage.setItem('cashCustomerPhone', cashCustomerPhone)
-                await AsyncStorage.setItem('orderRemark', orderRemark)
-                await AsyncStorage.setItem('trn', trn)
-                await AsyncStorage.setItem('payment', payment)
-                await AsyncStorage.setItem('delivery', delivery)
-                await AsyncStorage.setItem('validity', validity)
+                await AsyncStorage.setItem('cashCustomerName', cashCustomerName ? cashCustomerName :"")
+                await AsyncStorage.setItem('cashCustomerAddress', cashCustomerAddress ? cashCustomerAddress :"")
+                await AsyncStorage.setItem('cashCustomerPhone', cashCustomerPhone ? cashCustomerPhone :"")
+                await AsyncStorage.setItem('orderRemark', orderRemark ? orderRemark :"")
+                await AsyncStorage.setItem('trn', trn ? trn :"")
+                await AsyncStorage.setItem('payment', payment ? payment :"")
+                await AsyncStorage.setItem('delivery', delivery ? delivery :"")
+                await AsyncStorage.setItem('validity', validity ? validity :"")
 
                 setShowCartPanel(true)
             }
@@ -562,7 +596,12 @@ const SalesInvoiceNew = ({ route }) => {
         let checkQuantity = parseFloat(quantity).toFixed(3)
         let checkUnitPrice = parseFloat(unitPrice).toFixed(2)
 
-        if(checkQuantity == 0 || checkUnitPrice == 0){
+        if(checkQuantity > selectedStock.Qty){
+            Alert.alert("Quantity exceeded available quantity")
+            return
+        }
+
+        if (checkQuantity == 0 || checkUnitPrice == 0) {
             Alert.alert("Please enter Quantity and Price")
             return
         }
@@ -650,15 +689,15 @@ const SalesInvoiceNew = ({ route }) => {
 
                 await AsyncStorage.setItem('selectedCustomerInv', JSON.stringify(selectedCustomer))
                 // await AsyncStorage.setItem('savedItemDataInv', JSON.stringify(savedItemData))
-                await AsyncStorage.setItem('orderRemarkInv', orderRemark)
-                await AsyncStorage.setItem('trnInv', trn)
-                await AsyncStorage.setItem('paymentInv', payment)
-                await AsyncStorage.setItem('deliveryInv', delivery)
-                await AsyncStorage.setItem('validityInv', validity)
+                await AsyncStorage.setItem('orderRemarkInv', orderRemark ? orderRemark :"")
+                await AsyncStorage.setItem('trnInv', trn ? trn : "")
+                await AsyncStorage.setItem('paymentInv', payment ? payment :"")
+                await AsyncStorage.setItem('deliveryInv', delivery ? delivery :"")
+                await AsyncStorage.setItem('validityInv', validity ? validity :"")
                 // await AsyncStorage.setItem('totalUnitPrice', totalUnitPrice)
-                await AsyncStorage.setItem('cashCustomerNameInv', cashCustomerName)
-                await AsyncStorage.setItem('cashCustomerAddressInv', cashCustomerAddress)
-                await AsyncStorage.setItem('cashCustomerPhoneInv', cashCustomerPhone)
+                await AsyncStorage.setItem('cashCustomerNameInv', cashCustomerName ? cashCustomerName :"")
+                await AsyncStorage.setItem('cashCustomerAddressInv', cashCustomerAddress ? cashCustomerAddress :"")
+                await AsyncStorage.setItem('cashCustomerPhoneInv', cashCustomerPhone ? cashCustomerPhone:"")
 
                 setSavedItemData([...savedItemData, newItem]);
                 setQuantity('');
@@ -712,15 +751,15 @@ const SalesInvoiceNew = ({ route }) => {
 
             await AsyncStorage.setItem('selectedCustomerInv', JSON.stringify(selectedCustomer))
             // await AsyncStorage.setItem('savedItemDataInv', JSON.stringify(savedItemData))
-            await AsyncStorage.setItem('orderRemarkInv', orderRemark)
-            await AsyncStorage.setItem('trnInv', trn)
-            await AsyncStorage.setItem('paymentInv', payment)
-            await AsyncStorage.setItem('deliveryInv', delivery)
-            await AsyncStorage.setItem('validityInv', validity)
+            await AsyncStorage.setItem('orderRemarkInv', orderRemark ? orderRemark :"")
+            await AsyncStorage.setItem('trnInv', trn ? trn :"")
+            await AsyncStorage.setItem('paymentInv', payment ? payment :"")
+            await AsyncStorage.setItem('deliveryInv', delivery ? delivery :"")
+            await AsyncStorage.setItem('validityInv', validity ? validity :"")
             // await AsyncStorage.setItem('totalUnitPrice', totalUnitPrice)
-            await AsyncStorage.setItem('cashCustomerNameInv', cashCustomerName)
-            await AsyncStorage.setItem('cashCustomerAddressInv', cashCustomerAddress)
-            await AsyncStorage.setItem('cashCustomerPhoneInv', cashCustomerPhone)
+            await AsyncStorage.setItem('cashCustomerNameInv', cashCustomerName ? cashCustomerName :"")
+            await AsyncStorage.setItem('cashCustomerAddressInv', cashCustomerAddress ? cashCustomerAddress :"")
+            await AsyncStorage.setItem('cashCustomerPhoneInv', cashCustomerPhone ? cashCustomerPhone :"")
 
             setSavedItemData([...savedItemData, newItem]);
             setQuantity('');
@@ -774,15 +813,15 @@ const SalesInvoiceNew = ({ route }) => {
 
             await AsyncStorage.setItem('selectedCustomerInv', JSON.stringify(selectedCustomer))
             // await AsyncStorage.setItem('savedItemDataInv', JSON.stringify(savedItemData))
-            await AsyncStorage.setItem('orderRemarkInv', orderRemark)
-            await AsyncStorage.setItem('trnInv', trn)
-            await AsyncStorage.setItem('paymentInv', payment)
-            await AsyncStorage.setItem('deliveryInv', delivery)
-            await AsyncStorage.setItem('validityInv', validity)
+            await AsyncStorage.setItem('orderRemarkInv', orderRemark ? orderRemark :"")
+            await AsyncStorage.setItem('trnInv', trn ? trn :"")
+            await AsyncStorage.setItem('paymentInv', payment ? payment :"")
+            await AsyncStorage.setItem('deliveryInv', delivery ? delivery :"")
+            await AsyncStorage.setItem('validityInv', validity ? validity :"")
             // await AsyncStorage.setItem('totalUnitPrice', totalUnitPrice)
-            await AsyncStorage.setItem('cashCustomerNameInv', cashCustomerName)
-            await AsyncStorage.setItem('cashCustomerAddressInv', cashCustomerAddress)
-            await AsyncStorage.setItem('cashCustomerPhoneInv', cashCustomerPhone)
+            await AsyncStorage.setItem('cashCustomerNameInv', cashCustomerName ? cashCustomerName :"")
+            await AsyncStorage.setItem('cashCustomerAddressInv', cashCustomerAddress ? cashCustomerAddress :"")
+            await AsyncStorage.setItem('cashCustomerPhoneInv', cashCustomerPhone ? cashCustomerPhone :"")
 
             setSavedItemData([...savedItemData, newItem]);
             setQuantity('');
@@ -1357,6 +1396,48 @@ const SalesInvoiceNew = ({ route }) => {
 
     console.log('totalWithVAT', totalWithVAT)
 
+    const getLastCustomerSellingPrice = (product_code) => {
+
+        console.log("user_account_number ", selectedCustomer?.account)
+
+       // let apiUrl = `${appUrl}/Search_Items/lastsellprice?code=${product_code}&custacount=${selectedCustomer.account}`
+
+        let apiUrl = `${appUrl}Search_Items/${cmpcode}?type=lastsellprice&code=${product_code}&account=${selectedCustomer?.account}`
+
+        console.log("apiUrl last sell price-->", apiUrl)
+
+        axios.get(apiUrl).then((res) => {
+
+
+           
+            //console.log("e from which getLastCustomerSellingPrice is called and code res.data[0].UNIT_PRICE", e.target, product_code, res.data[0].UNIT_PRICE)
+
+            if (res.data?.length > 0) {
+                console.log("last sel price res is-->", res.data[0].lastsellprice);
+                setLastSellingPrice(""+res.data[0].lastsellprice)
+            }else{
+                setLastSellingPrice("no data found")
+            }
+
+            // let thePriceToBePutInTheField = null;
+            // if (res.data.result1 != null) {
+            //     thePriceToBePutInTheField = res.data.result1[0].lastsellprice;
+            // }
+
+            // console.log(" thePriceToBePutInTheField is ", thePriceToBePutInTheField);
+
+            // if (thePriceToBePutInTheField != null) {
+            //     setUpdatedObjectWithLastCustomerSellingPrice({ item_code: product_code, last_price: thePriceToBePutInTheField });
+            //     console.log("before setting updatedObjectWithLastCustomerSellingPrice ", updatedObjectWithLastCustomerSellingPrice);
+
+            // }
+
+        }).catch(err => {
+
+            console.log("error is ", err);
+        })
+    }
+
     return (
 
         <>
@@ -1408,7 +1489,7 @@ const SalesInvoiceNew = ({ route }) => {
                                     <View style={styles.RadioWrap}>
                                         <View style={{ width: '100%' }}>
                                             <RadioGroup
-                                                radioButtons={regUnregUserRadio}
+                                                radioButtons={cmpcode?.trim()?.toUpperCase() == "ICELAB" || cmpcode?.trim()?.toUpperCase() == "ICELAB_TEST" ? regUnregUserRadioOnlyRegistered : regUnregUserRadio}
                                                 onPress={setSelectedUserType}
                                                 selectedId={selectedUserType}
                                                 layout='row'
@@ -2317,8 +2398,13 @@ const SalesInvoiceNew = ({ route }) => {
                                                                                 justifyContent: 'space-between',
                                                                                 width: '100%'
                                                                             }}>
-                                                                                <View style={[styles.StockListDescText, { width: '75%' }]}>
+                                                                                <View style={[styles.StockListDescText, {
+                                                                                    flexDirection: 'row',
+                                                                                    justifyContent: 'space-between',
+                                                                                    width: '100%'
+                                                                                }]}>
                                                                                     <Text style={[styles.StockListDescText]}>{item.Description}</Text>
+                                                                                    <Text style={[styles.StockListDescTextSmall, { color: '#30B3A4', fontFamily: 'Lexend-Regular', }]}>{item.Qty}</Text>
                                                                                 </View>
                                                                             </View>
                                                                             <View style={{
@@ -2361,7 +2447,10 @@ const SalesInvoiceNew = ({ route }) => {
                                                 selectedStock &&
                                                 <View style={styles.SelectedItemHead}>
                                                     <Text style={[styles.SelectedItemText, { fontSize: 13, width: '85%' }]}>{selectedStock && selectedStock.Description !== '' ? selectedStock.Description : ''}</Text>
-                                                    <Text style={[styles.SelectedItemText, { fontSize: 13, fontFamily: 'Lexend-Regular', }]}>{selectedStock && selectedStock.Code !== '' ? selectedStock.Code : ''}</Text>
+                                                    <Text style={[styles.SelectedItemText, { fontSize: 13, width: '85%' }]}>Qty {selectedStock && selectedStock.Qty !== '' ? selectedStock.Qty : ''}</Text>
+                                                    <Text style={[styles.SelectedItemText, { fontSize: 13, fontFamily: 'Lexend-Regular', }]}>Code {selectedStock && selectedStock.Code !== '' ? selectedStock.Code : ''}</Text>
+                                                   {lastSellingPrice && <Text style={[styles.SelectedItemText, { fontSize: 13, fontFamily: 'Lexend-Regular', }]}>Last Customer Selling price {lastSellingPrice}</Text>} 
+                                                    
                                                     <TouchableOpacity style={styles.DeleteButton} onPress={() => ItemBinClick()}>
                                                         <Image style={styles.UpdateIcons} source={require('../images/deleteBin.png')} />
                                                     </TouchableOpacity>
@@ -2377,13 +2466,13 @@ const SalesInvoiceNew = ({ route }) => {
                                                     <View style={[styles.AddItemInpCont, { marginTop: 0 }]}>
                                                         {/* <Text style={styles.AddCartInpLabel}>Unit</Text> */}
                                                         <View style={[{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', height: 35 }]}>
-                                                            <Text style={[{ marginLeft: 4, color: '#aaa', width: '100%' }]}>{unitValue}</Text>
-                                                            <TouchableOpacity style={{
+                                                            <Text style={[{ marginLeft: 4, color: '#aaa', width: '100%' }]}>{selectedStock?.unit}</Text>
+                                                            {/* <TouchableOpacity style={{
                                                                 position: 'absolute',
                                                                 right: 8
                                                             }} onPress={() => setShowUnitPop(true)}>
                                                                 <Image style={styles.UnitDrpImg} source={require('../images/drop.png')} />
-                                                            </TouchableOpacity>
+                                                            </TouchableOpacity> */}
                                                         </View>
                                                     </View>
                                                 </View>
@@ -2461,7 +2550,7 @@ const SalesInvoiceNew = ({ route }) => {
                                                         <Checkbox
                                                             status={checked ? 'checked' : 'unchecked'}
                                                         />
-                                                        <Text>Incl. VAT</Text>
+                                                        <Text style={{color:"#000000"}}>Incl. VAT</Text>
                                                     </TouchableOpacity>
                                                 </View>
 

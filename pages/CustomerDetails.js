@@ -202,11 +202,11 @@ const CustomerDetails = () => {
     }
 
 
-    useEffect(() => {
-        if (appUrl && cmpcode && deptNo && salesName) {
-            fetchTop50Customers()
-        }
-    }, [appUrl, cmpcode, deptNo, salesName])
+    // useEffect(() => {
+    //     if (appUrl && cmpcode && deptNo && salesName) {
+    //         fetchTop50Customers()
+    //     }
+    // }, [appUrl, cmpcode, deptNo, salesName])
 
     useEffect(() => {
         if (searchItem !== '') {

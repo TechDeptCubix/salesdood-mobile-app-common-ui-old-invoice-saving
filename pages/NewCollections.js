@@ -963,9 +963,15 @@ const NewCollections = () => {
 
     const fetchStatementData = async () => {
         setShowLoader(true)
-        console.log(`${appUrl}OutstandingStmt/${cmpcode}/OUT_ACC1/${accountNo}/-/${fromDate}/${toDate}/-`)
+
+        // a modification in the sp done because cash sales was also coming in the collection list so to avoid that use  OUT_ACC1VAN now present in icelab_test db earlier it was OUT_ACC1
+        // now update this in every sp of customer 
+        // https://cubixweberp.com:313/api/OutstandingStmt/Icelab_test/OUT_ACC1VAN/12050005/-/2025-12-05/2025-12-12/-
+        // earlier like this https://cubixweberp.com:313/api/OutstandingStmt/Icelab_test/OUT_ACC1/12050005/-/2025-12-05/2025-12-12/-
+
+        console.log(`${appUrl}OutstandingStmt/${cmpcode}/OUT_ACC1VAN/${accountNo}/-/${fromDate}/${toDate}/-`)
         try {
-            const result = await axios.get(`${appUrl}OutstandingStmt/${cmpcode}/OUT_ACC1/${accountNo}/-/${fromDate}/${toDate}/-`)
+            const result = await axios.get(`${appUrl}OutstandingStmt/${cmpcode}/OUT_ACC1VAN/${accountNo}/-/${fromDate}/${toDate}/-`)
             setStatementData(result.data)
             // setDisplayData(result.data);
             console.log('fetchStatementData', result.data)

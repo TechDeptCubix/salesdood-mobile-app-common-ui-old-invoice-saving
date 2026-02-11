@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Dimensions, ScrollViewComponent, Image, TextInput, PermissionsAndroid } from 'react-native'
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Dimensions, ScrollViewComponent, Image, TextInput, PermissionsAndroid, Alert } from 'react-native'
 import React, { useEffect, useState } from 'react'
 import axios from 'axios';
 import REACT_APP_BASE_URL from '../url/AppUrl';
@@ -64,6 +64,16 @@ const QuotationPop = ({
 
     console.log("van in Quotation Popup page >>", van)
 
+    const [locusername, setLocusername] = useState("");
+
+  useEffect(() => {
+    const getUserName = async () => {
+      const value = await AsyncStorage.getItem("loginUserName");
+      setLocusername(value ? value : "");
+    };
+    getUserName();
+  }, []);
+
     const getLetterheadBase64 = async () => new Promise((resolve, reject) => {
 
         RNFS.readFileAssets('premier_letterhead_text.txt').then(result => {
@@ -102,6 +112,16 @@ const QuotationPop = ({
 
 
     }
+
+
+  const [date, setDate] = useState(new Date());
+
+  const formatDate = date => {
+    const yyyy = date.getFullYear();
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const dd = String(date.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+  };
 
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState(null)
@@ -144,7 +164,9 @@ const QuotationPop = ({
 
         switch (companyCodeToCheck) {
             case "MALBAR": return "100335207500003";
-            case "PREMIER": return "10027835690000"
+            case "PREMIER": return "10027835690000";
+            case "ICELAB": return "104112430400003";
+            case "ICELAB_TEST": return "104112430400003";
             default: return "-"
         }
 
@@ -231,7 +253,14 @@ const QuotationPop = ({
             display:flex;
             justify-content: center;
         }
-
+        .LogoContent_below_company_name {
+            font-weight: bold;
+            font-family: 'Calibri', 'InriaSans-Regular', sans-serif;
+            font-size: 16px;
+            text-align: center;
+            margin-top:20px;
+            margin-bottom:20px;
+        }
         .CmpnyLogo {
             width: 80%;
             height: 150px;
@@ -490,11 +519,30 @@ const QuotationPop = ({
     <img class="image_letterhead" src=${logoUri}
     </div>` : ""}
 
-        <div class=${cmpcode == 'premier' ? "header_without_top_margin" : "header"}>
+    ${cmpcode?.trim().toLowerCase() == 'premier' ?
+       `<div class=${cmpcode == 'premier' ? "header_without_top_margin" : "header"}>
             <div class="LogoContent">
                 <div>TAX INVOICE</div>
             </div>
-        </div>
+        </div>`
+        :
+        ""
+    }
+
+        <div class=${cmpcode?.trim().toLowerCase() == 'icelab' || cmpcode?.trim().toLowerCase() == 'icelab_test' ? "header_zero_margin_top" : "header"}>
+            
+                <div class="LogoContent">
+                    <div>THE ICE LAB MANUFACTURING LLC</div>
+                </div>
+                <div class="LogoContent_below_company_name">
+                        <div>Central Plaza 2, Al Jurf</div>
+                        <div>Ajman, UAE</div>
+                        <div>Tel:065617700</div>
+                    
+                </div>  
+                 <div class="LogoContent"> TAX INVOICE </div>
+
+        </div>      
 
         <div class="content">
 
@@ -542,7 +590,7 @@ const QuotationPop = ({
 
              <div class="TrnTop">
                 <div class="label">TRN Number:</div>
-                <div class="labelValue">${trn ? trn : ''}</div>
+                <div class="labelValue">${selectedCustomer ? selectedCustomer.TRN : ''}</div>
             </div>
 
 
@@ -693,6 +741,20 @@ const QuotationPop = ({
                     border-top: 1px solid gray;
                     border-bottom: 1px solid gray;
                     margin-top: 90px;
+                }
+
+                .header_zero_margin_top {
+                    /* background-color: #12151C; */
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                     justify-content: center;
+                    width: 100%;
+                    padding: 8px 0;
+                    color: black;
+                    border-top: 1px solid gray;
+                    border-bottom: 1px solid gray;
+                     margin-top: 0px;
                 }
         
                 .HeadTop {
@@ -1266,13 +1328,13 @@ const QuotationPop = ({
 
             }
 
-            console.log("cash_customer_account_number ---->>>>>",cashCustomerName,  cash_customer_account_number)
+            console.log("cash_customer_account_number ---->>>>>", cashCustomerName, cash_customer_account_number)
 
-            
+
 
 
             let standardizedObject = {
-                deptno: deptNo ? deptNo : '',
+                deptno: deptNo ? deptNo : '',  
                 operation: type && type === 'edit' ? 'edit' : 'save',
                 soNo: 0,
                 soDate: currentDate, // pass date here correctly  yyyy-mm-dd
@@ -1315,7 +1377,7 @@ const QuotationPop = ({
 
                 console.log('makeOrderapi>>+++}}}', newStandardisedSalesOrder, postData)
 
-                
+
 
                 const response = await axios.post(`${newStandardisedSalesOrder}`, postData, {
                     headers: {
@@ -1404,14 +1466,14 @@ const QuotationPop = ({
                 console.log("appurl before sending", appUrlpath)
 
                 console.log('reqData +++', transformedDataInv)
-                
+
                 const response = await axios.post(appUrlpath, postData, {
                     headers: {
                         'Content-Type': 'application/json',
                     }
                 });
 
-                
+
                 console.log('Invoice created successfully', response);
                 console.log('Invoice created successfully', response.data);
 
@@ -1568,7 +1630,7 @@ const QuotationPop = ({
             slno: (index + 1) + "",
             code: item.Code?.trim(),
             description: item.Description?.trim(),
-            locn: van?.trim(),
+            locn: van == "----" ? "" : van?.trim(),
             unit: unitValue,
             qty: item.quantity,
             unitPrice: item.unitPrice,
@@ -1616,7 +1678,7 @@ const QuotationPop = ({
             do_data: "",
             q_no: "0",
             inv_type: "",
-            user_id: "ADMIN",
+            user_id: locusername,
             fdisc_amt: "0",
             costc: "",
             job_code: "",
@@ -1663,7 +1725,7 @@ const QuotationPop = ({
             // deptno: 'HO',
             month: "",
             cashcred: "",
-            inv_date: "2024-07-01",
+            inv_date: formatDate(date), // yyy-mm-dd passing date here in backend if no getdate and accepts this it will be saved in db, // danger dont pass dummy date because in 313 api changed to accept previous date from date coming from app for jawafa so thats why their original entry gone to previous date reshmi corrected it by accepting current date 
             so_no: "0",
             sys_date: "2024-07-01",
             comm_pd_dt: "2024-07-01",
@@ -1701,10 +1763,10 @@ const QuotationPop = ({
             salesacc: "",
             salesAccDesc: "",
             Slno: String(index + 1),
-            code: item.Code.trim(),
-            description: item.Description.trim(),
-            locn: van,
-            unit: "PCS",
+            code: item.Code?.trim(),
+            description: item.Description?.trim(),
+            locn: van == "----" ? "" : van,
+            unit: item.unit,
             qty: item.quantity,
             'Unit Price': item.unitPrice,
             'Disc%': "0",
@@ -1713,7 +1775,7 @@ const QuotationPop = ({
             cntrl: "",
             Fraction: "1",
             "vat%": "5",
-            "Unit Cost": String(item.Cost_Avg),
+            "Unit Cost":item.Cost_Avg ? String(item.Cost_Avg) : "0",
             dono: "0",
             sono: "0",
             quotno: "0",
@@ -1854,12 +1916,18 @@ const QuotationPop = ({
 
 
                         <View style={styles.CustomerSection}>
+
+                        <Text>Inv date : {formatDate(date)}</Text>
+
+                        <Text>User : {locusername}</Text>
+
                             {
                                 selectedCustomer &&
                                 <>
                                     <View style={styles.CustomerItemWrap}>
                                         <Text style={styles.CustomerTagText}>Customer</Text>
                                     </View>
+                                    
                                     <View style={styles.CustomerItemWrap}>
                                         <Text style={styles.CustomerValueText}>{selectedCustomer ? selectedCustomer.Custname : ''}</Text>
                                     </View>
@@ -1987,6 +2055,10 @@ const QuotationPop = ({
                                                     <Text style={styles.DescSubTextValue}>{item.Code}</Text>
                                                 </View>
                                                 <View style={styles.DescCont}>
+                                                    <Text style={styles.DescSubText}>Item Unit :</Text>
+                                                    <Text style={styles.DescSubTextValue}>{item.unit}</Text>
+                                                </View>
+                                                <View style={styles.DescCont}>
                                                     <Text style={styles.DescSubText}>Unit Price :</Text>
                                                     {
                                                         cmpcode === 'AUTOMAX' ?
@@ -2042,7 +2114,13 @@ const QuotationPop = ({
                                 keyboardType="numeric" // This ensures the numeric keyboard appears
                                 onChangeText={text => {
                                     const numericText = text.replace(/[^0-9.]/g, ''); // This removes any non-numeric characters
-                                    setDiscount(numericText);
+                                    if(numericText > totalUnitPrice ){
+                                        Alert.alert('Discount exceeded total', '', [{text: 'OK'}]);
+                                        return;
+                                    }else{
+                                        setDiscount(numericText);
+                                    }
+                                    
                                 }}
                                 // onChangeText={text => setDiscount(text)}
                                 placeholderTextColor="#aaa"
@@ -2294,13 +2372,13 @@ const QuotationPop = ({
                             }} onPress={() => resultClosePress()}>
                                 <Text style={styles.CancelText}>Close</Text>
                             </TouchableOpacity>
-                            <TouchableOpacity style={{
+                            {/* <TouchableOpacity style={{
                                 backgroundColor: 'green',
                                 padding: 12,
                                 borderRadius: 8
                             }} onPress={generatePDF}>
                                 <Text style={styles.PDFText}>Save Pdf</Text>
-                            </TouchableOpacity>
+                            </TouchableOpacity> */}
                         </View>
                     </View>
                 </View>

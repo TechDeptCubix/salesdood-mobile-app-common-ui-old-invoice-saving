@@ -950,7 +950,8 @@ const GoodsCollectionDelivery = ({ }) => {
     const getSaleDetails = () => {
 
 
-        const apiurl = `${appUrl}TaskItemList/${cmpCode}/sales/${listItem.primarydoc}/${deptno}/-/-`
+        //const apiurl = `${appUrl}TaskItemList/${cmpCode}/sales/${listItem.primarydoc}/${deptno}/-/-` previously but not deptno branch from where this was created should be send
+        const apiurl = `${appUrl}TaskItemList/${cmpCode}/sales/${listItem.primarydoc}/${listItem.Branch}/-/-`
 
         console.log("apiurl getsaledetails++ listItem", apiurl, listItem)
 

@@ -677,7 +677,7 @@ const GoodsCollectionDeliveryPoolList = ({ fetchMyPickListLength, showAcceptDeta
 
         const apiurl = `${appUrl}CRMTaskMainListFilter/TASRA/DELIVERYITEM/-/-/-/${listItem.task_id}/${listItem.Branch?.trim()}/1900-01-01/1900-01-01/-/-/-`
 
-        console.log("apiurl getDeliveryDetails>>>++", apiurl)
+        console.log("apiurl getDeliveryDetails>>>++ listItem", apiurl, listItem)
 
 
 
@@ -995,7 +995,7 @@ const GoodsCollectionDeliveryPoolList = ({ fetchMyPickListLength, showAcceptDeta
 
 
                     <View style={{ flexDirection: "row", borderBottomWidth: 1 }}>
-                        <TouchableOpacity style={getTabStyle(1)} onPress={() => { setTabNumber(1); console.log("button 1 clicked") }}><Text style={getTextColor(1)}>Open <Text style={{ backgroundColor: "#000000", color: "#ffffff", padding: "4px" }}>{"   " + pickData?.length + "  "}</Text></Text></TouchableOpacity>
+                        <TouchableOpacity style={getTabStyle(1)} onPress={() => { setTabNumber(1); console.log("button 1 clicked") }}><Text style={getTextColor(1)}>Open <Text style={{ backgroundColor: "#000000", color: "#ffffff", padding: "4px" }}>{"   " + countOfHeaders?.open_count + "  "}</Text></Text></TouchableOpacity>
                         <TouchableOpacity style={getTabStyle(2)} onPress={() => { setTabNumber(2); console.log("button 2 clicked") }}><Text style={getTextColor(2)}>Alloted <Text style={{ backgroundColor: "#000000", color: "#ffffff", padding: "4px" }}>{"   " + countOfHeaders?.accepted_count + "  "}</Text></Text></TouchableOpacity>
                         <TouchableOpacity style={getTabStyle(3)} onPress={() => { setTabNumber(3); console.log("button 3 clicked") }}><Text style={getTextColor(3)}>Started <Text style={{ backgroundColor: "#000000", color: "#ffffff", padding: "4px" }}>{"   " + countOfHeaders?.started_count + "  "}</Text> </Text></TouchableOpacity>
                         <TouchableOpacity style={getTabStyle(4)} onPress={() => { setTabNumber(4); console.log("button 4 clicked") }}><Text style={getTextColor(4)}>Completed <Text style={{ backgroundColor: "#000000", color: "#ffffff", padding: "4px" }}>{"   " + countOfHeaders?.delivered_count + "  "}</Text></Text></TouchableOpacity>
@@ -1195,7 +1195,7 @@ const GoodsCollectionDeliveryPoolList = ({ fetchMyPickListLength, showAcceptDeta
                                         {/* <Text style={styles.TitleText}>{item.do_date.split('T')[0]}</Text> */}
                                         <View style={{ flexDirection: "row" }}>
                                             <Text style={[styles.TitleText, { fontSize: 12, color: "#000000", fontWeight: "700" }]}>
-                                                PDDT:
+                                                PT:
                                                 {(item["PDD &Time"].split(" ")[0])}{" "}
                                             </Text>
 
@@ -1271,7 +1271,7 @@ const GoodsCollectionDeliveryPoolList = ({ fetchMyPickListLength, showAcceptDeta
 
 
                                                 <View style={{ marginLeft: 6 }}>
-                                                    <Text style={[styles.TitleText, { marginVertical: 0, marginLeft: 4, fontSize: 12 }]}>PDDT Timer</Text>
+                                                    <Text style={[styles.TitleText, { marginVertical: 0, marginLeft: 4, fontSize: 12 }]}>PT Timer</Text>
 
 
                                                     {isAfter(parseISO(item.task_date), new Date()) ?
@@ -1369,7 +1369,7 @@ const GoodsCollectionDeliveryPoolList = ({ fetchMyPickListLength, showAcceptDeta
                                                     <TouchableOpacity style={[styles.RejectButton, { backgroundColor: "#9fc5e8", marginLeft: 10 }]} onPress={() => { changeTaskStatusCommmonMethod(item, "ESCALATED") }}>
                                                         <Text style={{ color: "#000000" }}>Escalated</Text>
                                                     </TouchableOpacity>
-                                                    <TouchableOpacity style={[styles.RejectButton, { backgroundColor: "#FFFFC5", marginLeft: 10 }]} onPress={() => { setCurrentListItemToSave(item); save_delivery_items_last_step(item, "HANDEDOVER"); setShowHideDriverList(prev => !prev) }}>
+                                                    <TouchableOpacity style={[styles.RejectButton, { backgroundColor: "#FFFFC5", marginLeft: 10 }]} onPress={() => { setCurrentListItemToSave(item); setShowHideDriverList(prev => !prev) }}>
                                                         <Text style={{ color: "#000000" }}>Handed To</Text>
                                                     </TouchableOpacity>
 
@@ -1539,87 +1539,135 @@ const GoodsCollectionDeliveryPoolList = ({ fetchMyPickListLength, showAcceptDeta
                 </View>
             </Modal>
 
+
+
             <Modal
-                animationType="fade" // Controls how the modal appears
-                transparent={true}  // Allows the background (screen behind the modal) to show
-                visible={showHideDeliveredToBox} // Linked to state for visibility
-                onRequestClose={() => setShowHideDeliveredToBox(false)} // Handles closing on hardware back button (Android)
+                animationType="fade"
+                transparent={true}
+                visible={showHideDeliveredToBox}
+                onRequestClose={() => setShowHideDeliveredToBox(false)}
             >
-                {/* Full-screen dark overlay with centered content */}
                 <View style={styles.centeredView}>
-                    {/* The actual popup container */}
-                    <View style={styles.modalView}>
-                        <Text style={styles.modalTitle}>Delivered To</Text>
+                    <View style={[styles.modalView, { maxHeight: '90%', paddingVertical: 20 }]}>
 
-                        <TextInput style={styles.input} onChangeText={(text) => handleUserTypedDeliveredTo(text)} value={user_typed_delivered_to} />
 
-                        <View style={{ flexDirection: "row", paddingBottom:20, width: '100%'}}>
-                            <View style={{ width: "70%", height: 80, flexDirection: "row" }}>
-                                
-                                <SignatureScreen
-                                    ref={signatureRef}
-                                    style={{ flex: 1 }}
-                                    onOK={handleSignature}
-                                    onEmpty={handleEmpty}
-                                    onClear={() => console.log('Signature manually cleared')}
-                                    autoClear={false} // ✅ Keeps drawing after save
-                                    descriptionText="Sign above"
-                                    webStyle={`
-          .m-signature-pad--footer { display: none; }
-          .m-signature-pad { flex: 1; }
-        `}
-                                    injectedJavaScript={injectedJS} // ✅ Fixes first stroke
-                                />
-                                <View style={{ flexDirection: 'row', alignItems:"center", justifyContent: 'space-around'}}>
+                        <View style={{ flexDirection: "row", width: "100%", alignItems: "center", justifyContent: "flex-start", marginBottom: 10 }}>
+
+                            <Text style={[styles.modalTitle_delivery]}>Delivered To</Text>
+
+                            <TextInput
+                                style={styles.input_in_modal}
+                                placeholder='Name'
+                                onChangeText={(text) => handleUserTypedDeliveredTo(text)}
+                                value={user_typed_delivered_to}
+                            />
+
+                            <TextInput
+                                style={styles.input_in_modal}
+                                placeholder='mobile number'
+                                onChangeText={(text) => handleUserTypedDeliveredTo(text)}
+                                value={user_typed_delivered_to}
+                            />
+                        </View>
+
+                        <View style={{ flexDirection: "row", paddingBottom: 20, width: '100%' }}>
+                            <View style={{ width: "70%", height: 150 }}>
+                                <View style={{ height: 120, width: '100%', borderWidth: 1, borderColor: '#ccc', overflow: 'hidden' }}>
+                                    <SignatureScreen
+                                        ref={signatureRef}
+                                        style={{ flex: 1, margin: 0, padding: 0 }}
+                                        onOK={handleSignature}
+                                        onEmpty={handleEmpty}
+                                        onClear={() => console.log('Signature manually cleared')}
+                                        autoClear={false}
+                                        descriptionText=""
+                                        scrollEnabled={false}
+                                        webStyle={`
+                                * { margin: 0 !important; padding: 0 !important; box-sizing: border-box; }
+                                body { margin: 0 !important; padding: 0 !important; overflow: hidden !important; touch-action: none; }
+                                .m-signature-pad { 
+                                    margin: 0 !important; 
+                                    padding: 0 !important; 
+                                    height: 120px !important; 
+                                    width: 100% !important;
+                                    overflow: hidden !important;
+                                    position: relative !important;
+                                }
+                                .m-signature-pad--body { 
+                                    margin: 0 !important; 
+                                    padding: 0 !important;
+                                    height: 120px !important; 
+                                    width: 100% !important;
+                                    overflow: hidden !important;
+                                    position: absolute !important;
+                                    top: 0 !important;
+                                    left: 0 !important;
+                                }
+                                .m-signature-pad--footer { display: none !important; }
+                                canvas { 
+                                    margin: 0 !important; 
+                                    padding: 0 !important;
+                                    display: block !important;
+                                    width: 100% !important;
+                                    height: 120px !important;
+                                    position: absolute !important;
+                                    top: 0 !important;
+                                    left: 0 !important;
+                                }
+                            `}
+                                        injectedJavaScript={injectedJS}
+                                    />
+                                </View>
+                                <View style={{ flexDirection: 'row', alignItems: "center", justifyContent: 'space-around', marginTop: 10 }}>
                                     <Button title="Save" onPress={() => signatureRef.current.readSignature()} />
                                     <Button title="Clear" onPress={handleClear} />
                                 </View>
                             </View>
 
-                            <View style={{ width: "30%" ,justifyContent:"center",alignItems:"center"}}>
-
-
+                            <View style={{ width: "30%", justifyContent: "center", alignItems: "center" }}>
                                 <View style={styles.LabelCell}>
                                     <TouchableOpacity
-                                        style={{ flexDirection: "row" }}
-                                        onPress={() => {
-
-                                            handleTakePhoto();
-                                        }}
+                                        style={{ flexDirection: "row", alignItems: "center" }}
+                                        onPress={() => handleTakePhoto()}
                                     >
-                                        
-                                        <Image source={require('../images/cameraTasra.png')} style={{ width: 25, height: 25 }} />
-                                        <Text style={{color:"#000000"}}>Take Photo</Text>
+                                        <Image
+                                            source={require('../images/cameraTasra.png')}
+                                            style={{ width: 25, height: 25, marginRight: 5 }}
+                                        />
+                                        <Text style={{ color: "#000000" }}>Take Photo</Text>
                                     </TouchableOpacity>
 
-                                    {
-                                        imageFileObjectTaken &&
-                                        // <TouchableOpacity onPress={() => handleImagePreview(item.label)}>
-                                        <TouchableOpacity>
-                                            <Image source={{ uri: imageFileObjectTaken.uri ? imageFileObjectTaken.uri : '' }} style={styles.imagePreview} />
+                                    {imageFileObjectTaken && (
+                                        <TouchableOpacity style={{ marginTop: 10 }}>
+                                            <Image
+                                                source={{ uri: imageFileObjectTaken.uri ? imageFileObjectTaken.uri : '' }}
+                                                style={styles.imagePreview}
+                                            />
                                         </TouchableOpacity>
-                                    }
-
+                                    )}
                                 </View>
                             </View>
                         </View>
 
                         <View style={{ flexDirection: "row", marginTop: 10 }}>
-
                             <TouchableOpacity
                                 style={[styles.button, styles.buttonCancel]}
-                                onPress={() => { setCurrentListItemToSave(null); setShowHideDeliveredToBox(false) }}
+                                onPress={() => {
+                                    setCurrentListItemToSave(null);
+                                    setShowHideDeliveredToBox(false);
+                                }}
                             >
                                 <Text style={styles.textStyleCancel}>Cancel</Text>
-
                             </TouchableOpacity>
 
                             <TouchableOpacity
                                 style={[styles.button, styles.buttonClose, { marginLeft: 10 }]}
-                                onPress={() => { save_delivery_items_last_step(currentListItemToSave, "DELIVERED"); setShowHideDeliveredToBox(false) }}
+                                onPress={() => {
+                                    save_delivery_items_last_step(currentListItemToSave, "DELIVERED");
+                                    setShowHideDeliveredToBox(false);
+                                }}
                             >
                                 <Text style={styles.textStyle}>Save</Text>
-
                             </TouchableOpacity>
                         </View>
                     </View>
@@ -2068,6 +2116,12 @@ const styles = StyleSheet.create({
         marginBottom: 15,
         color: '#333',
     },
+
+    modalTitle_delivery: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: '#333',
+    },
     listContainer: {
         width: '100%',
         maxHeight: 200, // Explicit max height for the list within the modal
@@ -2114,6 +2168,17 @@ const styles = StyleSheet.create({
 
     },
 
+    input_in_modal: {
+        borderWidth: 0.5,
+        borderColor: '#ccc',
+        borderRadius: 4,
+        padding: 0,
+        backgroundColor: '#fff',
+        height: 40,
+        minWidth: "30%",
+        marginLeft: 10
+
+    },
     captureButton: {
         // position: 'absolute',
         // bottom: 50,

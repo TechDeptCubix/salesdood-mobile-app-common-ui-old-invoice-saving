@@ -591,7 +591,7 @@ const Login = () => {
                         }
                         <Text style={styles.cmpcodeText}>{cmpcode}</Text>
 
-                        <Text style={{ color: 'grey', marginRight: 6, fontFamily: 'Lexend-Regular' }}>version number 5.82_v2</Text>
+                        <Text style={{ color: 'grey', marginRight: 6, fontFamily: 'Lexend-Regular' }}>version number 5.90_v2</Text>
 
                         <View style={styles.CBXImgWrap}>
                             {/* <Image style={styles.CBXImg} source={require('../images/cubix_logo_new.png')}></Image> */}

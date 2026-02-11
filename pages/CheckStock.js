@@ -79,18 +79,20 @@ const CheckStock = () => {
             // loc = master means will search in all locations
            // let apiUrl = `${appUrl}Search_Items/InventoryList?cmpcode=${cmpcode}&guid=F4369B5E-8E23-4BCF-AC82-76C977991728&mod=MOBILE&Loc=MASTER&searchKey=${encodedvalue}`
 
+           let locationToPassToApiBasedOnVan = vanFromLocalStorage == '----' ? "MASTER" : vanFromLocalStorage
+           let modeToPassToApiBasedOnVan = vanFromLocalStorage == '----' ? "MOBILE" : "all_top1000"
+
+           // passing all_top1000 because it is present in all customer sp so location based qty will come inside Stock i think 
+           // so if normal user MOBILE mode if van user then pass all_top1000
+
            // not changed to MODE CODE because on result CODE comes so i have to change everywhere
-           let apiUrl = `${appUrl}Search_Items/InventoryList?cmpcode=${cmpcode}&guid=F4369B5E-8E23-4BCF-AC82-76C977991728&mod=MOBILE&Loc=MASTER&searchKey=${encodedvalue}`
+           let apiUrl = `${appUrl}Search_Items/InventoryList?cmpcode=${cmpcode}&guid=F4369B5E-8E23-4BCF-AC82-76C977991728&mod=${modeToPassToApiBasedOnVan}&Loc=${locationToPassToApiBasedOnVan}&searchKey=${encodedvalue}`
 
             //let apiUrl = `${appUrl}Search_Items/${cmpcode}/Sitem/${encodedvalue}`
 
 
             console.log("search url ==>", apiUrl)
-            if (cmpcode?.trim()?.toUpperCase() == "MESHARI") {
-
-                apiUrl = `${appUrl}Search_Itemsnew/${cmpcode}/Sitem/${encodedvalue}/${vanFromLocalStorage}`
-                console.log(`searchStock url meshari  -- ${apiUrl}`)
-            }
+          
 
             await axios.get(apiUrl)
                 .then((res) => {
@@ -171,13 +173,13 @@ const CheckStock = () => {
 
 
 
-            let apiUrl = `${appUrl}Search_Items/InventoryList?cmpcode=${cmpcode}&guid=F4369B5E-8E23-4BCF-AC82-76C977991728&mod=MOBILE50&Loc=MASTER&searchKey=ALL`
+            let locationToPassToApiBasedOnVan = vanFromLocalStorage == '----' ? "MASTER" : vanFromLocalStorage
+            let modeToPassToApiBasedOnVan = vanFromLocalStorage == '----' ? "MOBILE50" : "all_top1000"
 
-            if (cmpcode?.trim()?.toUpperCase() == "MESHARI") {
+            // if location ie van is present use this mode all_top1000 insted of MOBILE50 because arya said if location is passed then call goes to another sp there MOBILE50 is not present but  all_top1000 is present in all customers sp
+            let apiUrl = `${appUrl}Search_Items/InventoryList?cmpcode=${cmpcode}&guid=F4369B5E-8E23-4BCF-AC82-76C977991728&mod=${modeToPassToApiBasedOnVan}&Loc=${locationToPassToApiBasedOnVan}&searchKey=ALL`
 
-                apiUrl = `${appUrl}Search_Itemsnew/${cmpcode}/Sitem50/12345/${vanFromLocalStorage}`
-                console.log(`searchStock url meshari  -- ${apiUrl}`)
-            }
+            
 
             console.log(`fetchTop50StockItems--${apiUrl}`)
 
@@ -203,7 +205,7 @@ const CheckStock = () => {
         if (appUrl && cmpcode) {
             fetchTop50StockItems()
         }
-    }, [appUrl, cmpcode])
+    }, [appUrl, cmpcode, vanFromLocalStorage])
 
     useEffect(() => {
         fetchAppUrl()
@@ -372,7 +374,7 @@ const CheckStock = () => {
                                                 }}>
 
                                                     <Text style={[styles.StockListDescText, { width: '75%' }]}>{item.Description}</Text>
-                                                    <Text style={[styles.StockListDescTextSmall, { color: '#30B3A4', fontFamily: 'Lexend-Regular', }]}>{item.Qty}</Text>
+                                                    <Text style={[styles.StockListDescTextSmall, { color: '#30B3A4', fontFamily: 'Lexend-Regular', }]}>{ item.Qty  }</Text>
                                                 </View>
                                                 <View style={{
                                                     flexDirection: 'row',
@@ -696,7 +698,7 @@ const CheckStock = () => {
                                                     width: '100%'
                                                 }}>
                                                     <Text style={[styles.StockListDescText, { width: '75%' }]}>{item.Description}</Text>
-                                                    <Text style={[styles.StockListDescTextSmall, { color: '#30B3A4', fontFamily: 'Lexend-Regular', }]}>{item.Qty}</Text>
+                                                    <Text style={[styles.StockListDescTextSmall, { color: '#30B3A4', fontFamily: 'Lexend-Regular', }]}>{ item.Qty }</Text>
                                                 </View>
                                                 <View style={{
                                                     flexDirection: 'row',
