@@ -4,7 +4,6 @@ import { format, addDays, subDays, addMonths, subMonths, addYears, subYears, las
 // import PieChart from 'react-native-pie-chart'
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { PieChart } from 'react-native-svg-charts';
 import urls from '../url/AppUrl'
 
 const { DashUrl } = urls;
@@ -398,21 +397,7 @@ const TopGroupCodes = () => {
                     </View>
                 }
 
-                {
-                    grpData && series && grpNames && showLoader === false &&
-                    showNoData === false && pieData &&
-                    // <PieChart
-                    //     widthAndHeight={widthAndHeight}
-                    //     series={series}
-                    //     sliceColor={hexValues.slice(0, series.length)}
-                    //     coverRadius={0.55}
-                    //     doughnut={true}
-                    //     coverFill={'#FFF'}
-                    // />
-
-                    <PieChart style={{ height: 200, width: '100%' }} data={pieData} padAngle={0} />
-                }
-
+                
                 {
                     showLoader === true &&
                     <ActivityIndicator size={180} color={'green'} />

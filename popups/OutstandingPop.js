@@ -1,98 +1,117 @@
-import { View, Text, StyleSheet, Dimensions, TouchableOpacity, Image, Button, ScrollView, FlatList, PermissionsAndroid, ActivityIndicator } from 'react-native'
-import React, { useEffect, useState } from 'react'
+import {
+  View,
+  Text,
+  StyleSheet,
+  Dimensions,
+  TouchableOpacity,
+  Image,
+  Button,
+  ScrollView,
+  FlatList,
+  PermissionsAndroid,
+  ActivityIndicator,
+} from 'react-native';
+import React, {useEffect, useState} from 'react';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import axios from 'axios';
-import { format } from 'date-fns';
+import {format} from 'date-fns';
 import data from '../url/statement.json';
 import RNHTMLtoPDF from 'react-native-html-to-pdf';
 import Share from 'react-native-share';
 import RNFS from 'react-native-fs';
+import Icon from 'react-native-vector-icons/MaterialIcons';
 
+const OutstandingPop = ({
+  setShowOutstandingPop,
+  privateKey,
+  accountNo,
+  appUrl,
+  cmpcode,
+  setSelectedStock,
+  selectedStock,
+}) => {
+  const [isFromDatePickerVisible, setFromDatePickerVisibility] =
+    useState(false);
+  const [fromData, setFromData] = useState(null);
 
-const OutstandingPop = ({ setShowOutstandingPop, privateKey, accountNo, appUrl, cmpcode, setSelectedStock, selectedStock }) => {
+  const [isToDatePickerVisible, setToDatePickerVisibility] = useState(false);
+  const [toData, setToData] = useState(format(new Date(), 'yyyy-MM-dd'));
 
-    const [isFromDatePickerVisible, setFromDatePickerVisibility] = useState(false);
-    const [fromData, setFromData] = useState(null);
+  const [statementData, setStatementData] = useState(null);
 
-    const [isToDatePickerVisible, setToDatePickerVisibility] = useState(false);
-    const [toData, setToData] = useState(null);
+  const [displayData, setDisplayData] = useState(null);
+  const [totalDebit, setTotalDebit] = useState(0);
+  const [totalCredit, setTotalCredit] = useState(0);
+  const [totalBalance, setTotalBalance] = useState(0);
 
-    const [statementData, setStatementData] = useState(null)
+  const [showLoader, setShowLoader] = useState(false);
 
-    const [displayData, setDisplayData] = useState(null)
-    const [totalDebit, setTotalDebit] = useState(0);
-    const [totalCredit, setTotalCredit] = useState(0);
-    const [totalBalance, setTotalBalance] = useState(0);
+  const [errorText, setErrorText] = useState('');
 
-    const [showLoader, setShowLoader] = useState(false)
+  const [pdfUri, setPdfUri] = useState(null);
 
-    const [errorText, setErrorText] = useState('')
+  const getCurrentDate = () => {
+    return format(new Date(), 'yyyy-MM-dd');
+  };
 
-    const [pdfUri, setPdfUri] = useState(null);
+  const generatePDF = async () => {
+    // if (Platform.OS === 'android') {
+    //     const granted = await PermissionsAndroid.request(
+    //         PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
+    //         {
+    //             title: 'Storage Permission',
+    //             message: 'This app needs access to your storage to download the PDF',
+    //             buttonNeutral: 'Ask Me Later',
+    //             buttonNegative: 'Cancel',
+    //             buttonPositive: 'OK',
+    //         }
+    //     );
+    //     if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
+    //         console.log('Storage permission denied');
+    //         return;
+    //     }
+    // }
 
-    const getCurrentDate = () => {
-        return format(new Date(), 'yyyy-MM-dd');
-    };
-
-
-    const generatePDF = async () => {
-        // if (Platform.OS === 'android') {
-        //     const granted = await PermissionsAndroid.request(
-        //         PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
-        //         {
-        //             title: 'Storage Permission',
-        //             message: 'This app needs access to your storage to download the PDF',
-        //             buttonNeutral: 'Ask Me Later',
-        //             buttonNegative: 'Cancel',
-        //             buttonPositive: 'OK',
-        //         }
-        //     );
-        //     if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
-        //         console.log('Storage permission denied');
-        //         return;
-        //     }
-        // }
-
-        if (Platform.OS === 'android') {
-            try {
-                console.log('Requesting permission...');
-                const granted = await PermissionsAndroid.request(
-                    PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
-                    {
-                        title: 'Storage Permission',
-                        message: 'This app needs access to your storage to download the PDF',
-                        buttonNeutral: 'Ask Me Later',
-                        buttonNegative: 'Cancel',
-                        buttonPositive: 'OK',
-                    }
-                );
-                console.log('Permission result:', granted);
-                if (granted === PermissionsAndroid.RESULTS.GRANTED) {
-                    console.log('You can use the storage');
-                } else {
-                    console.log('Storage permission denied');
-                }
-            } catch (err) {
-                console.warn('Permission request error:', err);
-            }
+    if (Platform.OS === 'android') {
+      try {
+        console.log('Requesting permission...');
+        const granted = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
+          {
+            title: 'Storage Permission',
+            message:
+              'This app needs access to your storage to download the PDF',
+            buttonNeutral: 'Ask Me Later',
+            buttonNegative: 'Cancel',
+            buttonPositive: 'OK',
+          },
+        );
+        console.log('Permission result:', granted);
+        if (granted === PermissionsAndroid.RESULTS.GRANTED) {
+          console.log('You can use the storage');
+        } else {
+          console.log('Storage permission denied');
         }
+      } catch (err) {
+        console.warn('Permission request error:', err);
+      }
+    }
 
+    const getLetterheadBase64 = async () =>
+      new Promise((resolve, reject) => {
+        RNFS.readFileAssets('soca_letterhead_text.txt')
+          .then(result => {
+            console.log(result);
+            resolve(result);
+          })
+          .catch(err => {
+            console.log(err);
+          });
+      });
 
-        const getLetterheadBase64 = async () => new Promise((resolve, reject) => {
+    const logoUri = await getLetterheadBase64();
 
-            RNFS.readFileAssets('soca_letterhead_text.txt').then(result => {
-                console.log(result);
-                resolve(result)
-            }).catch(err => {
-                console.log(err);
-            })
-    
-    
-        })
-
-const logoUri = await getLetterheadBase64()
-
-        const htmlContent2 = `
+    const htmlContent2 = `
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -211,9 +230,13 @@ const logoUri = await getLetterheadBase64()
     <div class="table-container">
 
 
- ${cmpcode.toLowerCase().trim() == 'soca' ? `<div>
+ ${
+   cmpcode.toLowerCase().trim() == 'soca'
+     ? `<div>
  <img class="image_letterhead" src=${logoUri}
- </div>` : ""}
+ </div>`
+     : ''
+ }
 
     <div class="statementHead">
         <div><h3>Outstanding Statement of Account ${accountNo}</h3></div>
@@ -234,7 +257,9 @@ const logoUri = await getLetterheadBase64()
             <div class="NameTag">Address</div>
             <div>:</div>
             <div class="ValueTag">
-                ${selectedStock.address1} ${selectedStock.address2} ${selectedStock.address3}
+                ${selectedStock.address1} ${selectedStock.address2} ${
+      selectedStock.address3
+    }
             </div>
         </div>
         <div class="CustomerDetailsTab">
@@ -264,31 +289,65 @@ const logoUri = await getLetterheadBase64()
                 </tr>
             </thead>
             <tbody>
-                ${displayData && displayData.map(item => `
+                ${
+                  displayData &&
+                  displayData
+                    .map(
+                      item => `
                     <tr class="table-row">
                         <td class="data-cell">${item.INVDATE.split('T')[0]}</td>
                         <td class="data-cell">${item.INV}</td>
                         <td class="data-cell">${item.NAME}</td>
                         <td class="data-cell">${item.DESCRIPTION}</td>
-                       <td class="data-cell">${new Intl.NumberFormat('en-US', { minimumFractionDigits: 3, maximumFractionDigits: 3 }).format(item.DEBIT)}</td>
-                       <td class="data-cell">${new Intl.NumberFormat('en-US', { minimumFractionDigits: 3, maximumFractionDigits: 3 }).format(item.CREDIT)}</td>
-                       <td class="data-cell">${new Intl.NumberFormat('en-US', { minimumFractionDigits: 3, maximumFractionDigits: 3 }).format(item.BALANCE)}</td>
+                       <td class="data-cell">${new Intl.NumberFormat('en-US', {
+                         minimumFractionDigits: 3,
+                         maximumFractionDigits: 3,
+                       }).format(item.DEBIT)}</td>
+                       <td class="data-cell">${new Intl.NumberFormat('en-US', {
+                         minimumFractionDigits: 3,
+                         maximumFractionDigits: 3,
+                       }).format(item.CREDIT)}</td>
+                       <td class="data-cell">${new Intl.NumberFormat('en-US', {
+                         minimumFractionDigits: 3,
+                         maximumFractionDigits: 3,
+                       }).format(item.BALANCE)}</td>
                     </tr>
-                `).join('')}
+                `,
+                    )
+                    .join('')
+                }
             </tbody>
         </table>
         <div class="total-values-wrap">
            <div class="total-cont">
                 <div class="total-label">Total Debit</div>
-                <div class="total-value-text">${totalDebit && new Intl.NumberFormat('en-US', { minimumFractionDigits: 3, maximumFractionDigits: 3 }).format(totalDebit)}</div>
+                <div class="total-value-text">${
+                  totalDebit &&
+                  new Intl.NumberFormat('en-US', {
+                    minimumFractionDigits: 3,
+                    maximumFractionDigits: 3,
+                  }).format(totalDebit)
+                }</div>
             </div>
             <div class="total-cont">
                 <div class="total-label">Total Credit</div>
-                <div class="total-value-text">${totalCredit && new Intl.NumberFormat('en-US', { minimumFractionDigits: 3, maximumFractionDigits: 3 }).format(totalCredit)}</div>
+                <div class="total-value-text">${
+                  totalCredit &&
+                  new Intl.NumberFormat('en-US', {
+                    minimumFractionDigits: 3,
+                    maximumFractionDigits: 3,
+                  }).format(totalCredit)
+                }</div>
             </div>
             <div class="total-cont">
                 <div class="total-label">Total Balance</div>
-                <div class="total-value-text">${totalBalance && new Intl.NumberFormat('en-US', { minimumFractionDigits: 3, maximumFractionDigits: 3 }).format(totalBalance)}</div>
+                <div class="total-value-text">${
+                  totalBalance &&
+                  new Intl.NumberFormat('en-US', {
+                    minimumFractionDigits: 3,
+                    maximumFractionDigits: 3,
+                  }).format(totalBalance)
+                }</div>
             </div>
         </div>
     </div>
@@ -296,7 +355,8 @@ const logoUri = await getLetterheadBase64()
 </html>
 `;
 
-        {/* <div class="total-values-wrap">
+    {
+      /* <div class="total-values-wrap">
 <div class="total-cont">
     <div class="total-label">Total Debit</div>
     <div class="total-value-text">${totalDebit && (totalDebit).toFixed(3)}</div>
@@ -309,158 +369,160 @@ const logoUri = await getLetterheadBase64()
     <div class="total-label">Total Balance</div>
     <div class="total-value-text">${totalBalance && (totalBalance).toFixed(3)}</div>
 </div>
-</div> */}
-
-
-        let options = {
-
-            html: htmlContent2,
-            fileName: 'oustanding',
-            directory: 'Documents',
-        };
-
-        try {
-            const file = await RNHTMLtoPDF.convert(options);
-            setPdfUri(`file://${file.filePath}`);
-            await Share.open({
-                title: 'Share Order Details PDF',
-                url: `file://${file.filePath}`,
-            });
-        } catch (error) {
-            console.error(error);
-        }
-    };
-
-
-
-    // setDisplayData(newData);
-    // setTotalDebit(debitTotal);
-    // setTotalCredit(creditTotal);
-    // setTotalBalance(debitTotal - creditTotal);
-
-    const showFromDatePicker = () => {
-        setFromDatePickerVisibility(true);
-    };
-
-    const hideFromDatePicker = () => {
-        setFromDatePickerVisibility(false);
-    };
-
-    const handleFromDateConfirm = (date) => {
-        const formattedDate = format(date, 'yyyy-MM-dd');
-        setFromData(formattedDate);
-        hideFromDatePicker();
-    };
-
-
-    const showToDatePicker = () => {
-        setToDatePickerVisibility(true);
-    };
-
-    const hideToDatePicker = () => {
-        setToDatePickerVisibility(false);
-    };
-
-    const handleToDateConfirm = (date) => {
-        const formattedDate = format(date, 'yyyy-MM-dd');
-        setToData(formattedDate);
-        hideToDatePicker();
-    };
-
-    const fetchStatementData = async () => {
-        setShowLoader(true)
-        console.log(`${appUrl}OutstandingStmt/${cmpcode}/OUT_ACC1/${accountNo}/-/${fromData}/${toData}/-`)
-        try {
-            const result = await axios.get(`${appUrl}OutstandingStmt/${cmpcode}/OUT_ACC1/${accountNo}/-/${fromData}/${toData}/-`)
-            setStatementData(result.data)
-            // setDisplayData(result.data);
-            console.log('fetchStatementData', result.data)
-            setShowLoader(false)
-        } catch (error) {
-            console.log('fetchStatementDataError', error)
-            setShowLoader(false)
-            setErrorText('Some Error Occured,Please Try again Later')
-        }
+</div> */
     }
 
-    const fetchRunningData = () => {
-        try {
-            // Calculate running balance
-            let runningBalance = 0;
-            let debitTotal = 0;
-            let creditTotal = 0;
-
-            const newData = statementData.map(entry => {
-                debitTotal += entry.DEBIT;
-                creditTotal += entry.CREDIT;
-                runningBalance = runningBalance + entry.DEBIT - entry.CREDIT;
-
-                return { ...entry, BALANCE: runningBalance };
-            });
-
-            setDisplayData(newData);
-            setTotalDebit(debitTotal);
-            setTotalCredit(creditTotal);
-            setTotalBalance(debitTotal - creditTotal);
-        } catch (error) {
-            console.log('fetchRunningDataError', error)
-        }
-    }
-
-    // useEffect(() => {
-    //     if (fromData && toData) {
-    //         fetchStatementData()
-    //     }
-    // }, [fromData, toData])
-
-    useEffect(() => {
-        if (statementData) {
-            fetchRunningData()
-        }
-    }, [statementData])
-
-    useEffect(() => {
-        const currentDate = getCurrentDate();
-
-        setFromData(currentDate)
-        // setToData(currentDate)
-    }, [])
-
-    const goBack = () => {
-        setSelectedStock(null)
-        setShowOutstandingPop(false)
-    }
-
-    const formatNumber = (number, decimals = 2) => {
-        return new Intl.NumberFormat('en-US', {
-            minimumFractionDigits: decimals,
-            maximumFractionDigits: decimals,
-        }).format(number);
+    let options = {
+      html: htmlContent2,
+      fileName: 'oustanding',
+      directory: 'Documents',
     };
 
+    try {
+      const file = await RNHTMLtoPDF.convert(options);
+      setPdfUri(`file://${file.filePath}`);
+      await Share.open({
+        title: 'Share Order Details PDF',
+        url: `file://${file.filePath}`,
+      });
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
-    // console.log('privateKey', privateKey)
-    // console.log('statementData', statementData)
-    console.log('displayData', displayData)
-    // console.log('debitTotal', totalDebit)
-    // console.log('creditTotal', totalCredit)
-    // console.log('totalBalance', totalBalance)
-    // console.log('jsonfiledata', data)
+  // setDisplayData(newData);
+  // setTotalDebit(debitTotal);
+  // setTotalCredit(creditTotal);
+  // setTotalBalance(debitTotal - creditTotal);
 
-    return (
-        <View style={styles.modalContainer}>
-            <View style={styles.modalContent}>
+  const showFromDatePicker = () => {
+    setFromDatePickerVisibility(true);
+  };
 
-                <View style={styles.HomeTextCont}>
-                    <TouchableOpacity style={styles.SettingsWrap} onPress={() => goBack()}>
-                        <Image style={styles.HeadIcon} source={require('../images/lftArr.png')} />
-                    </TouchableOpacity>
-                    <Text style={styles.HomeText}>Outstanding Statement</Text>
-                </View>
+  const hideFromDatePicker = () => {
+    setFromDatePickerVisibility(false);
+  };
 
-                <View style={styles.FromToDateButtonWrap}>
+  const handleFromDateConfirm = date => {
+    const formattedDate = format(date, 'yyyy-MM-dd');
+    setFromData(formattedDate);
+    hideFromDatePicker();
+  };
 
-                    {/* <View style={styles.DateButtonWrap}>
+  const showToDatePicker = () => {
+    setToDatePickerVisibility(true);
+  };
+
+  const hideToDatePicker = () => {
+    setToDatePickerVisibility(false);
+  };
+
+  const handleToDateConfirm = date => {
+    const formattedDate = format(date, 'yyyy-MM-dd');
+    setToData(formattedDate);
+    hideToDatePicker();
+  };
+
+  const fetchStatementData = async () => {
+    setShowLoader(true);
+    console.log(
+      `${appUrl}OutstandingStmt/${cmpcode}/OUT_ACC1/${accountNo}/-/${fromData}/${toData}/-`,
+    );
+    try {
+      const result = await axios.get(
+        `${appUrl}OutstandingStmt/${cmpcode}/OUT_ACC1/${accountNo}/-/${fromData}/${toData}/-`,
+      );
+      setStatementData(result.data);
+      // setDisplayData(result.data);
+      console.log('fetchStatementData', result.data);
+      setShowLoader(false);
+    } catch (error) {
+      console.log('fetchStatementDataError', error);
+      setShowLoader(false);
+      setErrorText('Some Error Occured,Please Try again Later');
+    }
+  };
+
+  const fetchRunningData = () => {
+    try {
+      // Calculate running balance
+      let runningBalance = 0;
+      let debitTotal = 0;
+      let creditTotal = 0;
+
+      const newData = statementData.map(entry => {
+        debitTotal += entry.DEBIT;
+        creditTotal += entry.CREDIT;
+        runningBalance = runningBalance + entry.DEBIT - entry.CREDIT;
+
+        return {...entry, BALANCE: runningBalance};
+      });
+
+      setDisplayData(newData);
+      setTotalDebit(debitTotal);
+      setTotalCredit(creditTotal);
+      setTotalBalance(debitTotal - creditTotal);
+    } catch (error) {
+      console.log('fetchRunningDataError', error);
+    }
+  };
+
+  // useEffect(() => {
+  //     if (fromData && toData) {
+  //         fetchStatementData()
+  //     }
+  // }, [fromData, toData])
+
+  useEffect(() => {
+    if (statementData) {
+      fetchRunningData();
+    }
+  }, [statementData]);
+
+  useEffect(() => {
+    const currentDate = getCurrentDate();
+
+    setFromData(currentDate);
+    // setToData(currentDate)
+  }, []);
+
+  const goBack = () => {
+    setSelectedStock(null);
+    setShowOutstandingPop(false);
+  };
+
+  const formatNumber = (number, decimals = 2) => {
+    return new Intl.NumberFormat('en-US', {
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
+    }).format(number);
+  };
+
+  // console.log('privateKey', privateKey)
+  // console.log('statementData', statementData)
+  console.log('displayData', displayData);
+  // console.log('debitTotal', totalDebit)
+  // console.log('creditTotal', totalCredit)
+  // console.log('totalBalance', totalBalance)
+  // console.log('jsonfiledata', data)
+
+  return (
+    <View style={styles.modalContainer}>
+      <View style={styles.modalContent}>
+        <View style={styles.HomeTextCont}>
+          <TouchableOpacity
+            style={styles.SettingsWrap}
+            onPress={() => goBack()}>
+            <Image
+              style={styles.HeadIcon}
+              source={require('../images/lftArr.png')}
+            />
+          </TouchableOpacity>
+          <Text style={styles.HomeText}>Outstanding Statement</Text>
+        </View>
+
+        <View style={styles.FromToDateButtonWrap}>
+          {/* <View style={styles.DateButtonWrap}>
                         <TouchableOpacity style={styles.DetailsButton} onPress={showFromDatePicker}>
                             <Text style={styles.DetailsText}>FromDate</Text>
                         </TouchableOpacity>
@@ -472,25 +534,27 @@ const logoUri = await getLetterheadBase64()
                         )}
                     </View> */}
 
-                    <View style={styles.DateButtonWrap}>
-                        <TouchableOpacity style={styles.DetailsButton} onPress={showToDatePicker}>
-                            <Text style={styles.DetailsText}>As on Date</Text>
-                        </TouchableOpacity>
+          <View style={styles.DateButtonWrap}>
+            <TouchableOpacity
+              style={styles.DetailsButton}
+              onPress={showToDatePicker}>
+              <Icon name="calendar-today" size={18} color="#333" />
 
-                        {toData && (
-                            <Text style={styles.dateText}>
-                                {toData}
-                            </Text>
-                        )}
-                    </View>
+              <Text style={styles.DetailsText}>
+                {toData ? toData : 'Select To Date'}
+              </Text>
+            </TouchableOpacity>
+          </View>
 
-                    <View>
-                        <TouchableOpacity style={styles.ViewButton} onPress={() => fetchStatementData()}>
-                            <Text style={styles.ViewText}>View</Text>
-                        </TouchableOpacity>
-                    </View>
+          <View>
+            <TouchableOpacity
+              style={styles.ViewButton}
+              onPress={() => fetchStatementData()}>
+              <Text style={styles.ViewText}>View</Text>
+            </TouchableOpacity>
+          </View>
 
-                    {/* 
+          {/* 
                     <DateTimePickerModal
                         isVisible={isFromDatePickerVisible}
                         mode="date"
@@ -498,340 +562,345 @@ const logoUri = await getLetterheadBase64()
                         onCancel={hideFromDatePicker}
                     /> */}
 
-                    <DateTimePickerModal
-                        isVisible={isToDatePickerVisible}
-                        mode="date"
-                        onConfirm={handleToDateConfirm}
-                        onCancel={hideToDatePicker}
-                    />
-                </View>
-
-                {
-                    showLoader &&
-                    <View>
-                        <ActivityIndicator />
-                    </View>
-                }
-
-                {
-                    errorText &&
-                    <View>
-                        <Text style={styles.ErrorText}>{errorText}</Text>
-                    </View>
-
-                }
-
-                {
-                    displayData && displayData.length === 0 && !showLoader &&
-                    <View>
-                        <Text style={styles.ErrorText}>No data available</Text>
-                    </View>
-                }
-
-                <View style={{
-                    marginTop: 8,
-                    maxHeight: 560,
-                    // minHeight: 200,
-                    marginBottom: 16,
-                    shadowColor: '#000',
-                    shadowOffset: { width: 0, height: 2 },
-                    shadowOpacity: 0.25,
-                    shadowRadius: 3,
-                    elevation: 5,
-                    flex: 1
-                }}>
-                    {
-                        displayData && displayData.length > 0 &&
-                        <>
-                            <ScrollView horizontal={true} style={{ width: '100%' }}>
-
-                                <View style={styles.TableContainer}>
-                                    <View style={styles.tableRow}>
-                                        <Text style={[styles.headerCell, { borderTopLeftRadius: 4 }]}>INVDATE</Text>
-                                        <Text style={styles.headerCell}>INV</Text>
-                                        <Text style={styles.headerCell}>NAME</Text>
-                                        <Text style={styles.headerCell}>DESCRIPTION</Text>
-                                        <Text style={styles.headerCell}>DEBIT</Text>
-                                        <Text style={styles.headerCell}>CREDIT</Text>
-                                        <Text style={[styles.headerCell, { borderTopRightRadius: 4 }]}>BALANCE</Text>
-                                    </View>
-                                    <ScrollView nestedScrollEnabled={true}>
-
-                                        <FlatList
-                                            data={displayData}
-                                            keyExtractor={(item, index) => index.toString()}
-                                            contentContainerStyle={{}}
-                                            renderItem={({ item }) => (
-                                                <View style={styles.tableRow}>
-                                                    <Text style={styles.dataCell}>{item.INVDATE.split('T')[0]}</Text>
-                                                    <Text style={styles.dataCell}>{item.INV}</Text>
-                                                    <Text style={styles.dataCell}>{item.NAME}</Text>
-                                                    <Text style={styles.dataCell}>{item.DESCRIPTION}</Text>
-                                                    <Text style={styles.dataCell}>{formatNumber(item.DEBIT, 3)}</Text>
-                                                    <Text style={styles.dataCell}>{formatNumber(item.CREDIT, 3)}</Text>
-                                                    <Text style={styles.dataCell}>{formatNumber(item.BALANCE, 3)}</Text>
-                                                </View>
-                                            )}
-                                            ListEmptyComponent={
-                                                <View>
-                                                    <Text style={{ color: 'red' }}>No data available</Text>
-                                                </View>
-                                            }
-                                        />
-
-
-                                    </ScrollView>
-
-
-                                </View>
-                            </ScrollView>
-
-                            <View style={styles.TotalValuesWrap}>
-                                <View style={styles.TotalCont}>
-                                    <Text style={styles.TotalLabel}>Total Debit</Text>
-                                    <Text style={styles.TotalValueText}>{totalDebit && formatNumber(totalDebit, 3)}</Text>
-                                </View>
-                                <View style={styles.TotalCont}>
-                                    <Text style={styles.TotalLabel}>Total Credit</Text>
-                                    <Text style={styles.TotalValueText}>{totalCredit && formatNumber(totalCredit, 3)}</Text>
-                                </View>
-                                <View style={styles.TotalCont}>
-                                    <Text style={styles.TotalLabel}>Total Balance</Text>
-                                    <Text style={styles.TotalValueText}>{totalBalance && formatNumber(totalBalance, 3)}</Text>
-                                </View>
-                            </View>
-                        </>
-                    }
-                </View>
-
-                {
-                    displayData && displayData.length > 0 &&
-                    <View style={styles.PDFWrap}>
-                        <TouchableOpacity style={styles.ViewButton} onPress={() => generatePDF()}>
-                            <Text style={styles.ViewText}>PDF</Text>
-                        </TouchableOpacity>
-                    </View>
-
-                }
-            </View>
+          <DateTimePickerModal
+            isVisible={isToDatePickerVisible}
+            mode="date"
+            onConfirm={handleToDateConfirm}
+            onCancel={hideToDatePicker}
+          />
         </View>
-    )
-}
+
+        {showLoader && (
+          <View>
+            <ActivityIndicator />
+          </View>
+        )}
+
+        {errorText && (
+          <View>
+            <Text style={styles.ErrorText}>{errorText}</Text>
+          </View>
+        )}
+
+        {displayData && displayData.length === 0 && !showLoader && (
+          <View>
+            <Text style={styles.ErrorText}>No data available</Text>
+          </View>
+        )}
+
+        <View
+          style={{
+            marginTop: 8,
+            maxHeight: 560,
+            // minHeight: 200,
+            marginBottom: 16,
+            shadowColor: '#000',
+            shadowOffset: {width: 0, height: 2},
+            shadowOpacity: 0.25,
+            shadowRadius: 3,
+            elevation: 5,
+            flex: 1,
+          }}>
+          {displayData && displayData.length > 0 && (
+            <>
+              <ScrollView horizontal={true} style={{width: '100%'}}>
+                <View style={styles.TableContainer}>
+                  <View style={styles.tableRow}>
+                    <Text style={[styles.headerCell, {borderTopLeftRadius: 4}]}>
+                      INVDATE
+                    </Text>
+                    <Text style={styles.headerCell}>INV</Text>
+                    <Text style={styles.headerCell}>NAME</Text>
+                    <Text style={styles.headerCell}>DESCRIPTION</Text>
+                    <Text style={styles.headerCell}>DEBIT</Text>
+                    <Text style={styles.headerCell}>CREDIT</Text>
+                    <Text
+                      style={[styles.headerCell, {borderTopRightRadius: 4}]}>
+                      BALANCE
+                    </Text>
+                  </View>
+                  <ScrollView nestedScrollEnabled={true}>
+                    <FlatList
+                      data={displayData}
+                      keyExtractor={(item, index) => index.toString()}
+                      contentContainerStyle={{}}
+                      renderItem={({item}) => (
+                        <View style={styles.tableRow}>
+                          <Text style={styles.dataCell}>
+                            {item.INVDATE.split('T')[0]}
+                          </Text>
+                          <Text style={styles.dataCell}>{item.INV}</Text>
+                          <Text style={styles.dataCell}>{item.NAME}</Text>
+                          <Text style={styles.dataCell}>
+                            {item.DESCRIPTION}
+                          </Text>
+                          <Text style={styles.dataCell}>
+                            {formatNumber(item.DEBIT, 3)}
+                          </Text>
+                          <Text style={styles.dataCell}>
+                            {formatNumber(item.CREDIT, 3)}
+                          </Text>
+                          <Text style={styles.dataCell}>
+                            {formatNumber(item.BALANCE, 3)}
+                          </Text>
+                        </View>
+                      )}
+                      ListEmptyComponent={
+                        <View>
+                          <Text style={{color: 'red'}}>No data available</Text>
+                        </View>
+                      }
+                    />
+                  </ScrollView>
+                </View>
+              </ScrollView>
+
+              <View style={styles.TotalValuesWrap}>
+                <View style={styles.TotalCont}>
+                  <Text style={styles.TotalLabel}>Total Debit</Text>
+                  <Text style={styles.TotalValueText}>
+                    {totalDebit && formatNumber(totalDebit, 3)}
+                  </Text>
+                </View>
+                <View style={styles.TotalCont}>
+                  <Text style={styles.TotalLabel}>Total Credit</Text>
+                  <Text style={styles.TotalValueText}>
+                    {totalCredit && formatNumber(totalCredit, 3)}
+                  </Text>
+                </View>
+                <View style={styles.TotalCont}>
+                  <Text style={styles.TotalLabel}>Total Balance</Text>
+                  <Text style={styles.TotalValueText}>
+                    {totalBalance && formatNumber(totalBalance, 3)}
+                  </Text>
+                </View>
+              </View>
+            </>
+          )}
+        </View>
+
+        {displayData && displayData.length > 0 && (
+          <View style={styles.PDFWrap}>
+            <TouchableOpacity
+              style={styles.ViewButton}
+              onPress={() => generatePDF()}>
+              <Text style={styles.ViewText}>PDF</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+      </View>
+    </View>
+  );
+};
 
 const styles = StyleSheet.create({
-    modalContainer: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
 
-        zIndex: 2,
-        backgroundColor: '#00000080',
-        position: 'absolute',
-        width: '100%',
-        height: '100%',
-    },
-    modalContent: {
-        // backgroundColor: '#F7F7F7',
-        // backgroundColor: '#5A55CA',
-        backgroundColor: 'white',
-        // paddingHorizontal: 8,
-        borderRadius: 5,
-        // alignItems: 'center',
-        width: '95%',
-        minHeight: 750,
-        maxHeight: Dimensions.get('window').height - 80
-    },
+    zIndex: 2,
+    backgroundColor: '#00000080',
+    position: 'absolute',
+    width: '100%',
+    height: '100%',
+  },
+  modalContent: {
+    // backgroundColor: '#F7F7F7',
+    // backgroundColor: '#5A55CA',
+    backgroundColor: 'white',
+    // paddingHorizontal: 8,
+    borderRadius: 5,
+    // alignItems: 'center',
+    width: '95%',
+    minHeight: 750,
+    maxHeight: Dimensions.get('window').height - 80,
+  },
 
-    HomeTextCont: {
-        width: '100%',
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'flex-start',
-        backgroundColor: '#DCDBDB',
-        paddingVertical: 10,
-        paddingHorizontal: 6
-    },
-    HomeText: {
-        fontSize: 18,
-        color: '#1A6CF6',
-        // borderBottomColor: 'gold',
-        // borderBottomWidth: 2,
-        marginTop: 6,
-        marginLeft: 6,
-        paddingBottom: 8,
-        fontFamily: 'Lexend-Regular'
-    },
-    SettingsWrap: {
-        // backgroundColor: '#189A2E',
-        // backgroundColor: 'red',
-        // borderRadius: 50,
-        padding: 6
-    },
-    HeadIcon: {
-        width: 20,
-        height: 20
-    },
+  HomeTextCont: {
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    backgroundColor: '#DCDBDB',
+    paddingVertical: 10,
+    paddingHorizontal: 6,
+  },
+  HomeText: {
+    fontSize: 18,
+    color: '#1A6CF6',
+    // borderBottomColor: 'gold',
+    // borderBottomWidth: 2,
+    marginTop: 6,
+    marginLeft: 6,
+    paddingBottom: 8,
+    fontFamily: 'Lexend-Regular',
+  },
+  SettingsWrap: {
+    // backgroundColor: '#189A2E',
+    // backgroundColor: 'red',
+    // borderRadius: 50,
+    padding: 6,
+  },
+  HeadIcon: {
+    width: 20,
+    height: 20,
+  },
 
-    FromToDateButtonWrap: {
-        width: '100%',
-        flexDirection: 'row',
-        justifyContent: 'space-around',
-        paddingHorizontal: 12,
-        paddingVertical: 12
-    },
+  FromToDateButtonWrap: {
+    width: '100%',
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+  },
 
-    DateButtonWrap: {
-        flexDirection: 'column',
-        alignItems: 'center'
+  DateButtonWrap: {
+    flexDirection: 'column',
+    alignItems: 'center',
+  },
+  dateText: {
+    fontSize: 14,
+    color: '#1A6CF6',
+    paddingBottom: 8,
+    fontFamily: 'Lexend-Regular',
+  },
 
-    },
-    dateText: {
-        fontSize: 14,
-        color: '#1A6CF6',
-        paddingBottom: 8,
-        fontFamily: 'Lexend-Regular'
-    },
+  ViewButton: {
+    backgroundColor: '#30B3A4',
+    padding: 8,
+    borderRadius: 4,
+    borderWidth: 0.5,
+    borderColor: 'grey',
+  },
+  ViewText: {
+    fontSize: 14,
+    color: 'white',
+    fontFamily: 'Lexend-Regular',
+  },
 
-    ViewButton: {
-        backgroundColor: '#30B3A4',
-        padding: 8,
-        borderRadius: 4,
-        borderWidth: 0.5,
-        borderColor: 'grey',
-    },
-    ViewText: {
-        fontSize: 14,
-        color: 'white',
-        fontFamily: 'Lexend-Regular',
-    },
+  TableContainer: {
+    width: '100%',
+    // padding: 10,
+    marginTop: 8,
+    alignItems: 'center',
+    // paddingBottom: 50,
+    // height: 500,
 
-    TableContainer: {
-        width: "100%",
-        // padding: 10,
-        marginTop: 8,
-        alignItems: 'center',
-        // paddingBottom: 50,
-        // height: 500,
+    flex: 1,
+    // width: 1200,
+  },
+  tableRow: {
+    flexDirection: 'row',
+    width: '100%',
+    // justifyContent: 'space-between',
+    // marginBottom: 5,
+    // paddingVertical: 5,
+  },
+  headerCell: {
+    // flex: 1,
+    // backgroundColor: '#5A55CA',
+    padding: 10,
+    textAlign: 'center',
+    fontWeight: 'bold',
+    flexWrap: 'nowrap',
+    width: 150,
+    color: '#2b2b2b',
+    fontFamily: 'Lexend-Bold',
+    // borderTopWidth: 1,
+    // borderLeftWidth: 1,
+    // borderRightWidth: 1,
+    // borderColor: '#dbdbdb',
+  },
+  dataCell: {
+    // flex: 1,
+    // backgroundColor: '#F3F3F3',
+    backgroundColor: '#f1faee',
+    padding: 10,
+    textAlign: 'center',
+    width: 150,
+    // borderTopWidth: 1,
+    // borderLeftWidth: 1,
+    // borderRightWidth: 1,
+    // borderColor: '#dbdbdb',
+    color: 'black',
+    fontFamily: 'Lexend-Regular',
+  },
 
-        flex: 1,
-        // width: 1200,
-    },
-    tableRow: {
-        flexDirection: 'row',
-        width: '100%',
-        // justifyContent: 'space-between',
-        // marginBottom: 5,
-        // paddingVertical: 5,
-    },
-    headerCell: {
-        // flex: 1,
-        // backgroundColor: '#5A55CA',
-        padding: 10,
-        textAlign: 'center',
-        fontWeight: 'bold',
-        flexWrap: 'nowrap',
-        width: 150,
-        color: '#2b2b2b',
-        fontFamily: 'Lexend-Bold',
-        // borderTopWidth: 1,
-        // borderLeftWidth: 1,
-        // borderRightWidth: 1,
-        // borderColor: '#dbdbdb',
+  TotalValuesWrap: {
+    width: '100%',
+    flexDirection: 'column',
+    // paddingHorizontal: 8
+  },
+  TotalCont: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    borderTopWidth: 1,
+    borderLeftWidth: 1,
+    borderRightWidth: 1,
+    borderColor: '#dbdbdb',
+    paddingRight: 12,
+  },
+  TotalLabel: {
+    // backgroundColor: '#5A55CA',
+    padding: 10,
+    textAlign: 'center',
+    fontWeight: 'bold',
+    flexWrap: 'nowrap',
+    width: 150,
+    color: '#2b2b2b',
+    fontFamily: 'Lexend-Bold',
+    // borderTopWidth: 1,
+    // borderLeftWidth: 1,
+    // borderRightWidth: 1,
+    // borderColor: '#dbdbdb',
+  },
+  TotalValueText: {
+    fontSize: 16,
+    color: '#2b2b2b',
+    fontFamily: 'Lexend-Bold',
+  },
 
-    },
-    dataCell: {
-        // flex: 1,
-        // backgroundColor: '#F3F3F3',
-        backgroundColor: '#f1faee',
-        padding: 10,
-        textAlign: 'center',
-        width: 150,
-        // borderTopWidth: 1,
-        // borderLeftWidth: 1,
-        // borderRightWidth: 1,
-        // borderColor: '#dbdbdb',
-        color: "black",
-        fontFamily: 'Lexend-Regular'
+  PDFWrap: {
+    width: '100%',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    paddingBottom: 32,
+  },
+  PDFButton: {
+    backgroundColor: '#1A6CF6',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 4,
+  },
+  PDFText: {
+    fontFamily: 'Lexend-Regular',
+    color: 'white',
+    fontSize: 14,
+  },
 
-    },
+  ErrorText: {
+    fontSize: 16,
+    color: 'red',
+    fontFamily: 'Lexend-Bold',
+  },
 
-    TotalValuesWrap: {
-        width: '100%',
-        flexDirection: 'column',
-        // paddingHorizontal: 8
-    },
-    TotalCont: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        borderTopWidth: 1,
-        borderLeftWidth: 1,
-        borderRightWidth: 1,
-        borderColor: '#dbdbdb',
-        paddingRight: 12
-    },
-    TotalLabel: {
-        // backgroundColor: '#5A55CA',
-        padding: 10,
-        textAlign: 'center',
-        fontWeight: 'bold',
-        flexWrap: 'nowrap',
-        width: 150,
-        color: '#2b2b2b',
-        fontFamily: 'Lexend-Bold',
-        // borderTopWidth: 1,
-        // borderLeftWidth: 1,
-        // borderRightWidth: 1,
-        // borderColor: '#dbdbdb',
-    },
-    TotalValueText: {
-        fontSize: 16,
-        color: '#2b2b2b',
-        fontFamily: 'Lexend-Bold'
-    },
+  DetailsButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    padding: 10,
+    borderRadius: 8,
+    backgroundColor: '#f9f9f9',
+  },
+  DetailsText: {
+    fontSize: 14,
+    color: 'black',
+    fontFamily: 'Lexend-Regular',
+  },
+});
 
-
-    PDFWrap: {
-        width: '100%',
-        flexDirection: 'row',
-        justifyContent: 'center',
-        paddingBottom: 32
-    },
-    PDFButton: {
-        backgroundColor: '#1A6CF6',
-        paddingHorizontal: 16,
-        paddingVertical: 10,
-        borderRadius: 4
-
-    },
-    PDFText: {
-        fontFamily: 'Lexend-Regular',
-        color: "white",
-        fontSize: 14
-    },
-
-    ErrorText: {
-        fontSize: 16,
-        color: 'red',
-        fontFamily: 'Lexend-Bold'
-    },
-
-    DetailsButton: {
-        backgroundColor: '#D8D8DA',
-        padding: 8,
-        borderRadius: 4,
-        marginRight: 8,
-        borderWidth: 0.5,
-        borderColor: 'grey',
-    },
-    DetailsText: {
-        fontSize: 14,
-        color: 'black',
-        fontFamily: 'Lexend-Regular',
-    },
-
-
-
-})
-
-export default OutstandingPop
+export default OutstandingPop;

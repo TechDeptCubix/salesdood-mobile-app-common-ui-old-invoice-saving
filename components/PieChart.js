@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Modal, Button } from 'react-native';
-import { PieChart } from 'react-native-svg-charts';
 
 const PieChartComp = () => {
     const [isModalVisible, setModalVisible] = useState(false);
@@ -26,12 +25,7 @@ const PieChartComp = () => {
 
     return (
         <>
-            <PieChart
-                style={{ height: 250 }}
-                data={data}
-                innerRadius={10}
-                outerRadius={80}
-            />
+           
             <View style={styles.container}>
                 <Text>DATATA</Text>
 

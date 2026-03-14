@@ -1,10 +1,8 @@
 import { View, Text, ImageBackground, Image, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native'
 import React, { useEffect, useState } from 'react'
 import { format, addDays, subDays, addMonths, subMonths, addYears, subYears, lastDayOfMonth, lastDayOfYear, startOfYear, startOfMonth } from 'date-fns';
-// import PieChart from 'react-native-pie-chart'
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { PieChart } from 'react-native-svg-charts';
 import urls from '../url/AppUrl'
 
 const { DashUrl } = urls;
@@ -406,20 +404,7 @@ const TopGroups = () => {
                     </View>
                 }
 
-                {
-                    grpData && series && grpNames && showLoader === false && showNoData === false && pieData &&
-                    // <PieChart
-                    //     widthAndHeight={widthAndHeight}
-                    //     series={series}
-                    //     sliceColor={hexValues.slice(0, series.length)}
-                    //     coverRadius={0.55}
-                    //     doughnut={true}
-                    //     coverFill={'#FFF'}
-                    //     onPress={(index) => handleSlicePress(index)}
-                    // />
-
-                    <PieChart style={{ height: 200, width: '100%' }} data={pieData} padAngle={0} />
-                }
+               
 
                 {
                     showLoader &&

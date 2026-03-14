@@ -146,9 +146,10 @@ const HomeNew = () => {
 
   const fetchSalesManDrop = async () => {
     const salesManDrop = (await AsyncStorage.getItem('sales_man_drop')) || '';
-
+    console.log('salesManDrop', salesManDrop);
     const salesManNameDrop =
       (await AsyncStorage.getItem('salesman_name_drop')) || '';
+    console.log('salesManNameDrop', salesManNameDrop);
 
     const appUrl = await AsyncStorage.getItem('appUrl');
 
@@ -639,29 +640,6 @@ const HomeNew = () => {
     };
   }, []);
 
-  // console.log('salesMan', salesMan)
-  // console.log('salesManName', salesManName)
-
-  // console.log('masterList', masterList)
-
-  // console.log('appUrl', appUrl)
-
-  // console.log('selectedSalesMan', selectedSalesMan)
-
-  // console.log('userDataArrayFromHomeNew', userDataArray)
-
-  // console.log('cmpName', cmpName)
-
-  // console.log('userLoginData', userLoginData)
-
-  // console.log('van', van)
-
-  // console.log('deptNo', deptNo)
-
-  // console.log('salesCollection', salesCollection)
-  // console.log('cashCollection', cashCollection)
-  // console.log('chequeCollection', chequeCollection)
-
   console.log('selectedBottomTab', selectedBottomTab);
 
   useEffect(() => {
@@ -736,192 +714,172 @@ const HomeNew = () => {
                 flexGrow: 1,
                 // backgroundColor: '#EFECE7'
               }}>
-              <View style={styles.topCont}>
-                {/* <View>
-                            <Button title='Send notification' onPress={()=>sendNotification()} />
-                        </View> */}
-
-                <View style={styles.TopSalesWrap}>
-                  <View
-                    style={{
-                      width: '96%',
-                      flexDirection: 'row',
-                      justifyContent: 'space-between',
-                      // paddingHorizontal: 12,
-                      // paddingVertical: 8
-                    }}>
-                    <View
-                      style={[
-                        styles.TopSalesBox,
-                        {backgroundColor: '#AEADB2'},
-                      ]}>
-                      <Text style={styles.TopBannerText}>Sales Order</Text>
-                      {showSalesCollLoader ? (
-                        <ActivityIndicator color={'white'} />
-                      ) : (
-                        <Text style={[styles.TopBannerText, {color: 'white'}]}>
-                          {(salesCollection && salesCollection[0]?.amount) ||
-                            'nil'}
-                        </Text>
-                      )}
-
-                      <Text style={styles.TopBannerText}>Credit Sales </Text>
-                      {showCreditSalesLoader ? (
-                        <ActivityIndicator color={'white'} />
-                      ) : (
-                        <Text style={[styles.TopBannerText, {color: 'white'}]}>
-                          {(salesInvoice && salesInvoice[0]?.amount) || 'nil'}
-                        </Text>
-                      )}
-
-                      <Text style={styles.TopBannerText}>Cash Sales </Text>
-                      {showCashSalesLoader ? (
-                        <ActivityIndicator color={'white'} />
-                      ) : (
-                        <Text style={[styles.TopBannerText, {color: 'white'}]}>
-                          {(salesInvoiceCash && salesInvoiceCash[0]?.amount) || 'nil'}
-                        </Text>
-                      )}
-                    </View>
-
-                    {cmpCode !== 'SUPERLAND' && (
-                      <>
-                        <View
-                          style={[
-                            styles.TopSalesBox,
-                            {backgroundColor: '#FF9501'},
-                          ]}>
-                          <Text style={styles.TopBannerText}>
-                            Cash Collection
-                          </Text>
-                          {showCashCollLoader ? (
-                            <ActivityIndicator color={'white'} />
-                          ) : (
-                            <Text
-                              style={[styles.TopBannerText, {color: 'white'}]}>
-                              {(cashCollection && cashCollection[0].amount) ||
-                                'nil'}
-                            </Text>
-                          )}
-                        </View>
-                        <View
-                          style={[
-                            styles.TopSalesBox,
-                            {backgroundColor: '#FF3B2F'},
-                          ]}>
-                          <Text style={styles.TopBannerText}>
-                            Cheque Collections
-                          </Text>
-                          {showChequeCollLoader ? (
-                            <ActivityIndicator color={'white'} />
-                          ) : (
-                            <Text
-                              style={[styles.TopBannerText, {color: 'white'}]}>
-                              {(chequeCollection &&
-                                chequeCollection[0].amount) ||
-                                'nil'}
-                            </Text>
-                          )}
-                        </View>
-                      </>
-                    )}
-                  </View>
-                </View>
-
-                {/* <View style={{ width: "100%", paddingHorizontal: 10, marginTop: 5 }}>
-
-                                    <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-                                        <Text style={{ fontSize: 14, color: "#000000" }}>
-                                            Achieved {salesCollection[0]?.amount}
-                                        </Text>
-                                        <Text style={{ fontSize: 14, color: "#000000" }}>
-                                            Target {salesmanTarget}
-                                        </Text>
-                                    </View>
-
-                                    <View style={{ width: "100%", height: 10, backgroundColor: "#f7f7f7", borderColor: "#D3D3D3", borderWidth: 1 }}>
-                                        <View style={{ width: (salesCollection[0]?.amount / salesmanTarget) * 100 + "%", height: 10, backgroundColor: "#ae3", }}>
-
-                                        </View>
-                                    </View>
-                                </View> */}
-
-                <View
-                  style={{
-                    width: '100%',
-                    flexDirection: 'row',
-                    justifyContent: 'center',
-                    marginTop: 3,
-                  }}>
-                  <Text style={[styles.cmpcodeText, {color: 'grey'}]}>
-                    {cmpName}
-                  </Text>
-                </View>
-
-                <View style={styles.TopUserBanner}>
-                  <View style={styles.UserAvatarCont}>
-                    <Image
-                      source={require('../images/ic_user_placeholder.png')}
-                      style={styles.userAvatar}></Image>
-                    <Text style={styles.userNameText}>
+              <View style={styles.modernHeaderWrapper}>
+                {/* TOP ROW: Welcome & Picker */}
+                <View style={styles.headerTopRow}>
+                  <View style={styles.welcomeSection}>
+                    <Text style={styles.greetingText}>Welcome back,</Text>
+                    <Text style={styles.userNameTextMain}>
                       {selectedSalesName
                         ? selectedSalesName.toUpperCase()
                         : salesManName.toUpperCase()}
                     </Text>
                   </View>
 
-                  <View style={styles.UserAvatarCont}>
-                    <Text style={styles.userNameText}>{formattedDate}</Text>
-                    <Text style={styles.userNameText}>{formattedTime}</Text>
-                  </View>
+                  {/* DROPDOWN SECTION: Moved to the top right for better access */}
+                  {userLoginData && (
+                    <View style={styles.pickerContainer}>
+                      {/* <Picker
+                        style={styles.minimalPicker}
+                        onValueChange={itemValue =>
+                          handlePickerClick(itemValue)
+                        }>
+                        {userLoginData.map((item, index) => (
+                          <Picker.Item
+                            label={`${item.DEPTNO || ''} - ${
+                              item.salesman_name || item.sales_man || ''
+                            }`}
+                            value={{
+                              sales_man: item.sales_man,
+                              dept_no: item.DEPTNO,
+                            }}
+                            key={index}
+                          />
+                        ))}
+                      </Picker> */}
+                      <Picker
+                        // selectedValue={selectedSalesMan}
 
-                  <View
-                    style={{
-                      flexDirection: 'column',
-                    }}>
-                    {console.log('userlogindata --->', userLoginData)}
-                    {userLoginData && (
-                      // <View style={styles.PickerWrap}>
-                      <View
-                        style={{
-                          backgroundColor: '#cdcdcd',
-                          borderWidth: 1,
-                          borderColor: '#a7a7a7',
-                          width: 40,
-                        }}>
-                        <Picker
-                          // selectedValue={selectedSalesMan}
-                          style={styles.picker}
-                          onValueChange={itemValue =>
-                            handlePickerClick(itemValue)
-                          }>
-                          {userLoginData &&
-                            userLoginData.map((item, index) => (
-                              <Picker.Item
-                                label={[
-                                  item.DEPTNO ? item.DEPTNO : item.Column1,
-                                  item.sales_man,
-                                  item.salesman_name,
-                                ]}
-                                value={{
-                                  sales_man: item.sales_man,
-                                  dept_no: item.DEPTNO,
-                                }}
-                                key={index}
-                              />
-                            ))}
-                        </Picker>
+                        style={styles.picker}
+                        onValueChange={itemValue =>
+                          handlePickerClick(itemValue)
+                        }>
+                        {userLoginData &&
+                          userLoginData.map((item, index) => (
+                            <Picker.Item
+                              label={[
+                                item.DEPTNO ? item.DEPTNO : item.Column1,
+
+                                item.sales_man,
+
+                                item.salesman_name,
+                              ]}
+                              value={{
+                                sales_man: item.sales_man,
+
+                                dept_no: item.DEPTNO,
+                              }}
+                              key={index}
+                            />
+                          ))}
+                      </Picker>
+                    </View>
+                  )}
+                </View>
+
+                {/* BOTTOM ROW: Just Company Name */}
+                <View style={styles.headerBottomRow}>
+                  <View style={styles.companyBadge}>
+                    <Text style={styles.cmpSubtitle}>{cmpName}</Text>
+                  </View>
+                </View>
+
+                {/* SALES STATS SECTION */}
+                <View style={styles.TopSalesWrap}>
+                  <View style={styles.modernContainer}>
+                    {/* PRIMARY SALES BOX */}
+                    <View
+                      style={[
+                        styles.modernSalesBox,
+                        {borderLeftColor: '#AEADB2'},
+                      ]}>
+                      <View style={styles.metricRow}>
+                        <Text style={styles.metricLabel}>Sales Order</Text>
+                        {showSalesCollLoader ? (
+                          <ActivityIndicator size="small" color="#AEADB2" />
+                        ) : (
+                          <Text style={styles.metricValue}>
+                            {(salesCollection && salesCollection[0]?.amount) ||
+                              '0.00'}
+                          </Text>
+                        )}
+                      </View>
+
+                      <View style={styles.metricRow}>
+                        <Text style={styles.metricLabel}>Credit Sales</Text>
+                        {showCreditSalesLoader ? (
+                          <ActivityIndicator size="small" color="#AEADB2" />
+                        ) : (
+                          <Text style={styles.metricValue}>
+                            {(salesInvoice && salesInvoice[0]?.amount) ||
+                              '0.00'}
+                          </Text>
+                        )}
+                      </View>
+
+                      <View style={styles.metricRow}>
+                        <Text style={styles.metricLabel}>Cash Sales</Text>
+                        {showCashSalesLoader ? (
+                          <ActivityIndicator size="small" color="#AEADB2" />
+                        ) : (
+                          <Text style={styles.metricValue}>
+                            {(salesInvoiceCash &&
+                              salesInvoiceCash[0]?.amount) ||
+                              '0.00'}
+                          </Text>
+                        )}
+                      </View>
+                    </View>
+
+                    {/* COLLECTIONS SECTION - Condition Intact */}
+                    {cmpCode !== 'SUPERLAND' && (
+                      <View style={styles.collectionsWrapper}>
+                        <View
+                          style={[
+                            styles.modernSalesBox,
+                            {borderLeftColor: '#FF9501', marginBottom: 8},
+                          ]}>
+                          <Text style={styles.metricLabelSmall}>
+                            Cash Collection
+                          </Text>
+                          {showCashCollLoader ? (
+                            <ActivityIndicator size="small" color="#FF9501" />
+                          ) : (
+                            <Text
+                              style={[
+                                styles.metricValueMain,
+                                {color: '#FF9501'},
+                              ]}>
+                              {(cashCollection && cashCollection[0].amount) ||
+                                '0.00'}
+                            </Text>
+                          )}
+                        </View>
+
+                        <View
+                          style={[
+                            styles.modernSalesBox,
+                            {borderLeftColor: '#FF3B2F'},
+                          ]}>
+                          <Text style={styles.metricLabelSmall}>
+                            Cheque Collection
+                          </Text>
+                          {showChequeCollLoader ? (
+                            <ActivityIndicator size="small" color="#FF3B2F" />
+                          ) : (
+                            <Text
+                              style={[
+                                styles.metricValueMain,
+                                {color: '#FF3B2F'},
+                              ]}>
+                              {(chequeCollection &&
+                                chequeCollection[0].amount) ||
+                                '0.00'}
+                            </Text>
+                          )}
+                        </View>
                       </View>
                     )}
-                    <View style={styles.deptVan}>
-                      <Text style={styles.userNameText}>
-                        {deptNo ? deptNo : ''}
-                      </Text>
-                      <Text style={styles.userNameText}>-</Text>
-                      <Text style={styles.userNameText}>
-                        {locName ? locName : ''}
-                      </Text>
-                    </View>
                   </View>
                 </View>
               </View>
@@ -3677,9 +3635,63 @@ const styles = StyleSheet.create({
   },
 
   TopSalesWrap: {
+    width: '100%',
+    paddingHorizontal: '2%',
+    marginTop: 10,
+  },
+  modernContainer: {
     flexDirection: 'row',
     width: '100%',
-    justifyContent: 'center',
+    justifyContent: 'space-between',
+  },
+  modernSalesBox: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 12,
+    flex: 1,
+    marginHorizontal: 4,
+    // Accent border on the left for a modern look
+    borderLeftWidth: 4,
+    // Modern soft shadow
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 3,
+  },
+  collectionsWrapper: {
+    flex: 1,
+    flexDirection: 'column',
+  },
+  metricRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 6,
+    borderBottomWidth: 0.5,
+    borderBottomColor: '#F0F0F0',
+  },
+  metricLabel: {
+    fontSize: 11,
+    color: '#666',
+    fontFamily: 'Lexend-Regular',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  metricLabelSmall: {
+    fontSize: 10,
+    color: '#666',
+    fontFamily: 'Lexend-Bold',
+    marginBottom: 4,
+  },
+  metricValue: {
+    fontSize: 13,
+    color: '#2B2B2B',
+    fontFamily: 'Lexend-Bold',
+  },
+  metricValueMain: {
+    fontSize: 16,
+    fontFamily: 'Lexend-Bold',
   },
   TopSalesBox: {
     flexDirection: 'column',
@@ -3761,6 +3773,85 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: 'white',
     fontFamily: 'Lexend-Regular',
+  }, // Add these to your existing styles object
+  modernHeaderWrapper: {
+    width: '100%',
+    backgroundColor: '#FFFFFF',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F2F2F7',
+  },
+  headerTopRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+  },
+  welcomeSection: {
+    flex: 1,
+  },
+  greetingText: {
+    fontSize: 12,
+    color: '#8E8E93',
+    fontFamily: 'Lexend-Regular',
+  },
+  userNameTextMain: {
+    fontSize: 18,
+    color: '#1C1C1E',
+    fontFamily: 'Lexend-Bold',
+  },
+  profileActionSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  dateTimeContainer: {
+    alignItems: 'flex-end',
+    marginRight: 2,
+  },
+  avatarCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#F2F2F7',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: '#018ED1', // Corporate Blue
+  },
+  companyBadge: {
+    flexDirection: 'column',
+  },
+  locationBadge: {
+    backgroundColor: '#E5F6FF',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    marginTop: 2,
+    alignSelf: 'flex-start',
+  },
+  pickerContainer: {
+    backgroundColor: '#F2F2F7', // Light grey professional background
+    borderRadius: 10,
+    width: '45%', // Wide enough to show Dept + Name
+    height: 40,
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#E5E5EA',
+  },
+  minimalPicker: {
+    width: '100%',
+    color: '#018ED1', // Corporate Blue for the text
+  },
+  headerBottomRow: {
+    paddingHorizontal: 16,
+    marginTop: 4,
+  },
+  cmpSubtitle: {
+    fontSize: 11,
+    color: '#8E8E93',
+    fontFamily: 'Lexend-Regular',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
   },
 });
 
