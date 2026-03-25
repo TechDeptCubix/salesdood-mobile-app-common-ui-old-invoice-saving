@@ -2153,6 +2153,71 @@ const HomeNew = () => {
                           </View>
                         </TouchableOpacity>
                       )}
+
+
+{menuNotAllowedToThisCompany ? (
+                        menuNotAllowedToThisCompany.some(
+                          itemSommy =>
+                            itemSommy.MENUID.trim().toUpperCase() ==
+                            'Sales Return'.trim().toUpperCase(),
+                        ) ? null : menuAllowedToThisRole?.length == 0 ||
+                          menuAllowedToThisRole?.some(
+                            itemSommy =>
+                              itemSommy.MENUID.trim().toUpperCase() ==
+                              'Sales Return'.trim().toUpperCase(),
+                          ) ? (
+                          <TouchableOpacity
+                            style={[
+                              styles.ItemCont,
+                              {backgroundColor: '#D4CFC5'},
+                            ]}
+                            onPress={() =>
+                              navigation.navigate('SalesReturn')
+                            }>
+                            <View style={styles.innerItem}>
+                              <View style={styles.TouchablwWhiteBackg}>
+                                <Image
+                                  source={require('../images/todoDark.png')}
+                                  style={[
+                                    styles.optionIcon,
+                                    {resizeMode: 'contain'},
+                                  ]}></Image>
+                              </View>
+                              <View style={styles.innerText}>
+                                <Text style={styles.optionText}>
+                                  Sales Return
+                                </Text>
+                              </View>
+                            </View>
+                          </TouchableOpacity>
+                        ) : null
+                      ) : (
+                        <TouchableOpacity
+                          style={[
+                            styles.ItemCont,
+                            {backgroundColor: '#D4CFC5'},
+                          ]}
+                          onPress={() =>
+                            navigation.navigate('SalesReturn')
+                          }>
+                          <View style={styles.innerItem}>
+                            <View style={styles.TouchablwWhiteBackg}>
+                              <Image
+                                source={require('../images/todoDark.png')}
+                                style={[
+                                  styles.optionIcon,
+                                  {resizeMode: 'contain'},
+                                ]}></Image>
+                            </View>
+                            <View style={styles.innerText}>
+                              <Text style={styles.optionText}>
+                                Sales Return
+                              </Text>
+                            </View>
+                          </View>
+                        </TouchableOpacity>
+                      )}
+
                     </View>
                   </ScrollView>
                 ) : (
@@ -3142,7 +3207,7 @@ const HomeNew = () => {
                       marginRight: 6,
                       fontFamily: 'Lexend-Regular',
                     }}>
-                    version 5.90_v2
+                    version 6.0.0
                   </Text>
                 </View>
               </View>

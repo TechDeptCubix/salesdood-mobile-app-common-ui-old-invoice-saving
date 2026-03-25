@@ -1916,7 +1916,7 @@ const QuotationPop = ({
           : selectedRadio == 'CASH'
           ? 'yes'
           : 'no',
-      inv_no: '68435',
+      inv_no: '68435', // this is dummy but no problem
       cust_acc: selectedUserType === 'reg' && customer ? customer.account : '',
       inv_total: String(calculatedValue),
       inv_cost: totalCostAvg ? String(totalCostAvg) : '0',
