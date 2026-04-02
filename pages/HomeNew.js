@@ -793,17 +793,20 @@ const HomeNew = () => {
                         styles.modernSalesBox,
                         {borderLeftColor: '#AEADB2'},
                       ]}>
-                      <View style={styles.metricRow}>
-                        <Text style={styles.metricLabel}>Sales Order</Text>
-                        {showSalesCollLoader ? (
-                          <ActivityIndicator size="small" color="#AEADB2" />
-                        ) : (
-                          <Text style={styles.metricValue}>
-                            {(salesCollection && salesCollection[0]?.amount) ||
-                              '0.00'}
-                          </Text>
-                        )}
-                      </View>
+                      {/* {cmpCode?.toUpperCase() !== 'STARLINK' && ( */}
+                        <View style={styles.metricRow}>
+                          <Text style={styles.metricLabel}>Sales Order</Text>
+                          {showSalesCollLoader ? (
+                            <ActivityIndicator size="small" color="#AEADB2" />
+                          ) : (
+                            <Text style={styles.metricValue}>
+                              {(salesCollection &&
+                                salesCollection[0]?.amount) ||
+                                '0.00'}
+                            </Text>
+                          )}
+                        </View>
+                      {/* )}  */}
 
                       <View style={styles.metricRow}>
                         <Text style={styles.metricLabel}>Credit Sales</Text>
@@ -2154,8 +2157,7 @@ const HomeNew = () => {
                         </TouchableOpacity>
                       )}
 
-
-{menuNotAllowedToThisCompany ? (
+                      {menuNotAllowedToThisCompany ? (
                         menuNotAllowedToThisCompany.some(
                           itemSommy =>
                             itemSommy.MENUID.trim().toUpperCase() ==
@@ -2171,9 +2173,7 @@ const HomeNew = () => {
                               styles.ItemCont,
                               {backgroundColor: '#D4CFC5'},
                             ]}
-                            onPress={() =>
-                              navigation.navigate('SalesReturn')
-                            }>
+                            onPress={() => navigation.navigate('SalesReturn')}>
                             <View style={styles.innerItem}>
                               <View style={styles.TouchablwWhiteBackg}>
                                 <Image
@@ -2197,9 +2197,7 @@ const HomeNew = () => {
                             styles.ItemCont,
                             {backgroundColor: '#D4CFC5'},
                           ]}
-                          onPress={() =>
-                            navigation.navigate('SalesReturn')
-                          }>
+                          onPress={() => navigation.navigate('SalesReturn')}>
                           <View style={styles.innerItem}>
                             <View style={styles.TouchablwWhiteBackg}>
                               <Image
@@ -2217,7 +2215,6 @@ const HomeNew = () => {
                           </View>
                         </TouchableOpacity>
                       )}
-
                     </View>
                   </ScrollView>
                 ) : (

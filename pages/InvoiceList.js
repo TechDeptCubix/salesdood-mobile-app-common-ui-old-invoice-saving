@@ -23,6 +23,7 @@ import * as RNFS from 'react-native-fs';
 import ThermalPrinterModule from 'react-native-thermal-printer';
 import {generatePDF} from './InvoicePdf';
 import SunmiPrinter, {AlignValue} from '@heasy/react-native-sunmi-printer';
+import {ICUP_LOGO_BASE64} from '../images/icup_logo';
 
 const InvoiceList = () => {
   // the issue is fixed padding
@@ -294,7 +295,7 @@ const InvoiceList = () => {
           console.log(err);
         });
     });
-  const printSunmiInvoice = data => {
+  const printSunmiInvoice = async data => {
     try {
       if (!data || data.length === 0) return;
 
@@ -312,6 +313,21 @@ const InvoiceList = () => {
       const grandTotal = totalExclusive + totalVat;
 
       SunmiPrinter.printerInit();
+      try {
+        SunmiPrinter.setAlignment(AlignValue.CENTER);
+
+        // Remove header if it exists (e.g., data:image/png;base64,)
+        const cleanBase64 = ICUP_LOGO_BASE64.replace(
+          /^data:image\/[a-z]+;base64,/,
+          '',
+        );
+
+        // 384 is the standard pixel width for Sunmi 58mm paper
+        await SunmiPrinter.printBitmap(cleanBase64, 384);
+        SunmiPrinter.lineWrap(1);
+      } catch (imgError) {
+        console.log('Logo Print Error:', imgError);
+      }
 
       // 🔹 HEADER
       SunmiPrinter.setAlignment(AlignValue.CENTER);
@@ -319,12 +335,25 @@ const InvoiceList = () => {
       SunmiPrinter.setFontWeight(true);
       SunmiPrinter.printerText('TAX INVOICE\n');
 
+      // 1. ADD PADDING BOTTOM FOR TAX INVOICE
+      SunmiPrinter.lineWrap(1); // Adds one line of vertical space
+
       SunmiPrinter.setFontSize(28);
-      SunmiPrinter.printerText('ICECUP FOOD INDUSTRIES\n');
+      SunmiPrinter.printerText('ICECUP FOOD INDUSTRIES L.L.C\n');
+
       SunmiPrinter.setFontSize(20);
       SunmiPrinter.setFontWeight(false);
-      SunmiPrinter.printerText('Jabal Ali, Industrial 4\n');
-      SunmiPrinter.printerText('TRN: 100XXXXXXXXXXXX\n');
+      SunmiPrinter.printerText(
+        'Warehouse 23, First Industrial Area, Jebel Ali, Dubai.\n',
+      );
+
+      SunmiPrinter.printerText('Tel: +971 547642223 , +971 43264233\n');
+
+      SunmiPrinter.setFontWeight(true);
+      SunmiPrinter.printerText('TRN: 104173070400003\n');
+      SunmiPrinter.setFontWeight(false); // Reset weight for subsequent text
+
+      SunmiPrinter.lineWrap(1);
 
       // 🔹 WIDER DIVIDER
       // Increased number of dashes to ensure it spans the full width
@@ -1030,19 +1059,39 @@ const InvoiceList = () => {
   const printBt = async () => {
     const hasPermission = await requestBluetoothPermissions();
 
+    console.log('Has permission', hasPermission);
+
     if (!hasPermission) {
-      // Optionally show a message to the user that printing cannot proceed
       console.log('Cannot print: Bluetooth Connect permission denied.');
       return;
     }
 
     try {
+      const bluetoothDeviceList =
+        await ThermalPrinterModule.getBluetoothDeviceList();
+
+      console.log('BluetoothDevice list -----------', bluetoothDeviceList);
+
+      // Check if devices exist
+      if (!bluetoothDeviceList || bluetoothDeviceList.length === 0) {
+        console.log('No Bluetooth printers found.');
+        return;
+      }
+
+      const formattedData = setFormatTextForBluetooth();
+      console.log('Formatted Data', formattedData);
+      if (!formattedData?.text) {
+        console.log('Print data is empty.');
+        return;
+      }
+
       await ThermalPrinterModule.printBluetooth({
-        payload: setFormatTextForBluetooth().text,
+        payload: formattedData.text,
       });
+
+      console.log('Print completed successfully');
     } catch (err) {
-      //error handling
-      console.log('err bt print', err.message);
+      console.log('err bt print', err?.message || err);
     }
   };
 

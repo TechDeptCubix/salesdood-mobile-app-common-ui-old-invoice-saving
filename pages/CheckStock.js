@@ -472,7 +472,7 @@ const CheckStock = () => {
                           </View>
                           <View style={styles.PriceTag}>
                             <Text style={styles.StockListCodeText}>
-                              Order Pend.
+                              Order Pend .
                             </Text>
                             <Text style={styles.PriceValueText}>
                               {item.Ord_pend}
@@ -484,14 +484,16 @@ const CheckStock = () => {
                               {item.BIN}
                             </Text>
                           </View>
-                          <View style={styles.PriceTag}>
-                            <Text style={styles.StockListCodeText}>
-                              Discount Price
-                            </Text>
-                            <Text style={styles.PriceValueText}>
-                              {formatPrice3Decimal(item.Discount_Price)}
-                            </Text>
-                          </View>
+                          {cmpcode?.trim().toUpperCase() !== 'STARLINK' && (
+                            <View style={styles.PriceTag}>
+                              <Text style={styles.StockListCodeText}>
+                                Discount Price
+                              </Text>
+                              <Text style={styles.PriceValueText}>
+                                {formatPrice3Decimal(item.Discount_Price)}
+                              </Text>
+                            </View>
+                          )}
                         </View>
 
                         <View style={styles.TabCont}>
@@ -911,16 +913,17 @@ const CheckStock = () => {
                               {item.BIN}
                             </Text>
                           </View>
-                          {cmpcode?.trim().toUpperCase() != 'SOCA' && (
-                            <View style={styles.PriceTag}>
-                              <Text style={styles.StockListCodeText}>
-                                Discount Price
-                              </Text>
-                              <Text style={styles.PriceValueText}>
-                                {formatPrice3Decimal(item.Discount_Price)}
-                              </Text>
-                            </View>
-                          )}
+                          {cmpcode?.trim().toUpperCase() !== 'SOCA' &&
+                            cmpcode?.trim().toUpperCase() !== 'STARLINK' && (
+                              <View style={styles.PriceTag}>
+                                <Text style={styles.StockListCodeText}>
+                                  Discount Price
+                                </Text>
+                                <Text style={styles.PriceValueText}>
+                                  {formatPrice3Decimal(item.Discount_Price)}
+                                </Text>
+                              </View>
+                            )}
                         </View>
 
                         <View style={styles.TabCont}>
