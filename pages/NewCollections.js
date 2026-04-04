@@ -1441,33 +1441,36 @@ const NewCollections = () => {
                               justifyContent: 'space-between',
                               width: '100%',
                             }}>
-                            <View
-                              style={{
-                                flexDirection: 'row',
-                              }}>
+                            <View style={{flexDirection: 'row'}}>
                               <Text style={styles.StockListDescTextSmall}>
                                 Avail.Bal:{' '}
                               </Text>
 
-                              <Text
-                                style={[
-                                  styles.StockListDescTextSmall,
-                                  {
-                                    color:
-                                      Number(item?.credit || 0) -
-                                        Number(item?.debit || 0) >
-                                      0
-                                        ? 'green'
-                                        : Number(item?.credit || 0) -
-                                            Number(item?.debit || 0) <
-                                          0
-                                        ? 'red'
-                                        : 'gray',
-                                  },
-                                ]}>
-                                {Number(item?.credit || 0) -
-                                  Number(item?.debit || 0)}
-                              </Text>
+                              {(() => {
+                                // 1. Calculate the raw balance once
+                                const balance =
+                                  Number(item?.credit || 0) -
+                                  Number(item?.debit || 0);
+
+                                // 2. Determine color based on the number
+                                const balanceColor =
+                                  balance > 0
+                                    ? 'green'
+                                    : balance < 0
+                                    ? 'red'
+                                    : 'gray';
+
+                                return (
+                                  <Text
+                                    style={[
+                                      styles.StockListDescTextSmall,
+                                      {color: balanceColor, fontWeight: 'bold'},
+                                    ]}>
+                                    {/* 3. Apply toFixed(2) for the 2-digit decimal display */}
+                                    {balance.toFixed(2)}
+                                  </Text>
+                                );
+                              })()}
                             </View>
                             <TouchableOpacity
                               style={[styles.PlusMinusCont]}

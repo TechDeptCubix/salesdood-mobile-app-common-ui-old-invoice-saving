@@ -7,7 +7,6 @@ import {
   Image,
   Button,
   ScrollView,
-  FlatList,
   PermissionsAndroid,
   ActivityIndicator,
 } from 'react-native';
@@ -20,7 +19,7 @@ import data from '../url/statement.json';
 import RNHTMLtoPDF from 'react-native-html-to-pdf';
 import Share from 'react-native-share';
 import RNFS from 'react-native-fs';
-
+import SunmiPrinter from '@heasy/react-native-sunmi-printer';
 const StatementPop = ({
   setShowStatementPop,
   privateKey,
@@ -457,10 +456,73 @@ const StatementPop = ({
   console.log('selectedStock', selectedStock);
 
   console.log('appUrl', appUrl);
+  const handleSunmiPrint = async () => {
+    try {
+      // 1. Prepare Printer
+      await SunmiPrinter.printerInit();
+
+      // 2. Print Header
+      await SunmiPrinter.setAlignment(1); // Center
+      await SunmiPrinter.setFontSize(24);
+      await SunmiPrinter.printText('ICECUP FOOD INDUSTRIES\n');
+      await SunmiPrinter.setFontSize(20);
+      await SunmiPrinter.printText('Statement of Accounts\n');
+      await SunmiPrinter.printText(`Period: ${fromData} to ${toData}\n`);
+      await SunmiPrinter.printText('--------------------------------\n');
+
+      // 3. Table Header
+      await SunmiPrinter.setAlignment(0); // Left
+      // Sunmi printColumnsText: [Array of strings], [Array of widths], [Array of alignments]
+      // Total width for Sunmi is usually 32 or 48 characters
+      await SunmiPrinter.printColumnsText(
+        ['Date', 'Ref', 'Amount'],
+        [12, 10, 10],
+        [0, 0, 2],
+      );
+      await SunmiPrinter.printText('--------------------------------\n');
+
+      // 4. Print Rows
+      for (const item of displayData) {
+        const date = item.DATE.split('T')[0];
+        const ref = item.REF || '-';
+        const amount = formatNumber(
+          item.DEBIT > 0 ? item.DEBIT : -item.CREDIT,
+          3,
+        );
+
+        await SunmiPrinter.printColumnsText(
+          [date, ref, amount],
+          [12, 10, 10],
+          [0, 0, 2],
+        );
+      }
+
+      // 5. Print Totals
+      await SunmiPrinter.printText('--------------------------------\n');
+      await SunmiPrinter.setAlignment(2); // Right
+      await SunmiPrinter.printText(
+        `Total Debit: ${formatNumber(totalDebit, 3)}\n`,
+      );
+      await SunmiPrinter.printText(
+        `Total Credit: ${formatNumber(totalCredit, 3)}\n`,
+      );
+      await SunmiPrinter.setFontSize(24);
+      await SunmiPrinter.printText(
+        `Balance: ${formatNumber(totalBalance, 3)}\n`,
+      );
+
+      // 6. Feed paper and cut
+      await SunmiPrinter.lineFeed(3);
+    } catch (error) {
+      console.error('Sunmi Print Error:', error);
+      alert('Printer error: Make sure this is a Sunmi device.');
+    }
+  };
 
   return (
     <View style={styles.modalContainer}>
       <View style={styles.modalContent}>
+        {/* 1. HEADER (Fixed) */}
         <View style={styles.HomeTextCont}>
           <TouchableOpacity
             style={styles.SettingsWrap}
@@ -473,13 +535,13 @@ const StatementPop = ({
           <Text style={styles.HomeText}>Statement of Accounts</Text>
         </View>
 
+        {/* 2. FILTERS (Fixed - This ensures they are always clickable) */}
         <View style={styles.FromToDateButtonWrap}>
           <View style={styles.DateButtonWrap}>
             <TouchableOpacity
               style={styles.DetailsButton}
               onPress={showFromDatePicker}>
               <Icon name="calendar-today" size={18} color="#333" />
-
               <Text style={styles.DetailsText}>
                 {fromData ? fromData : 'Select From Date'}
               </Text>
@@ -491,20 +553,17 @@ const StatementPop = ({
               style={styles.DetailsButton}
               onPress={showToDatePicker}>
               <Icon name="calendar-today" size={18} color="#333" />
-
               <Text style={styles.DetailsText}>
                 {toData ? toData : 'Select To Date'}
               </Text>
             </TouchableOpacity>
           </View>
 
-          <View>
-            <TouchableOpacity
-              style={styles.ViewButton}
-              onPress={() => fetchStatementData()}>
-              <Text style={styles.ViewText}>View</Text>
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity
+            style={styles.ViewButton}
+            onPress={() => fetchStatementData()}>
+            <Text style={styles.ViewText}>View</Text>
+          </TouchableOpacity>
 
           <DateTimePickerModal
             isVisible={isFromDatePickerVisible}
@@ -512,7 +571,6 @@ const StatementPop = ({
             onConfirm={handleFromDateConfirm}
             onCancel={hideFromDatePicker}
           />
-
           <DateTimePickerModal
             isVisible={isToDatePickerVisible}
             mode="date"
@@ -521,126 +579,101 @@ const StatementPop = ({
           />
         </View>
 
-        {showLoader && (
-          <View>
-            <ActivityIndicator />
-          </View>
-        )}
+        {/* 3. SCROLLABLE CONTENT (Flex: 1 makes this take up the middle space) */}
+        <View style={{flex: 1}}>
+          {showLoader && (
+            <ActivityIndicator
+              size="large"
+              color="#1A6CF6"
+              style={{marginTop: 20}}
+            />
+          )}
+          {errorText && <Text style={styles.ErrorText}>{errorText}</Text>}
 
-        {errorText && (
-          <View>
-            <Text style={styles.ErrorText}>{errorText}</Text>
-          </View>
-        )}
-
-        <View
-          style={{
-            marginTop: 8,
-            maxHeight: 560,
-            // minHeight: 200,
-            marginBottom: 16,
-            shadowColor: '#000',
-            shadowOffset: {width: 0, height: 2},
-            shadowOpacity: 0.25,
-            shadowRadius: 3,
-            elevation: 5,
-            flex: 1,
-          }}>
           {displayData && displayData.length > 0 && (
-            <>
-              <ScrollView horizontal={true} style={{width: '100%'}}>
-                <View style={styles.TableContainer}>
-                  <View style={styles.tableRow}>
-                    <Text style={[styles.headerCell, {borderTopLeftRadius: 4}]}>
-                      DATE
-                    </Text>
-                    <Text style={styles.headerCell}>TYPE</Text>
-                    <Text style={styles.headerCell}>REF</Text>
-                    <Text style={styles.headerCell}>DESCRIPTION</Text>
-                    <Text style={styles.headerCell}>DEBIT</Text>
-                    <Text style={styles.headerCell}>CREDIT</Text>
-                    <Text
-                      style={[styles.headerCell, {borderTopRightRadius: 4}]}>
-                      BALANCE
-                    </Text>
-                  </View>
-                  <ScrollView nestedScrollEnabled={true}>
-                    {/* <View style={styles.tableRow}>
-                                            <Text style={[styles.headerCell, { borderTopLeftRadius: 4 }]}>DATE</Text>
-                                            <Text style={styles.headerCell}>TYPE</Text>
-                                            <Text style={styles.headerCell}>REF</Text>
-                                            <Text style={styles.headerCell}>DESCRIPTION</Text>
-                                            <Text style={styles.headerCell}>DEBIT</Text>
-                                            <Text style={styles.headerCell}>CREDIT</Text>
-                                            <Text style={[styles.headerCell, { borderTopRightRadius: 4 }]}>BALANCE</Text>
-                                        </View> */}
+            <ScrollView horizontal={true}>
+              <View style={styles.TableContainer}>
+                {/* Table Header */}
+                <View style={styles.tableRow}>
+                  <Text style={[styles.headerCell, {borderTopLeftRadius: 4}]}>
+                    DATE
+                  </Text>
+                  <Text style={styles.headerCell}>TYPE</Text>
+                  <Text style={styles.headerCell}>REF</Text>
+                  <Text style={styles.headerCell}>DESCRIPTION</Text>
+                  <Text style={styles.headerCell}>DEBIT</Text>
+                  <Text style={styles.headerCell}>CREDIT</Text>
+                  <Text style={[styles.headerCell, {borderTopRightRadius: 4}]}>
+                    BALANCE
+                  </Text>
+                </View>
 
-                    <FlatList
-                      data={displayData}
-                      keyExtractor={(item, index) => index.toString()}
-                      contentContainerStyle={{}}
-                      renderItem={({item}) => (
-                        <View style={styles.tableRow}>
-                          <Text style={styles.dataCell}>
-                            {item.DATE.split('T')[0]}
-                          </Text>
-                          <Text style={styles.dataCell}>{item.TYPE}</Text>
-                          <Text style={styles.dataCell}>{item.REF}</Text>
-                          <Text style={styles.dataCell}>
-                            {item.DESCRIPTION}
-                          </Text>
-                          <Text style={styles.dataCell}>
-                            {formatNumber(item.DEBIT, 3)}
-                          </Text>
-                          <Text style={styles.dataCell}>
-                            {formatNumber(item.CREDIT, 3)}
-                          </Text>
-                          <Text style={styles.dataCell}>
-                            {formatNumber(item.BALANCE, 3)}
-                          </Text>
-                        </View>
-                      )}
-                      ListEmptyComponent={
-                        <View>
-                          <Text style={{color: 'red'}}>No data available</Text>
-                        </View>
-                      }
-                    />
-                  </ScrollView>
-                </View>
-              </ScrollView>
-
-              <View style={styles.TotalValuesWrap}>
-                <View style={styles.TotalCont}>
-                  <Text style={styles.TotalLabel}>Total Debit</Text>
-                  <Text style={styles.TotalValueText}>
-                    {totalDebit && formatNumber(totalDebit, 3)}
-                  </Text>
-                </View>
-                <View style={styles.TotalCont}>
-                  <Text style={styles.TotalLabel}>Total Credit</Text>
-                  <Text style={styles.TotalValueText}>
-                    {totalCredit && formatNumber(totalCredit, 3)}
-                  </Text>
-                </View>
-                <View style={styles.TotalCont}>
-                  <Text style={styles.TotalLabel}>Total Balance</Text>
-                  <Text style={styles.TotalValueText}>
-                    {totalBalance && formatNumber(totalBalance, 3)}
-                  </Text>
-                </View>
+                {/* Vertical Scroll for Table Rows ONLY */}
+                <ScrollView nestedScrollEnabled={true}>
+                  {displayData.map((item, index) => (
+                    <View key={index.toString()} style={styles.tableRow}>
+                      <Text style={styles.dataCell}>
+                        {item.DATE.split('T')[0]}
+                      </Text>
+                      <Text style={styles.dataCell}>{item.TYPE}</Text>
+                      <Text style={styles.dataCell}>{item.REF}</Text>
+                      <Text style={styles.dataCell}>{item.DESCRIPTION}</Text>
+                      <Text style={styles.dataCell}>
+                        {formatNumber(item.DEBIT, 3)}
+                      </Text>
+                      <Text style={styles.dataCell}>
+                        {formatNumber(item.CREDIT, 3)}
+                      </Text>
+                      <Text style={styles.dataCell}>
+                        {formatNumber(item.BALANCE, 3)}
+                      </Text>
+                    </View>
+                  ))}
+                </ScrollView>
               </View>
-            </>
+            </ScrollView>
           )}
         </View>
 
-        {displayData && (
-          <View style={styles.PDFWrap}>
-            <TouchableOpacity
-              style={styles.ViewButton}
-              onPress={() => generatePDF()}>
-              <Text style={styles.ViewText}>PDF</Text>
-            </TouchableOpacity>
+        {/* 4. FIXED FOOTER (Totals and PDF always at bottom right) */}
+        {displayData && displayData.length > 0 && (
+          <View style={styles.FixedFooter}>
+            <View style={styles.TotalValuesWrap}>
+              <View style={styles.TotalCont}>
+                <Text style={styles.TotalLabel}>Total Debit</Text>
+                <Text style={styles.TotalValueText}>
+                  {formatNumber(totalDebit, 3)}
+                </Text>
+              </View>
+              <View style={styles.TotalCont}>
+                <Text style={styles.TotalLabel}>Total Credit</Text>
+                <Text style={styles.TotalValueText}>
+                  {formatNumber(totalCredit, 3)}
+                </Text>
+              </View>
+              <View style={styles.TotalCont}>
+                <Text style={[styles.TotalLabel, {color: '#1A6CF6'}]}>
+                  Total Balance
+                </Text>
+                <Text style={[styles.TotalValueText, {color: '#1A6CF6'}]}>
+                  {formatNumber(totalBalance, 3)}
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.PDFWrap}>
+              <TouchableOpacity
+                style={styles.PDFButtonBlue}
+                onPress={() => generatePDF()}>
+                <Text style={styles.PDFText}>GENERATE PDF</Text>
+              </TouchableOpacity>
+            </View>
+            {/* <TouchableOpacity
+              style={styles.PrintButtonGreen}
+              onPress={() => handleSunmiPrint()}>
+              <Icon name="print" size={18} color="white" />
+              <Text style={styles.ButtonText}>PRINT</Text>
+            </TouchableOpacity> */}
           </View>
         )}
       </View>
@@ -662,15 +695,10 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   modalContent: {
-    // backgroundColor: '#F7F7F7',
-    // backgroundColor: '#5A55CA',
     backgroundColor: 'white',
-    // paddingHorizontal: 8,
     borderRadius: 5,
-    // alignItems: 'center',
     width: '95%',
-    minHeight: 750,
-    maxHeight: Dimensions.get('window').height - 80,
+    height: '90%', // Use height instead of minHeight/maxHeight for layout stability
   },
 
   HomeTextCont: {
@@ -702,7 +730,49 @@ const styles = StyleSheet.create({
     width: 20,
     height: 20,
   },
-
+  FixedFooter: {
+    padding: 10,
+    borderTopWidth: 1,
+    borderColor: '#dbdbdb',
+    backgroundColor: '#fff',
+    alignItems: 'flex-end', // Pushes everything to the right
+  },
+  TotalValuesWrap: {
+    width: '100%',
+    alignItems: 'flex-end', // Aligns the text to the right
+  },
+  TotalCont: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    marginBottom: 2,
+  },
+  TotalLabel: {
+    fontFamily: 'Lexend-Bold',
+    fontSize: 14,
+    color: '#2b2b2b',
+    marginRight: 10,
+  },
+  TotalValueText: {
+    fontSize: 16,
+    color: '#2b2b2b',
+    fontFamily: 'Lexend-Bold',
+    width: 120,
+    textAlign: 'right',
+  },
+  // PDFWrap: {
+  //   marginTop: 10,
+  //   width: '100%',
+  //   flexDirection: 'row',
+  //   justifyContent: 'flex-end', // PDF button to the right
+  // },
+  PDFButtonBlue: {
+    backgroundColor: '#1A6CF6',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 6,
+    elevation: 2,
+  },
   FromToDateButtonWrap: {
     width: '100%',
     flexDirection: 'row',
@@ -736,7 +806,7 @@ const styles = StyleSheet.create({
   },
 
   TableContainer: {
-    width: '100%',
+    // width: '100%',
     // padding: 10,
     marginTop: 8,
     alignItems: 'center',
@@ -748,7 +818,7 @@ const styles = StyleSheet.create({
   },
   tableRow: {
     flexDirection: 'row',
-    width: '100%',
+    // width: '100%',
     // justifyContent: 'space-between',
     // marginBottom: 5,
     // paddingVertical: 5,
@@ -821,7 +891,8 @@ const styles = StyleSheet.create({
     width: '100%',
     flexDirection: 'row',
     justifyContent: 'center',
-    paddingBottom: 32,
+    marginTop: 20,
+    paddingBottom: 20,
   },
   PDFButton: {
     backgroundColor: '#1A6CF6',
@@ -855,6 +926,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: 'black',
     fontFamily: 'Lexend-Regular',
+  },
+  NoDataText: {
+    color: 'red',
+    padding: 20,
+    fontFamily: 'Lexend-Regular',
+    textAlign: 'center',
   },
 });
 

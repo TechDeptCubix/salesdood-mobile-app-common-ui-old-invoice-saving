@@ -300,6 +300,7 @@ const InvoiceList = () => {
       if (!data || data.length === 0) return;
 
       const header = data[0];
+      console.log('Inovice header data', header);
 
       // 🔹 CALCULATIONS
       const totalExclusive = data.reduce(
@@ -361,18 +362,37 @@ const InvoiceList = () => {
       // SunmiPrinter.printerText(divider);
 
       // 🔹 INVOICE INFO
-      const infoWeights = [200, 360]; // Shifted weight to allow longer values on the right
+      const infoWeights = [200, 360];
+
+      // Determine the Payment Type Label
+      const paymentType = header.cashcred === 'C' ? 'CASH' : 'CREDIT';
+
       SunmiPrinter.setAlignment(AlignValue.LEFT);
+
+      // 1. Invoice Number
       SunmiPrinter.printColumnsString(
         ['Invoice No:', header.inv_no.toString()],
         infoWeights,
         [AlignValue.LEFT, AlignValue.RIGHT],
       );
+
+      // 2. NEW: Payment Mode
+      SunmiPrinter.setFontWeight(true); // Make it bold so it's clear
+      SunmiPrinter.printColumnsString(
+        ['Payment Mode:', paymentType],
+        infoWeights,
+        [AlignValue.LEFT, AlignValue.RIGHT],
+      );
+      SunmiPrinter.setFontWeight(false);
+
+      // 3. Customer
       SunmiPrinter.printColumnsString(
         ['Customer:', header.custref],
         infoWeights,
         [AlignValue.LEFT, AlignValue.RIGHT],
       );
+
+      // 4. Date
       SunmiPrinter.printColumnsString(
         ['Date:', header.inv_date.split('T')[0]],
         infoWeights,
