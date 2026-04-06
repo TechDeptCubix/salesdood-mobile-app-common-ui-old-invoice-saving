@@ -560,6 +560,7 @@ export default function SalesReturn({navigation}) {
                     invoiceDate: activeInvoice.date,
                     invoiceDetailObject: activeInvoice,
                     salesMan: salesMan,
+                    deptNo:deptNo
                   });
                 }}
                 activeOpacity={0.9}>

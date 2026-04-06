@@ -2215,6 +2215,68 @@ const HomeNew = () => {
                           </View>
                         </TouchableOpacity>
                       )}
+
+
+{menuNotAllowedToThisCompany ? (
+                        menuNotAllowedToThisCompany.some(
+                          itemSommy =>
+                            itemSommy.MENUID.trim().toUpperCase() ==
+                            'Split Item Screen'.trim().toUpperCase(),
+                        ) ? null : menuAllowedToThisRole?.length == 0 ||
+                          menuAllowedToThisRole?.some(
+                            itemSommy =>
+                              itemSommy.MENUID.trim().toUpperCase() ==
+                              'Split Item Screen'.trim().toUpperCase(),
+                          ) ? (
+                          <TouchableOpacity
+                            style={[
+                              styles.ItemCont,
+                              {backgroundColor: '#D4CFC5'},
+                            ]}
+                            onPress={() => navigation.navigate('SplitItemScreen')}>
+                            <View style={styles.innerItem}>
+                              <View style={styles.TouchablwWhiteBackg}>
+                                <Image
+                                  source={require('../images/todoDark.png')}
+                                  style={[
+                                    styles.optionIcon,
+                                    {resizeMode: 'contain'},
+                                  ]}></Image>
+                              </View>
+                              <View style={styles.innerText}>
+                                <Text style={styles.optionText}>
+                                Split Item Screen
+                                </Text>
+                              </View>
+                            </View>
+                          </TouchableOpacity>
+                        ) : null
+                      ) : (
+                        <TouchableOpacity
+                          style={[
+                            styles.ItemCont,
+                            {backgroundColor: '#D4CFC5'},
+                          ]}
+                          onPress={() => navigation.navigate('SplitItemScreen')}>
+                          <View style={styles.innerItem}>
+                            <View style={styles.TouchablwWhiteBackg}>
+                              <Image
+                                source={require('../images/todoDark.png')}
+                                style={[
+                                  styles.optionIcon,
+                                  {resizeMode: 'contain'},
+                                ]}></Image>
+                            </View>
+                            <View style={styles.innerText}>
+                              <Text style={styles.optionText}>
+                              Split Item Screen
+                              </Text>
+                            </View>
+                          </View>
+                        </TouchableOpacity>
+                      )}
+
+
                     </View>
                   </ScrollView>
                 ) : (
@@ -3204,7 +3266,7 @@ const HomeNew = () => {
                       marginRight: 6,
                       fontFamily: 'Lexend-Regular',
                     }}>
-                    version 6.0.0
+                    version 6.5.0
                   </Text>
                 </View>
               </View>

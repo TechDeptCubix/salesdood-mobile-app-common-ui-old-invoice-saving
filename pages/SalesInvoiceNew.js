@@ -625,10 +625,13 @@ const SalesInvoiceNew = ({route}) => {
     let checkQuantity = parseFloat(quantity).toFixed(3);
     let checkUnitPrice = parseFloat(unitPrice).toFixed(2);
 
-    if (checkQuantity > selectedStock.Qty) {
-      Alert.alert('Quantity exceeded available quantity');
-      return;
+    if (cmpcode.toUpperCase().trim() != 'ICUP') {
+      if (checkQuantity > selectedStock.Qty) {
+        Alert.alert('Quantity exceeded available quantity');
+        return;
+      }
     }
+    
 
     if (checkQuantity == 0 || checkUnitPrice == 0) {
       Alert.alert('Please enter Quantity and Price');
@@ -2701,6 +2704,11 @@ const SalesInvoiceNew = ({route}) => {
                                     </View>
 
                                     <View style={styles.CustomerListMid}>
+
+                                    <Text
+                                            style={[styles.StockListDescText]}>Unit - 
+                                            {item.unit} 
+                                          </Text>
                                       <View
                                         style={{
                                           flexDirection: 'row',
@@ -2718,7 +2726,7 @@ const SalesInvoiceNew = ({route}) => {
                                           ]}>
                                           <Text
                                             style={[styles.StockListDescText]}>
-                                            {item.Description}
+                                            {item.Description} 
                                           </Text>
                                           <Text
                                             style={[

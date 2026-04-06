@@ -367,15 +367,21 @@ const CheckStock = () => {
                       </View>
 
                       <View style={styles.CustomerListMid}>
+                      <Text
+                            style={[styles.StockListDescText, {width: '75%'}]}>
+                              Unit -
+                            {item.unit} 
+                          </Text>
                         <View
                           style={{
                             flexDirection: 'row',
                             justifyContent: 'space-between',
                             width: '100%',
                           }}>
+                             
                           <Text
                             style={[styles.StockListDescText, {width: '75%'}]}>
-                            {item.Description}
+                            {item.Description} 
                           </Text>
                           <Text
                             style={[
@@ -810,7 +816,7 @@ const CheckStock = () => {
                           }}>
                           <Text
                             style={[styles.StockListDescText, {width: '75%'}]}>
-                            {item.Description}
+                            {item.Description} 
                           </Text>
                           <Text
                             style={[
@@ -827,7 +833,7 @@ const CheckStock = () => {
                             paddingVertical: 6,
                           }}>
                           <Text style={styles.StockListDescTextSmall}>
-                            {item.Code ? item.Code : item.code}
+                            {item.Code ? item.Code : item.code} 
                           </Text>
                           <TouchableOpacity
                             style={[styles.PlusMinusCont, {marginLeft: 'auto'}]}

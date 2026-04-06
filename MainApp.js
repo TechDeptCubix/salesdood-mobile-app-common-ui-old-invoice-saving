@@ -60,6 +60,7 @@ import WarehousePoolList from './pages/WarehousePoolList';
 import WarehouseListItemDetails from './pages/WarehouseListItemDetails';
 import SalesReturn from './pages/sales_return/SalesReturn'
 import SalesReturnEntry from './pages/sales_return/SalesReturnEntry'
+import SplitItemScreen from './pages/SplitItemScreen';
 
 
 
@@ -302,6 +303,7 @@ const MainApp = () => {
                 <Stack.Screen name='InvoiceVsReceipt' component={InvoiceVsReceipt} options={{ headerShown: false }} />
                 <Stack.Screen name='SalesReturn' component={SalesReturn} options={{ headerShown: false }} />
                 <Stack.Screen name='SalesReturnEntry' component={SalesReturnEntry} options={{ headerShown: false }} />
+                <Stack.Screen name='SplitItemScreen' component={SplitItemScreen} options={{ headerShown: false }} />
 
                 
                

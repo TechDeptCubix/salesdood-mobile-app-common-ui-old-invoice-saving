@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import {
   View,
   Text,
@@ -10,13 +10,16 @@ import {
   KeyboardAvoidingView,
   Platform,
   Image,
+  Alert,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 
 export default function SalesReturnEntry({route, navigation}) {
-  const {selectedItems, customer, invoiceId, invoiceDetailObject, salesMan} =
+  const {selectedItems, customer, invoiceId, invoiceDetailObject, salesMan, deptNo} =
     route.params;
+
+const [glSettings, setGLSettings] = useState(null)
 
   const [loading, setLoading] = useState(false);
 
@@ -53,6 +56,25 @@ export default function SalesReturnEntry({route, navigation}) {
   };
 
   const handleSubmit = async () => {
+
+
+    const SR_VT_D_Account = glSettings?.find(item => item.Scrn_code === "SR-VT-D")?.ACCOUNT;
+
+    if(!SR_VT_D_Account){
+      Alert.alert("Cannot find accounts, please contact admin")
+      return
+    }
+    const SR_CR_D_Account = glSettings?.find(item => item.Scrn_code === "SR-CR-D")?.ACCOUNT;
+    if(!SR_CR_D_Account){
+      Alert.alert("Cannot find accounts, please contact admin")
+      return
+    }
+
+    if(deptNo == "----"){
+      Alert.alert('Department missing');
+      return
+    }
+
     // 1. Check if EVERY item has a quantity entered and it's greater than 0
     const allItemsHaveQty = selectedItems.every(item => {
       const qty = parseFloat(qtys[item.id]);
@@ -60,13 +82,13 @@ export default function SalesReturnEntry({route, navigation}) {
     });
 
     if (!allItemsHaveQty) {
-      alert('Please enter a valid quantity for ALL items before submitting.');
+      Alert.alert('Please enter a valid quantity for ALL items before submitting.');
       return; // Stop execution
     }
 
     // 2. Check for reason first
     if (!reason.trim()) {
-      alert('Please enter a reason for return');
+      Alert.alert('Please enter a reason for return');
       return;
     }
 
@@ -99,7 +121,7 @@ export default function SalesReturnEntry({route, navigation}) {
         srInvNo: invoiceDetailObject.id + '',
         saleMan: salesMan,
         discAmt: parseFloat(totalReturnDiscount.toFixed(2)),
-        glSr: '',
+        glSr: SR_CR_D_Account, // income account take SR-CR-D from gl settings api
         nextSrNo: 0,
         lpoNo: '',
         doNo: 0,
@@ -109,14 +131,21 @@ export default function SalesReturnEntry({route, navigation}) {
         rate: 1,
         fc: 'AED',
         areaCode: '',
-        deptNo: '',
+        deptNo: deptNo,
         jobCode: '',
         upd: '',
-        retQty: selectedItems.reduce(
-          (sum, item) => sum + (parseFloat(qtys[item.id]) || 0),
-          0,
-        ),
-        vatAcc: '',
+        retQty: parseFloat(
+          selectedItems.reduce((sum, item) => {
+            const qty = parseFloat(qtys[item.id]) || 0;
+            const unitPrice = item.price ?? 0;
+            const lineSubtotal = qty * unitPrice;
+            const lineDiscount = lineSubtotal * discountRatio;
+            const lineNet = lineSubtotal - lineDiscount;
+            const lineVat = lineNet * (vatRate / 100);
+            return sum + lineVat;
+          }, 0).toFixed(2)
+        ), // earlier i send total of qty returned but after checking backend found out vat amount should be send here 
+        vatAcc: SR_VT_D_Account,  // for vat account take SR-VT-D from glsettings api
         stkAcc: '',
         cosAcc: '',
         commAcc: '',
@@ -201,11 +230,11 @@ export default function SalesReturnEntry({route, navigation}) {
         },
       );
 
-      console.log("response from api success", response)
+      console.log("response from api success", response, response.data)
 
       // Axios puts the response body in .data
-      if (response.status === 200 || response.status === 201) {
-        alert('Return Processed Successfully!');
+      if (response.data.message?.toUpperCase() === 'SAVED SUCCESSFULLY') {
+        Alert.alert('Return Processed Successfully');
         navigation.goBack();
       }
     } catch (err) {
@@ -217,22 +246,54 @@ export default function SalesReturnEntry({route, navigation}) {
         // The server responded with a status code outside of 2xx
         console.log('Server Error Data:', err.response.data);
         console.log('Status Code:', err.response.status);
-        alert(
+        Alert.alert(
           `Server Error: ${err.response.status} - ${JSON.stringify(
             err.response.data,
           )}`,
         );
       } else if (err.request) {
         // The request was made but no response was received (Network issues)
-        alert('No response from server. Check your internet connection.');
+        Alert.alert('No response from server. Check your internet connection.');
       } else {
         // Something happened in setting up the request
-        alert('Error: ' + err.message);
+        Alert.alert('Error: ' + err.message);
       }
     } finally {
       setLoading(false); // Stop loading
     }
   };
+
+
+  const getGLSettings = async () => {
+    const appUrl = await AsyncStorage.getItem('appUrl');
+
+    const storedUserDataArray = await AsyncStorage.getItem('userDataArray');
+    const parsedUserDataArray =
+      (storedUserDataArray && JSON.parse(storedUserDataArray)) || [];
+
+    let company_code = parsedUserDataArray[0].cmpcode.trim();
+
+    try {
+      let apiUrl = `${appUrl}CRMGLSettings/${company_code}/Scrn_code/Sr/-/${deptNo}/-`
+      console.log('GL Settings: url', apiUrl);
+      const response = await axios.get(apiUrl);
+  
+      console.log('GL Settings:', response.data);
+      setGLSettings(response.data)
+      return response.data;
+  
+    } catch (error) {
+      console.error('Error fetching GL Settings:', error.message);
+    }
+  };
+  
+  
+
+  useEffect(()=>{
+
+
+    getGLSettings();
+  },[])
 
   return (
     <KeyboardAvoidingView

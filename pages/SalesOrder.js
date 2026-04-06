@@ -1991,6 +1991,7 @@ const SalesOrder = ({route}) => {
                                             fontSize: 15,
                                             fontWeight: '600',
                                             width: '80%',
+                                            color:"#000000"
                                           }}>
                                           {item.Custname}
                                         </Text>
@@ -2021,7 +2022,8 @@ const SalesOrder = ({route}) => {
                                           flexDirection: 'row',
                                           marginTop: 6,
                                         }}>
-                                        <Text style={{fontSize: 12}}>
+                                        <Text style={{fontSize: 12,
+                                            color:"#000000"}}>
                                           Acc: {item.account}
                                         </Text>
 
@@ -2030,6 +2032,7 @@ const SalesOrder = ({route}) => {
                                             style={{
                                               fontSize: 12,
                                               marginLeft: 20,
+                                              color:"#000000"
                                             }}>
                                             📞 {item.msg}
                                           </Text>
@@ -2043,15 +2046,18 @@ const SalesOrder = ({route}) => {
                                           marginTop: 6,
                                           justifyContent: 'space-between',
                                         }}>
-                                        <Text style={{fontSize: 12}}>
+                                        <Text style={{fontSize: 12,
+                                            color:"#000000"}}>
                                           Limit: {item.Credit_Limit}
                                         </Text>
 
-                                        <Text style={{fontSize: 12}}>
+                                        <Text style={{fontSize: 12,
+                                            color:"#000000"}}>
                                           Avl Bal: {item.Avai_Bal}
                                         </Text>
 
-                                        <Text style={{fontSize: 12}}>
+                                        <Text style={{fontSize: 12,
+                                            color:"#000000"}}>
                                           Allowed: {item.duedays} d
                                         </Text>
 
@@ -2974,8 +2980,7 @@ const SalesOrder = ({route}) => {
                                           fontWeight: '600',
                                           color: '#1F2937',
                                         },
-                                      ]}
-                                      numberOfLines={1}>
+                                      ]}>
                                       {item.Description}
                                     </Text>
 
