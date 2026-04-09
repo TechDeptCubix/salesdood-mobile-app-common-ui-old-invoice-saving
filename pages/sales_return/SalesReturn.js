@@ -101,6 +101,7 @@ export default function SalesReturn({navigation}) {
       isRefresh ? setRefreshing(true) : setLoading(true);
       setError(null);
       const endpoint = `${url}SalesInvoice/${code}/invoicelist/${deptNoVal}/${salesManVal}/-`;
+      console.log('Endpoint', endpoint);
       const response = await fetch(endpoint, {
         method: 'GET',
         headers: {'Content-Type': 'application/json'},
@@ -156,12 +157,13 @@ export default function SalesReturn({navigation}) {
       const items = raw.map((item, index) => ({
         id: item.ITEM_CODE?.trim() ?? index.toString(),
         name: item.DESCRIPTION?.trim(),
-        qty: item.QTY,
+        qty: item.QTY, // Original Invoice Quantity
+        retQty: item.RetQty ?? 0, // Actual quantity available to return
         unit: item.UNIT?.trim(),
         price: item.PRICE,
         lineTotal: item.LINE_TOTAL,
         discount_amount: item.disc_amt,
-        total_vat_from_api:item.w
+        total_vat_from_api: item.w,
       }));
 
       setInvoices(prev =>
@@ -560,7 +562,7 @@ export default function SalesReturn({navigation}) {
                     invoiceDate: activeInvoice.date,
                     invoiceDetailObject: activeInvoice,
                     salesMan: salesMan,
-                    deptNo:deptNo
+                    deptNo: deptNo,
                   });
                 }}
                 activeOpacity={0.9}>

@@ -52,6 +52,7 @@ const SalesInvoiceNew = ({route}) => {
   const [showActivity, setShowActivity] = useState(false);
 
   const [showCashCust, setShowCashCust] = useState(false);
+  const [showCartPanel, setShowCartPanel] = useState(false);
 
   // const searchUrl = `https://cubixweberp.com:208/api/Search_Items/${cmpcode}/Sitem/`
 
@@ -151,8 +152,6 @@ const SalesInvoiceNew = ({route}) => {
   const [customerCreditBlocked, setCustomerCreditBlocked] = useState(false);
 
   const [totalWithVAT, setTotalWithVAT] = useState(0);
-
-  const [showCartPanel, setShowCartPanel] = useState(false);
 
   const [showUnitPop, setShowUnitPop] = useState(false);
 
@@ -313,15 +312,29 @@ const SalesInvoiceNew = ({route}) => {
   }, []);
 
   const handleRemoveItem = async itemcode => {
-    setShowSelectedStockPop(false);
+    // 1. Filter the list first
     const filteredItems = savedItemData.filter(item => item.Code !== itemcode);
+
+    // 2. Update state and local storage
     setSavedItemData(filteredItems);
     await AsyncStorage.setItem(
       'savedItemDataInv',
       JSON.stringify(filteredItems),
     );
+
+    // 3. Recalculate totals and show success message
     updateTotalUnitPrice(filteredItems);
     showItemRemove();
+
+    // 4. Conditional Close Logic:
+    // If no items are left, close the window.
+    // Otherwise, stay exactly where we are.
+    if (filteredItems.length === 0) {
+      setShowSelectedStockPop(false);
+    } else {
+      // Optional: If you want to stay open, ensure the state is true
+      setShowSelectedStockPop(true);
+    }
   };
 
   const handleEditRemoveItem = async itemcode => {
@@ -378,35 +391,7 @@ const SalesInvoiceNew = ({route}) => {
     }
   };
 
-  const searchEditCustomer = async value => {
-    // setShowActivity(true)
-    console.log('searchEditCustomer', value);
-
-    let customerSearchType = 'Cust';
-    if (selectedRadio?.trim()?.toUpperCase() == 'CASH') {
-      customerSearchType = 'CashCust';
-    }
-
-    try {
-      console.log(
-        `${appUrl}Search_Customer/${cmpcode}/${customerSearchType}/${value}/${deptNo}`,
-      );
-      await axios
-        .get(
-          `${appUrl}Search_Customer/${cmpcode}/${customerSearchType}/${value}/${deptNo}`,
-        )
-        .then(res => {
-          setSelectedCustomer(res.data);
-          AsyncStorage.setItem('selectedCustomerInv', JSON.stringify(res.data))
-            .then(() => console.log('Data saved successfully'))
-            .catch(error => console.log('Error saving data', error));
-        });
-      // setShowActivity(false)
-    } catch (error) {
-      console.log('searchEditCustomererror', error);
-      // setShowActivity(false)
-    }
-  };
+  // Removed searchEditCustomer. No customer details are loaded from storage or auto-selected.
 
   useEffect(() => {
     if (customerSearchItem !== '') {
@@ -421,76 +406,7 @@ const SalesInvoiceNew = ({route}) => {
     }
   }, [customerSearchItem]);
 
-  useEffect(() => {
-    if (selectedCustomer) {
-      console.log('insideSlecCustBlock');
-
-      setCustomerData('');
-      setCustomerSearchItem('');
-
-      if (selectedCustomer.CREDITMETHOD == 'BLOCKED') {
-        setCustomerCreditBlocked(true);
-        Alert.alert('This customer is blocked for any kind of transaction');
-      }
-
-      if (
-        selectedCustomer.CREDITMETHOD == 'CREDIT BLOCK' &&
-        selectedRadio === 'CREDIT'
-      ) {
-        console.log('insideSlecCustCREDITBLOCK');
-        setCustomerCreditBlocked(false);
-
-        if (
-          selectedCustomer.Avai_Bal < selectedCustomer.Credit_Limit &&
-          selectedCustomer.Avai_Bal !== 0
-        ) {
-          setCustomerCreditBlocked(false);
-          setCustomerSearchItem('');
-          setTrn(selectedCustomer.TRN);
-          setPayment(selectedCustomer.terms);
-          setBlockNextButtonView(false);
-        }
-
-        if (selectedCustomer.Avai_Bal > selectedCustomer.Credit_Limit) {
-          setBlockNextButtonView(true);
-          setCustomerSearchItem('');
-          setTrn(selectedCustomer.TRN);
-          setPayment(selectedCustomer.terms);
-          Alert.alert(
-            'Amount Exceed',
-            'Available balance is greater than Credit limit. Please choose cash customer to add more items.',
-            [{text: 'OK'}],
-          );
-        }
-        if (selectedCustomer.Avai_Bal <= 0) {
-          setBlockNextButtonView(true);
-          setCustomerSearchItem('');
-          setTrn(selectedCustomer.TRN);
-          setPayment(selectedCustomer.terms);
-          Alert.alert(
-            'Amount Zero',
-            'Available balance is Zero. Please choose cash customer to add more items.',
-            [{text: 'OK'}],
-          );
-        }
-      }
-
-      if (selectedCustomer.CREDITMETHOD == 'OPEN') {
-        setCustomerCreditBlocked(false);
-        setCustomerSearchItem('');
-        setTrn(selectedCustomer.TRN);
-        setPayment(selectedCustomer.terms);
-        setBlockNextButtonView(false);
-
-        // if (selectedCustomer) {
-        // }
-
-        if (selectedCustomer && searchItemInpRef.current) {
-          searchItemInpRef.current.focus();
-        }
-      }
-    }
-  }, [selectedCustomer]);
+  // Removed effect that auto-fills customer details from selectedCustomer. All customer details must be entered manually.
 
   useEffect(() => {
     if (savedItemData) {
@@ -541,19 +457,11 @@ const SalesInvoiceNew = ({route}) => {
 
     if (selectedStock) {
       getLastCustomerSellingPrice(selectedStock.Code);
-
       setSearchItem('');
-      if (unitPrice) {
-        setUnitPrice(unitPrice);
-        setUnitPriceToShowUser(unitPriceToShowUser);
-
-        if (unitPrice != unitPriceToShowUser) {
-          setChecked(true);
-        }
-      } else {
-        setUnitPrice(selectedStock.price.toString());
-        setUnitPriceToShowUser(selectedStock.price.toString());
-      }
+      // Always reset VAT toggle and price fields to base price
+      setChecked(false);
+      setUnitPrice(selectedStock.price?.toString() || '');
+      setUnitPriceToShowUser(selectedStock.price?.toString() || '');
     }
 
     if (selectedStock && qtyInpRef.current) {
@@ -631,7 +539,6 @@ const SalesInvoiceNew = ({route}) => {
         return;
       }
     }
-    
 
     if (checkQuantity == 0 || checkUnitPrice == 0) {
       Alert.alert('Please enter Quantity and Price');
@@ -650,33 +557,52 @@ const SalesInvoiceNew = ({route}) => {
       showAddToCartErr();
       return;
     }
-    // // Check if the item already exists in the list
-    const itemExists = savedItemDataArray.some(
-      item => item.Code === selectedStock.Code,
-    );
+
+    // Only check for duplicates if there are items in the cart
+    let itemExists = false;
+    if (savedItemDataArray.length > 0) {
+      itemExists = savedItemDataArray.some(
+        item => item.Code === selectedStock.Code,
+      );
+    }
 
     console.log('itemExists >> Sales invoice++ ', itemExists);
-
     console.log(
       'selected account before showAddToCartCustomerErr',
       selectedCustomer,
     );
 
-    if (itemExists) {
-      showItemExistError();
-      setQuantity('');
-      setUnitPrice('');
-      setUnitPriceToShowUser('');
-      setSelectedStock(null);
-      return; // Exit the function
+    // For unregistered (walk-in) customers, only show duplicate error if cart is not empty and item exists
+    if (selectedUserType === 'unreg') {
+      if (savedItemDataArray.length > 0 && itemExists) {
+        showItemExistError();
+        setQuantity('');
+        setUnitPrice('');
+        setUnitPriceToShowUser('');
+        setSelectedStock(null);
+        return; // Exit the function
+      }
+    } else {
+      // For registered customers, show duplicate error as before
+      if (itemExists) {
+        showItemExistError();
+        setQuantity('');
+        setUnitPrice('');
+        setUnitPriceToShowUser('');
+        setSelectedStock(null);
+        return; // Exit the function
+      }
     }
 
-    if (selectedStock['Block Price']) {
-      if (selectedStock['Block Price'] > 0) {
-        if (selectedStock['Block Price'] > unitPrice) {
-          Alert.alert('Entered price less than block price');
-          return;
-        }
+    if (selectedStock['Block Price'] && selectedStock['Block Price'] > 0) {
+      // If Block Price is 50 and unitPrice is 50, this will trigger (>=)
+      // The user MUST enter 50.01 or more to pass.
+      if (selectedStock['Block Price'] >= unitPrice) {
+        Alert.alert(
+          'Invalid Price',
+          `Entered price must be more than the block price (${selectedStock['Block Price']})`,
+        );
+        return;
       }
     }
 
@@ -709,7 +635,7 @@ const SalesInvoiceNew = ({route}) => {
 
       // Add the new item to the list
       const updatedSavedItemData = [...savedItemDataArray, newItem];
-
+      console.log('Payload  to save', updatedSavedItemData);
       const totalIncludingVAT = calculateTotalWithVAT(updatedSavedItemData);
 
       if (
@@ -764,7 +690,7 @@ const SalesInvoiceNew = ({route}) => {
         setSelectedStock(null);
         // showSaveItemSuccess()
 
-        logAsyncData();
+        // logAsyncData();
 
         if (selectedCustomer && searchItemInpRef.current) {
           searchItemInpRef.current.focus();
@@ -856,7 +782,7 @@ const SalesInvoiceNew = ({route}) => {
       setChecked(false);
       // showSaveItemSuccess()
 
-      logAsyncData();
+      // logAsyncData();
 
       if (selectedCustomer && searchItemInpRef.current) {
         searchItemInpRef.current.focus();
@@ -872,22 +798,6 @@ const SalesInvoiceNew = ({route}) => {
         total: quantity * unitPrice,
       };
 
-      console.log('newItem', newItem);
-
-      // Retrieve existing savedItemData from AsyncStorage
-      // const savedItemDataString = await AsyncStorage.getItem('savedItemData');
-      // const savedItemDataArray = savedItemDataString ? JSON.parse(savedItemDataString) : [];
-
-      // console.log('savedItemDataArray', savedItemDataArray)
-
-      // // Check if the item already exists in the list
-      // const itemExists = savedItemDataArray.some(item => item.Code === selectedStock.Code);
-
-      // if (itemExists) {
-      //     showItemExistError()
-      //     return; // Exit the function
-      // }
-
       // Retrieve existing savedItemData from AsyncStorage
       const savedItemDataString = await AsyncStorage.getItem(
         'savedItemDataInv',
@@ -895,6 +805,8 @@ const SalesInvoiceNew = ({route}) => {
       const savedItemDataArray = savedItemDataString
         ? JSON.parse(savedItemDataString)
         : [];
+
+      // Duplicate item check is handled in the main SaveItem logic above
 
       // Add the new item to the list
       const updatedSavedItemData = [...savedItemDataArray, newItem];
@@ -909,7 +821,6 @@ const SalesInvoiceNew = ({route}) => {
         'selectedCustomerInv',
         JSON.stringify(selectedCustomer),
       );
-      // await AsyncStorage.setItem('savedItemDataInv', JSON.stringify(savedItemData))
       await AsyncStorage.setItem(
         'orderRemarkInv',
         orderRemark ? orderRemark : '',
@@ -918,7 +829,6 @@ const SalesInvoiceNew = ({route}) => {
       await AsyncStorage.setItem('paymentInv', payment ? payment : '');
       await AsyncStorage.setItem('deliveryInv', delivery ? delivery : '');
       await AsyncStorage.setItem('validityInv', validity ? validity : '');
-      // await AsyncStorage.setItem('totalUnitPrice', totalUnitPrice)
       await AsyncStorage.setItem(
         'cashCustomerNameInv',
         cashCustomerName ? cashCustomerName : '',
@@ -939,7 +849,7 @@ const SalesInvoiceNew = ({route}) => {
       setSelectedStock(null);
       // showSaveItemSuccess()
 
-      logAsyncData();
+      // logAsyncData();
 
       if (cashCustomerName && searchItemInpRef.current) {
         searchItemInpRef.current.focus();
@@ -971,110 +881,13 @@ const SalesInvoiceNew = ({route}) => {
 
       showCashCustSuccess();
 
-      logAsyncData();
+      // logAsyncData();
     } catch (error) {
       console.error('Error saving data to AsyncStorage', error);
     }
   };
 
-  const logAsyncData = async () => {
-    try {
-      const storedSelectedCustomer = await AsyncStorage.getItem(
-        'selectedCustomerInv',
-      );
-      const storedSavedItemData = await AsyncStorage.getItem(
-        'savedItemDataInv',
-      );
-      const storedOrderRemark = await AsyncStorage.getItem('orderRemarkInv');
-      const storedtrn = await AsyncStorage.getItem('trnInv');
-      const storedPayment = await AsyncStorage.getItem('paymentInv');
-      const storedDelivery = await AsyncStorage.getItem('deliveryInv');
-      const storedValidity = await AsyncStorage.getItem('validityInv');
-      // const storedTotalUnitPrice = await AsyncStorage.getItem('totalUnitPrice');
-      const storedCashCustomerName = await AsyncStorage.getItem(
-        'cashCustomerNameInv',
-      );
-      const storedCashCustomerAddress = await AsyncStorage.getItem(
-        'cashCustomerAddressInv',
-      );
-      const storedCashCustomerPhone = await AsyncStorage.getItem(
-        'cashCustomerPhoneInv',
-      );
-
-      if (storedSelectedCustomer) {
-        setSelectedCustomer(JSON.parse(storedSelectedCustomer));
-      } else {
-        setSelectedCustomer(null);
-      }
-      if (storedSavedItemData) {
-        setSavedItemData(JSON.parse(storedSavedItemData));
-        setIsDataLoaded(true);
-      } else {
-        setSavedItemData([]);
-      }
-      if (storedOrderRemark) {
-        setOrderRemark(storedOrderRemark);
-      } else {
-        setOrderRemark('');
-      }
-      if (storedtrn) {
-        setTrn(storedtrn);
-      } else {
-        setTrn('');
-      }
-      if (storedPayment) {
-        setPayment(storedPayment);
-      } else {
-        setPayment('');
-      }
-      if (storedDelivery) {
-        setDelivery(storedDelivery);
-      } else {
-        setDelivery('');
-      }
-      if (storedValidity) {
-        setValidity(storedValidity);
-      } else {
-        setValidity('');
-      }
-      if (storedCashCustomerName) {
-        setCashCustomerName(storedCashCustomerName);
-        setShowCashCust(true);
-      } else {
-        setCashCustomerName('');
-        setShowCashCust(false);
-      }
-      if (storedCashCustomerAddress) {
-        setCashCustomerAddress(storedCashCustomerAddress);
-        setShowCashCust(true);
-      } else {
-        setCashCustomerAddress('');
-        // setShowCashCust(false)
-      }
-      if (storedCashCustomerPhone) {
-        setCashCustomerPhone(storedCashCustomerPhone);
-        setShowCashCust(true);
-      } else {
-        setCashCustomerPhone('');
-        // setShowCashCust(false)
-      }
-
-      console.log('selectedCustomerLogAsyncData:', storedSelectedCustomer);
-      console.log('savedItemDataLogAsyncData:', storedSavedItemData);
-      console.log('orderRemarkLogAsyncData:', storedOrderRemark);
-      console.log('paymentLogAsyncData:', storedPayment);
-      console.log('deliveryLogAsyncData:', storedDelivery);
-      console.log('validityLogAsyncData:', storedValidity);
-      console.log('cashCustomerNameLogAsyncData:', storedCashCustomerName);
-      console.log(
-        'cashCustomerAddressLogAsyncData:',
-        storedCashCustomerAddress,
-      );
-      console.log('cashCustomerPhoneLogAsyncData:', storedCashCustomerPhone);
-    } catch (error) {
-      console.error('Error loading data from AsyncStorage', error);
-    }
-  };
+  // Removed logAsyncData. No customer details are loaded from storage.
 
   const removeAsyncItems = async () => {
     try {
@@ -1095,7 +908,7 @@ const SalesInvoiceNew = ({route}) => {
       navigation.setParams({type: undefined});
 
       showAsyncItemRemove();
-      logAsyncData();
+      // logAsyncData();
       // updateTotalUnitPrice()
       setTotalUnitPrice(0);
 
@@ -1129,7 +942,7 @@ const SalesInvoiceNew = ({route}) => {
 
       // showAsyncItemRemove()
       showMakeOrderSuccess();
-      logAsyncData();
+      // logAsyncData();
       // updateTotalUnitPrice()
       setTotalUnitPrice(0);
 
@@ -1199,7 +1012,7 @@ const SalesInvoiceNew = ({route}) => {
         setSavedItemData(transformed);
         AsyncStorage.setItem('savedItemDataInv', JSON.stringify(transformed))
           .then(() => {
-            logAsyncData();
+            // logAsyncData();
             console.log('Pull Data saved successfully');
           })
           .catch(error => console.log('Error saving data', error));
@@ -1227,7 +1040,7 @@ const SalesInvoiceNew = ({route}) => {
         setSavedItemData(transformed);
         AsyncStorage.setItem('savedItemDataInv', JSON.stringify(transformed))
           .then(() => {
-            logAsyncData();
+            // logAsyncData();
             console.log('Edit Data saved successfully');
           })
           .catch(error => console.log('Error saving data', error));
@@ -1286,9 +1099,9 @@ const SalesInvoiceNew = ({route}) => {
     setTotalUnitPrice(total);
   };
 
-  useEffect(() => {
-    logAsyncData();
-  }, []);
+  // useEffect(() => {
+  //   logAsyncData();
+  // }, []);
 
   useEffect(() => {
     if (savedItemData.length > 0) {
@@ -1317,6 +1130,7 @@ const SalesInvoiceNew = ({route}) => {
 
   const showMakeOrderSuccess = () => {
     Toast.success(`Invoice created successfully `);
+    navigation.navigate('PreviousSalesInvoice');
   };
 
   const showSaveItemSuccess = () => {
@@ -1393,12 +1207,14 @@ const SalesInvoiceNew = ({route}) => {
           selectedCustomer.phone && selectedCustomer.phone.trim(),
         );
       }
-
       // setSelectedCustomer('')
     }
     if (selectedUserType === 'reg') {
       setSelectedRadio('CREDIT');
       setShowCashCust(false);
+      setCashCustomerName('');
+      setCashCustomerAddress('');
+      setCashCustomerPhone('');
     }
   }, [selectedUserType]);
 
@@ -1706,14 +1522,16 @@ const SalesInvoiceNew = ({route}) => {
                                     onPress={() => {
                                       Keyboard.dismiss();
                                       setSelectedCustomer(item);
+                                      setCustomerSearchItem(''); // Close the suggestion list
+                                      setCustomerData(null); // Hide the suggestion list
                                     }}>
                                     <View style={styles.CustomerListCont}>
-                                      <View style={styles.CustomerImgWrap}>
+                                      {/* <View style={styles.CustomerImgWrap}>
                                         <Image
                                           style={styles.CustomerImage}
                                           source={require('../images/customerList.png')}
                                         />
-                                      </View>
+                                      </View> */}
 
                                       <View style={styles.CustomerListMid}>
                                         <View
@@ -1933,52 +1751,54 @@ const SalesInvoiceNew = ({route}) => {
                                   </View>
                                 </View>
                               )}
-
-                              <View style={styles.NextWrap}>
-                                <View style={styles.NextValuesCotn}>
-                                  <View style={styles.NextValueInner}>
-                                    <Text style={styles.CustHeadText}>
-                                      Credit Limit:
-                                    </Text>
-                                    <Text
-                                      style={[
-                                        styles.CustHeadTextValue,
-                                        {marginLeft: 12},
-                                      ]}>
-                                      {selectedCustomer &&
-                                        selectedCustomer.Credit_Limit}
-                                    </Text>
-                                  </View>
-                                  <View style={styles.NextValueInner}>
-                                    <Text style={styles.CustHeadText}>
-                                      Available Balance:
-                                    </Text>
-                                    <Text
-                                      style={[
-                                        styles.CustHeadTextValue,
-                                        {marginLeft: 12},
-                                      ]}>
-                                      {selectedCustomer &&
-                                        selectedCustomer.Avai_Bal}
-                                    </Text>
-                                  </View>
-                                </View>
-                                {blocknextButtonView === false && (
-                                  <View>
-                                    <TouchableOpacity
-                                      style={styles.NextButton}
-                                      onPress={() => NextClick()}>
+                              {selectedCustomer && (
+                                <View style={styles.NextWrap}>
+                                  <View style={styles.NextValuesCotn}>
+                                    <View style={styles.NextValueInner}>
+                                      <Text style={styles.CustHeadText}>
+                                        Credit Limit:
+                                      </Text>
                                       <Text
                                         style={[
-                                          styles.CustHeadText,
-                                          {color: 'white'},
+                                          styles.CustHeadTextValue,
+                                          {marginLeft: 12},
                                         ]}>
-                                        Next
+                                        {selectedCustomer &&
+                                          selectedCustomer.Credit_Limit}
                                       </Text>
-                                    </TouchableOpacity>
+                                    </View>
+                                    <View style={styles.NextValueInner}>
+                                      <Text style={styles.CustHeadText}>
+                                        Available Balance:
+                                      </Text>
+                                      <Text
+                                        style={[
+                                          styles.CustHeadTextValue,
+                                          {marginLeft: 12},
+                                        ]}>
+                                        {selectedCustomer &&
+                                          selectedCustomer.Avai_Bal}
+                                      </Text>
+                                    </View>
                                   </View>
-                                )}
-                              </View>
+
+                                  {blocknextButtonView === false && (
+                                    <View>
+                                      <TouchableOpacity
+                                        style={styles.NextButton}
+                                        onPress={() => NextClick()}>
+                                        <Text
+                                          style={[
+                                            styles.CustHeadText,
+                                            {color: 'white'},
+                                          ]}>
+                                          Next
+                                        </Text>
+                                      </TouchableOpacity>
+                                    </View>
+                                  )}
+                                </View>
+                              )}
 
                               {selectedCustomer && (
                                 <View style={styles.AddressDetailsWrap}>
@@ -2430,155 +2250,9 @@ const SalesInvoiceNew = ({route}) => {
                                   </View>
                                 </View>
                               </View>
-
-                              {/* <View style={styles.CustomerUIWrap}>
-    
-                                                                    <View style={styles.TabCont}>
-                                                                        <TouchableOpacity style={[styles.TabButtons, walkSelectTab === 'WalkCustomer' && styles.SelectedTab]} onPress={() => setWalkSelectTab('WalkCustomer')}>
-                                                                            <Text style={[styles.TabText, walkSelectTab === 'WalkCustomer' && styles.SelectedText]}>Walk in Customer</Text>
-                                                                        </TouchableOpacity>
-                                                                        <TouchableOpacity style={[styles.TabButtons, { marginLeft: 8 }, walkSelectTab === 'Details' && styles.SelectedTab]} onPress={() => setWalkSelectTab('Details')}>
-                                                                            <Text style={[styles.TabText, walkSelectTab === 'Details' && styles.SelectedText]}>Details</Text>
-                                                                        </TouchableOpacity>
-                                                                    </View>
-    
-                                                                    {
-                                                                        walkSelectTab === 'WalkCustomer' &&
-                                                                        <View style={styles.DetailsInpCont}>
-                                                                            <View style={styles.RemarkInputCont}>
-                                                                                <TextInput
-                                                                                    style={styles.PlaceHolderInput}
-                                                                                    ref={cashCustNameRef}
-                                                                                    placeholder='Name'
-                                                                                    value={cashCustomerName}
-                                                                                    onChangeText={text => setCashCustomerName(text)}
-                                                                                    placeholderTextColor="#aaa"
-                                                                                // onBlur={() => {
-                                                                                //     if (cashCustAddressRef.current) {
-                                                                                //         cashCustAddressRef.current.focus();
-                                                                                //     }
-                                                                                // }}
-                                                                                />
-                                                                            </View>
-    
-                                                                            <View style={styles.RemarkInputCont}>
-                                                                                <TextInput
-                                                                                    style={styles.PlaceHolderInput}
-                                                                                    ref={cashCustAddressRef}
-                                                                                    placeholder='Address'
-                                                                                    value={cashCustomerAddress}
-                                                                                    onChangeText={text => setCashCustomerAddress(text)}
-                                                                                    placeholderTextColor="#aaa"
-                                                                                // onBlur={() => {
-                                                                                //     if (cashCustPhoneRef.current) {
-                                                                                //         cashCustPhoneRef.current.focus();
-                                                                                //     }
-                                                                                // }}
-                                                                                />
-                                                                            </View>
-    
-                                                                            <View style={styles.RemarkInputCont}>
-                                                                                <TextInput
-                                                                                    style={styles.PlaceHolderInput}
-                                                                                    ref={cashCustPhoneRef}
-                                                                                    placeholder='Phone Number'
-                                                                                    value={cashCustomerPhone}
-                                                                                    onChangeText={text => setCashCustomerPhone(text)}
-                                                                                    placeholderTextColor="#aaa"
-                                                                                // onBlur={() => {
-                                                                                //     if (searchItemInpRef.current) {
-                                                                                //         searchItemInpRef.current.focus();
-                                                                                //     }
-                                                                                // }}
-                                                                                />
-                                                                            </View>
-                                                                        </View>
-    
-                                                                    }
-    
-                                                                    {
-                                                                        walkSelectTab === 'Details' &&
-                                                                        <View style={styles.DetailsInpCont}>
-                                                                            <View style={styles.RemarkInputCont}>
-                                                                                <TextInput
-                                                                                    style={styles.PlaceHolderInput}
-                                                                                    placeholder='Enter order remark'
-                                                                                    value={orderRemark}
-                                                                                    onChangeText={text => setOrderRemark(text)}
-                                                                                    placeholderTextColor="#aaa"
-                                                                                />
-                                                                            </View>
-    
-    
-                                                                            <View style={styles.RemarkInputCont}>
-                                                                                <TextInput
-                                                                                    style={styles.PlaceHolderInput}
-                                                                                    placeholder='Enter Trn'
-                                                                                    value={trn}
-                                                                                    onChangeText={text => setTrn(text)}
-                                                                                    placeholderTextColor="#aaa"
-                                                                                />
-                                                                            </View>
-    
-                                                                            <View style={styles.RemarkInputCont}>
-                                                                                <TextInput
-                                                                                    style={styles.PlaceHolderInput}
-                                                                                    placeholder='payment'
-                                                                                    value={payment}
-                                                                                    onChangeText={text => setPayment(text)}
-                                                                                    placeholderTextColor="#aaa"
-                                                                                />
-                                                                            </View>
-    
-                                                                            <View style={styles.RemarkInputCont}>
-                                                                                <TextInput
-                                                                                    style={styles.PlaceHolderInput}
-                                                                                    placeholder='delivery'
-                                                                                    value={delivery}
-                                                                                    onChangeText={text => setDelivery(text)}
-                                                                                    placeholderTextColor="#aaa"
-                                                                                />
-                                                                            </View>
-    
-                                                                            <View style={styles.RemarkInputCont}>
-                                                                                <TextInput
-                                                                                    style={styles.PlaceHolderInput}
-                                                                                    placeholder='validity'
-                                                                                    value={validity}
-                                                                                    onChangeText={text => setValidity(text)}
-                                                                                    placeholderTextColor="#aaa"
-                                                                                />
-                                                                            </View>
-                                                                        </View>
-                                                                    }
-                                                                </View> */}
                             </>
                           )
                         }
-
-                        {/* <View style={styles.NextWrap}>
-    
-                                                        <View style={styles.NextValuesCotn}>
-                                                            <View style={styles.NextValueInner}>
-                                                                <Text style={styles.CustHeadText}>Credit Limit:</Text>
-                                                                <Text style={[styles.CustHeadTextValue, { marginLeft: 12 }]}>{selectedCustomer && selectedCustomer.Credit_Limit}</Text>
-                                                            </View>
-                                                            <View style={styles.NextValueInner}>
-                                                                <Text style={styles.CustHeadText}>Available Balance:</Text>
-                                                                <Text style={[styles.CustHeadTextValue, { marginLeft: 12 }]}>{selectedCustomer && selectedCustomer.Avai_Bal}</Text>
-                                                            </View>
-                                                        </View>
-    
-                                                        {
-                                                            blocknextButtonView === false &&
-                                                            <View>
-                                                                <TouchableOpacity style={styles.NextButton} onPress={() => NextClick()}>
-                                                                    <Text style={[styles.CustHeadText, { color: 'white' }]}>Next</Text>
-                                                                </TouchableOpacity>
-                                                            </View>
-                                                        }
-    
-                                                    </View> */}
                       </>
                     </View>
                   )}
@@ -2597,22 +2271,6 @@ const SalesInvoiceNew = ({route}) => {
                 <>
                   <View style={styles.StockItemBox}>
                     <View style={styles.StockItemWrap}>
-                      {/* <View style={styles.StockItemHead}>
-    
-    
-                                                    <View style={styles.StockBagWrap}>
-    
-                                                        <TouchableOpacity style={styles.stockBagCont} onPress={() => setShowSelectedStockPop(!showSelectedStockPop)}>
-                                                            <Image style={styles.stockBagIcon} source={require('../images/goCart.png')} />
-    
-                                                            <View style={styles.itemCount}>
-                                                                <Text style={styles.itemCountText}>{savedItemData && savedItemData.length}</Text>
-                                                            </View>
-                                                        </TouchableOpacity>
-    
-                                                    </View>
-                                                </View> */}
-
                       <View
                         style={{
                           width: '100%',
@@ -2657,33 +2315,10 @@ const SalesInvoiceNew = ({route}) => {
                       )}
 
                       {stockData && !selectedStock && (
-                        // <View style={styles.StockTableContainer}>
-                        //     <View style={styles.tableRow}>
-                        //         <Text style={[styles.StockheaderCell, {
-                        //             borderTopLeftRadius: 4
-                        //         }]}>Code</Text>
-                        //         <Text style={[styles.StockheaderCell, {
-                        //             borderTopRightRadius: 4
-                        //         }]}>Description</Text>
-                        //     </View>
-
-                        //     <ScrollView style={styles.ScrollView} nestedScrollEnabled={true}>
-                        //         {
-                        //             stockData && stockData.length > 0 && stockData.map((item, index) => (
-                        //                 <TouchableOpacity style={styles.tableRow} key={index} onPress={() => setSelectedStock(item)}>
-                        //                     <Text style={styles.StockdataCell}>{item.Code}</Text>
-                        //                     <Text style={styles.StockdataCell}>{item.Description}</Text>
-                        //                 </TouchableOpacity>
-
-                        //             ))
-                        //         }
-                        //     </ScrollView>
-
-                        // </View>
                         <>
                           <ScrollView
                             nestedScrollEnabled={true}
-                            contentContainerStyle={[styles.CheckStockListView]}
+                            contentContainerStyle={styles.CheckStockListView}
                             keyboardShouldPersistTaps="handled">
                             {stockData &&
                               stockData.length > 0 &&
@@ -2696,59 +2331,58 @@ const SalesInvoiceNew = ({route}) => {
                                   key={index}
                                   onPress={() => setSelectedStock(item)}>
                                   <View style={styles.CustomerListCont}>
-                                    <View style={styles.CustomerImgWrap}>
-                                      <Image
-                                        style={styles.CustomerImage}
-                                        source={require('../images/openBoxW.png')}
-                                      />
-                                    </View>
-
+                                    {/* Middle Content Area */}
                                     <View style={styles.CustomerListMid}>
-
-                                    <Text
-                                            style={[styles.StockListDescText]}>Unit - 
-                                            {item.unit} 
-                                          </Text>
                                       <View
                                         style={{
                                           flexDirection: 'row',
                                           justifyContent: 'space-between',
                                           width: '100%',
                                         }}>
-                                        <View
+                                        <Text
                                           style={[
                                             styles.StockListDescText,
                                             {
-                                              flexDirection: 'row',
-                                              justifyContent: 'space-between',
-                                              width: '100%',
+                                              fontFamily: 'Lexend-Bold',
+                                              marginBottom: 4,
                                             },
                                           ]}>
-                                          <Text
-                                            style={[styles.StockListDescText]}>
-                                            {item.Description} 
-                                          </Text>
-                                          <Text
-                                            style={[
-                                              styles.StockListDescTextSmall,
-                                              {
-                                                color: '#30B3A4',
-                                                fontFamily: 'Lexend-Regular',
-                                              },
-                                            ]}>
-                                            {item.Qty}
-                                          </Text>
-                                        </View>
-                                      </View>
-                                      <View
-                                        style={{
-                                          flexDirection: 'row',
-                                          width: '100%',
-                                          paddingVertical: 6,
-                                        }}>
+                                          {item.Description}
+                                        </Text>
                                         <Text
                                           style={styles.StockListDescTextSmall}>
                                           {item.Code}
+                                        </Text>
+                                      </View>
+
+                                      <View
+                                        style={{
+                                          flexDirection: 'row',
+                                          justifyContent: 'space-between',
+                                          width: '100%',
+                                          marginTop: 6,
+                                          paddingTop: 6,
+                                          borderTopWidth: 0.5,
+                                          borderTopColor: '#E0E0E0',
+                                        }}>
+                                        <Text
+                                          style={styles.StockListDescTextSmall}>
+                                          Unit:{' '}
+                                          <Text
+                                            style={{fontFamily: 'Lexend-Bold'}}>
+                                            {item.unit}
+                                          </Text>
+                                        </Text>
+
+                                        <Text
+                                          style={[
+                                            styles.StockListDescTextSmall,
+                                            {
+                                              color: '#30B3A4',
+                                              fontFamily: 'Lexend-Bold',
+                                            },
+                                          ]}>
+                                          Qty: {item.Qty}
                                         </Text>
                                       </View>
                                     </View>
@@ -2756,7 +2390,6 @@ const SalesInvoiceNew = ({route}) => {
                                 </TouchableOpacity>
                               ))}
                           </ScrollView>
-
                           {stockData === null && <ActivityIndicator />}
 
                           {stockData && stockData.length === 0 && (
@@ -2937,20 +2570,22 @@ const SalesInvoiceNew = ({route}) => {
                             </View>
                           </View>
 
-                          <TouchableOpacity
-                            style={{
-                              flexDirection: 'column',
-                              alignItems: 'left',
-                              marginLeft: 15,
-                            }}
-                            onPress={() => {
-                              setChecked(!checked);
-                            }}>
-                            <Checkbox
-                              status={checked ? 'checked' : 'unchecked'}
-                            />
-                            <Text style={{color: '#000000'}}>Incl. VAT</Text>
-                          </TouchableOpacity>
+                          {cmpcode?.toUpperCase()?.trim() !== 'ICUP' && (
+                            <TouchableOpacity
+                              style={{
+                                flexDirection: 'column',
+                                alignItems: 'flex-start',
+                                marginLeft: 15,
+                              }}
+                              onPress={() => {
+                                setChecked(!checked);
+                              }}>
+                              <Checkbox
+                                status={checked ? 'checked' : 'unchecked'}
+                              />
+                              <Text style={{color: '#000000'}}>Incl. VAT</Text>
+                            </TouchableOpacity>
+                          )}
                         </View>
 
                         <View style={[styles.TANDCInpItem, {width: '75%'}]}>
@@ -4315,9 +3950,9 @@ const styles = StyleSheet.create({
   },
 
   CustomerListMid: {
+    flex: 1,
     flexDirection: 'column',
     alignItems: 'flex-start',
-    width: '80%',
     marginLeft: 12,
   },
   StockListDescText: {

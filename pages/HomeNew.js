@@ -2215,6 +2215,64 @@ const HomeNew = () => {
                           </View>
                         </TouchableOpacity>
                       )}
+                        {menuNotAllowedToThisCompany ? (
+                        menuNotAllowedToThisCompany.some(
+                          itemSommy =>
+                            itemSommy.MENUID.trim().toUpperCase() ==
+                            'Sales Return List'.trim().toUpperCase(),
+                        ) ? null : menuAllowedToThisRole?.length == 0 ||
+                          menuAllowedToThisRole?.some(
+                            itemSommy =>
+                              itemSommy.MENUID.trim().toUpperCase() ==
+                              'Sales Return List'.trim().toUpperCase(),
+                          ) ? (
+                          <TouchableOpacity
+                            style={[
+                              styles.ItemCont,
+                              {backgroundColor: '#D4CFC5'},
+                            ]}
+                            onPress={() => navigation.navigate('SalesReturnList')}>
+                            <View style={styles.innerItem}>
+                              <View style={styles.TouchablwWhiteBackg}>
+                                <Image
+                                  source={require('../images/todoDark.png')}
+                                  style={[
+                                    styles.optionIcon,
+                                    {resizeMode: 'contain'},
+                                  ]}></Image>
+                              </View>
+                              <View style={styles.innerText}>
+                                <Text style={styles.optionText}>
+                                  Sales Return List
+                                </Text>
+                              </View>
+                            </View>
+                          </TouchableOpacity>
+                        ) : null
+                      ) : (
+                        <TouchableOpacity
+                          style={[
+                            styles.ItemCont,
+                            {backgroundColor: '#D4CFC5'},
+                          ]}
+                          onPress={() => navigation.navigate('SalesReturnList')}>
+                          <View style={styles.innerItem}>
+                            <View style={styles.TouchablwWhiteBackg}>
+                              <Image
+                                source={require('../images/todoDark.png')}
+                                style={[
+                                  styles.optionIcon,
+                                  {resizeMode: 'contain'},
+                                ]}></Image>
+                            </View>
+                            <View style={styles.innerText}>
+                              <Text style={styles.optionText}>
+                                Sales Return List
+                              </Text>
+                            </View>
+                          </View>
+                        </TouchableOpacity>
+                      )}
 
 
 {menuNotAllowedToThisCompany ? (

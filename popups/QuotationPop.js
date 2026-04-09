@@ -76,7 +76,7 @@ const QuotationPop = ({
   console.log('van in Quotation Popup page >>', van);
 
   const [locusername, setLocusername] = useState('');
-
+  const [customerCashAccount, setCustomerCashAccount] = useState('');
   useEffect(() => {
     const getUserName = async () => {
       const value = await AsyncStorage.getItem('loginUserName');
@@ -121,6 +121,38 @@ const QuotationPop = ({
       return '';
     }
   };
+
+  const CustomerCashAccountInv = async () => {
+    try {
+      const appUrlpath = `${appUrl}api/CRMGLSettings/${cmpcode}/Scrn_code/si/-/${deptNo}/-`;
+
+      console.log('appUrlpath getcashcustomer ', appUrlpath);
+
+      let resultOfCashAccount = await axios.get(appUrlpath);
+
+      console.log('custom cash account', resultOfCashAccount);
+
+      const data = resultOfCashAccount?.data || [];
+
+      const cashCustomerAccount = data.find(
+        item => item.Scrn_code === 'SI-CA-D',
+      );
+
+      console.log('Cash Customer Account Object:', cashCustomerAccount);
+
+      const cashAccountNumber = cashCustomerAccount?.ACCOUNT;
+
+      console.log('Cash Account Number:', cashAccountNumber);
+
+      setCustomerCashAccount(cashAccountNumber);
+    } catch (error) {
+      console.log('Error fetching cash account', error);
+    }
+  };
+
+  useEffect(() => {
+    CustomerCashAccountInv();
+  }, []);
 
   const [date, setDate] = useState(new Date());
 
@@ -414,11 +446,12 @@ const QuotationPop = ({
 
         .BottomSignSection {
             width: 100%;
-            display: flex;
             flex-direction: row;
             justify-content: space-between;
             align-items: center;
             padding-bottom: 50px;
+            padding-left:12px;
+            padding-top: 30px;
         }
 
         .ForCustomer {
@@ -621,7 +654,7 @@ const QuotationPop = ({
                         <div style="font-weight: bold;">:</div>
                     </div>
                     <div>
-                        <div style="font-weight: bold;">${
+                        <div style="font-weight: bold;">MFS-${
                           result.invoiceNo ? result.invoiceNo : ''
                         }
                         </div>
@@ -1690,6 +1723,7 @@ const QuotationPop = ({
         const postData = JSON.stringify(newJsonWithSalesManChanged);
 
         console.log('postData', postData);
+        // return;
 
         const appUrl = await AsyncStorage.getItem('appUrl');
 
@@ -1756,59 +1790,6 @@ const QuotationPop = ({
     setShowCartPanel(false);
   };
 
-  const transformData1 = (
-    data,
-    customer,
-    orderRemark,
-    payment,
-    delivery,
-    validity,
-    totalUnitPrice,
-    cashCustomerName,
-    cashCustomerAddress,
-    cashCustomerPhone,
-  ) => {
-    return data.map((item, index) => ({
-      cmpcode: cmpcode,
-      Cust_Acc: customer ? customer.account : '',
-      Acc_Descr: customer ? customer.Custname : '',
-      Total_Amt: calculatedValue ? calculatedValue : '',
-      Slno: index + 1,
-      code: item.Code.trim(),
-      description: item.Description.trim(),
-      locn: '',
-      unit: 0,
-      qty: item.quantity,
-      unit_price: item.unitPrice,
-      disc_percentage: 0,
-      Amount: item.total,
-      x: '',
-      cntrl: '',
-      fraction: 1,
-      qno: 0,
-      oem: item.OEM,
-      vat_percentage: 5,
-      Vatamt: vatValue ? vatValue : '0',
-      total: totalUnitPrice,
-      UPrice_VInc: 0,
-      Curstk: 0,
-      // sales_man: customer ? customer.sale_man : '',
-      sales_man: salesMan ? salesMan : '',
-      itemwiseRemark: '',
-      BarcodeRemark: '',
-      OrderRemark: orderRemark,
-      cash_customer: cashCustomerName ? 'yes' : 'no',
-      cash_customer_company_name: cashCustomerName,
-      cash_customer_company_address: cashCustomerAddress,
-      cash_customer_company_phone_number: cashCustomerPhone,
-      quotationNotes_payment: payment,
-      quotationNotes_Delivery: delivery,
-      quotationNotes_Validity: validity,
-      quotation_number: '0',
-      operation: type && type === 'edit' ? 'edit' : 'save',
-    }));
-  };
-
   const transformData = (
     data,
     customer,
@@ -1821,52 +1802,6 @@ const QuotationPop = ({
     cashCustomerAddress,
     cashCustomerPhone,
   ) => {
-    // old way before standardisation
-    // return data.map((item, index) => ({
-    //     cmpcode: cmpcode,
-    //     // so_no: "1001",
-    //     // so_date: "2023-01-12",
-    //     Cust_Acc: selectedUserType === 'reg' && customer ? customer.account : '',
-    //     Acc_Descr: selectedUserType === 'reg' && customer ? customer.Custname : '',
-    //     Total_Amt: calculatedValue ? calculatedValue : '0',
-    //     Slno: index + 1,
-    //     code: item.Code?.trim(),
-    //     description: item.Description?.trim(),
-    //     locn: van,
-    //     unit: unitValue,
-    //     qty: item.quantity,
-    //     unit_price: item.unitPrice,
-    //     disc_percentage: "0",
-    //     Amount: item.total,
-    //     x: "",
-    //     cntrl: "8C846C86-19D2-4FB6-AF18-D5E067357423",
-    //     fraction: "1",
-    //     qno: "0",
-    //     oem: item.OEM,
-    //     vat_percentage: 5,
-    //     Vatamt: vatValue ? vatValue : '0',
-    //     total: totalUnitPrice,
-    //     UPrice_VIncl: "0",
-    //     Curstk: "0",
-    //     sales_man: salesMan ? salesMan : '',
-    //     itemwiseRemark: highPriority ? 'high' : '',
-    //     BarcodeRemark: selectedRadio,
-    //     // add radio cash/credit
-    //     OrderRemark: orderRemark,
-    //     cash_customer: selectedUserType === 'unreg' ? "yes" : "no",
-    //     cash_customer_company_address: cashCustomerAddress,
-    //     cash_customer_company_name: cashCustomerName,
-    //     cash_customer_company_phone_number: cashCustomerPhone,
-    //     quotationNotes_Delivery: delivery,
-    //     quotationNotes_Validity: validity,
-    //     quotationNotes_payment: payment,
-    //     quotation_number: "0",
-    //     operation: type && type === 'edit' ? 'edit' : 'save',
-    //     disc_amt: discount,
-    //     deptNo: deptNo ? deptNo : '',
-
-    // }));
-
     console.log('van and data item array  ', van, data);
     return data.map((item, index) => ({
       slno: index + 1 + '',
@@ -1884,7 +1819,7 @@ const QuotationPop = ({
       qno: 0,
       oem: item.OEM ? item.OEM : '',
       vatPercent: 5,
-      vatamt: vatValue ? vatValue : '0',
+      vatamt: (item.unitPrice * item.quantity * (VAT_RATE / 100)).toFixed(2),
       total: totalUnitPrice,
       unitPriceVatIncl: 0,
       curstk: 0,
@@ -1917,7 +1852,10 @@ const QuotationPop = ({
           ? 'yes'
           : 'no',
       inv_no: '68435', // this is dummy but no problem
-      cust_acc: selectedUserType === 'reg' && customer ? customer.account : '',
+      cust_acc:
+        selectedUserType === 'reg' && customer
+          ? customer.account
+          : customerCashAccount,
       inv_total: String(calculatedValue),
       inv_cost: totalCostAvg ? String(totalCostAvg) : '0',
       jv_num: '',
@@ -1990,8 +1928,7 @@ const QuotationPop = ({
       pump: '',
       // governor: trn ? `${trn}(TRN)` : '',
       governor: trn ? trn : '',
-      feedpump: '',
-      injector: cashCustomerAddress ? cashCustomerAddress : '',
+      feedpump: cashCustomerAddress ? cashCustomerAddress : '',
       // starter: customer ? `${(customer.phone).trim()} (TELEPHONE)` : '',
       starter: customer
         ? customer.phone.trim()
@@ -2042,7 +1979,9 @@ const QuotationPop = ({
       sono: '0',
       quotno: '0',
       Avlqty: '0',
-      Vatamt: '0',
+      Vatamt: String(
+        (item.unitPrice * item.quantity * (VAT_RATE / 100)).toFixed(2),
+      ),
       BDiscsplit: '0',
       total: '0',
       // oem: item.OEM,
@@ -2401,16 +2340,17 @@ const QuotationPop = ({
                 )}
               </Text>
             </View>
-            {cmpcode !== 'SOCA' && (
+            {!['SOCA', 'ICUP'].includes(cmpcode?.toUpperCase()?.trim()) && (
               <View style={styles.RemarkInputCont}>
                 <TextInput
                   style={styles.PlaceHolderInput}
                   placeholder="Discount"
                   value={discount}
-                  keyboardType="numeric" // This ensures the numeric keyboard appears
+                  keyboardType="numeric"
                   onChangeText={text => {
-                    const numericText = text.replace(/[^0-9.]/g, ''); // This removes any non-numeric characters
-                    if (numericText > totalUnitPrice) {
+                    const numericText = text.replace(/[^0-9.]/g, '');
+
+                    if (Number(numericText) > totalUnitPrice) {
                       Alert.alert('Discount exceeded total', '', [
                         {text: 'OK'},
                       ]);
@@ -2419,12 +2359,10 @@ const QuotationPop = ({
                       setDiscount(numericText);
                     }
                   }}
-                  // onChangeText={text => setDiscount(text)}
                   placeholderTextColor="#aaa"
                 />
               </View>
             )}
-
             {/* {
                             page === 'SALESINV' &&
                             <View style={styles.RemarkInputCont}>
@@ -2608,48 +2546,6 @@ const QuotationPop = ({
                 </Text>
               )}
             </View>
-            {/* <View style={styles.SubTotalCont}>
-                            <Text style={styles.CustomerValueText}>Payment</Text>
-                            <Text style={styles.TotalValueTexts}>{payment ? payment : ''}</Text>
-                        </View>
-                        <View style={styles.SubTotalCont}>
-                            <Text style={styles.CustomerValueText}>Delivery</Text>
-                            <Text style={styles.TotalValueTexts}>{delivery ? delivery : ""}</Text>
-                        </View> */}
-            {/* <View style={styles.SubTotalCont}>
-                            <Text style={styles.CustomerValueText}>Validity</Text>
-                            <Text style={styles.TotalValueTexts}>{validity ? validity : ""}</Text>
-                        </View> */}
-
-            {/* <View style={styles.TaxBox}>
-                            <View style={styles.TaxCont}>
-                                <Text style={styles.CustomerValueText}>VAT% :</Text>
-                                <Text style={styles.CustomerValueText}>5%</Text>
-                            </View>
-                            <View style={styles.TaxCont}>
-                                <Text style={styles.CustomerValueText}>VAT :</Text>
-                                <Text style={styles.CustomerValueText}>0.5</Text>
-                            </View>
-                            <View style={styles.TaxCont}>
-                                <Text style={styles.CustomerValueText}>Amount Incl.VAT</Text>
-                                <Text style={styles.CustomerValueText}>10.5</Text>
-                            </View>
-                        </View>
-    
-                        <View style={styles.TaxBox2}>
-                            <View style={styles.TaxCont}>
-                                <Text style={styles.CustomerValueText}>Payment</Text>
-                                <Text style={styles.CustomerValueText}>{payment ? payment : ''}</Text>
-                            </View>
-                            <View style={styles.TaxCont}>
-                                <Text style={styles.CustomerValueText}>Delivery</Text>
-                                <Text style={styles.CustomerValueText}>{delivery ? delivery : ""}</Text>
-                            </View>
-                            <View style={styles.TaxCont}>
-                                <Text style={styles.CustomerValueText}>Validity</Text>
-                                <Text style={styles.CustomerValueText}>{validity ? validity : ""}</Text>
-                            </View>
-                        </View> */}
           </ScrollView>
 
           {transformedData.length > 0 && !error && !loading && (
@@ -2897,9 +2793,9 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     paddingVertical: 12,
     paddingHorizontal: 8,
-    borderWidth: 1,
-    borderColor: '#dbdbdb',
-    borderRadius: 6,
+    // borderWidth: 1,
+    // borderColor: '#dbdbdb',
+    // borderRadius: 6,
     marginVertical: 6,
   },
   DescText: {

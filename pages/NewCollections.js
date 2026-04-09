@@ -3,12 +3,12 @@ import {
   Text,
   StyleSheet,
   Dimensions,
+  Platform,
   Image,
   TouchableOpacity,
   TextInput,
   ScrollView,
   ActivityIndicator,
-  Button,
   FlatList,
   KeyboardAvoidingView,
   PermissionsAndroid,
@@ -1163,735 +1163,300 @@ const NewCollections = () => {
 
   // console.log(fromDate, toDate)
 
+  // ── Shared: render a customer card ──────────────────────────────────────
+  const renderCustomerCard = (item, index, showBalance = false) => {
+    const isSelected = selectedStock?.account === item.account;
+    const balance = Number(item?.credit || 0) - Number(item?.debit || 0);
+    const balanceColor =
+      balance > 0 ? '#22A45D' : balance < 0 ? '#E74C3C' : '#888';
+    const expanded = expandedItems.includes(item.account);
+
+    return (
+      <View
+        key={index}
+        style={[
+          styles.CustomerCard,
+          isSelected && styles.CustomerCardSelected,
+        ]}>
+        {/* Main tappable row — clicking anywhere selects the customer */}
+        <TouchableOpacity
+          activeOpacity={0.75}
+          onPress={() => setSelectedStock(item)}
+          style={styles.CustomerCardBody}>
+          {/* Avatar */}
+          <View style={styles.Avatar}>
+            <Text style={styles.AvatarText}>
+              {(item.Custname || '?').charAt(0).toUpperCase()}
+            </Text>
+          </View>
+
+          {/* Middle info */}
+          <View style={styles.CardMid}>
+            <Text style={styles.CardName} numberOfLines={1}>
+              {item.Custname}
+            </Text>
+            <View style={styles.CardMetaRow}>
+              <Text style={styles.CardMeta}>{item.account}</Text>
+              {item.Credit_Limit ? (
+                <>
+                  <Text style={styles.CardMetaSep}>·</Text>
+                  <Text style={styles.CardMeta}>
+                    Limit: {item.Credit_Limit}
+                  </Text>
+                </>
+              ) : null}
+            </View>
+            {showBalance && (
+              <Text style={[styles.CardBalance, {color: balanceColor}]}>
+                Avail. Bal: {balance.toFixed(2)}
+              </Text>
+            )}
+            {!showBalance && item.Avai_Bal !== undefined && (
+              <Text style={[styles.CardBalance, {color: '#5A55CA'}]}>
+                Bal: {item.Avai_Bal}
+              </Text>
+            )}
+          </View>
+
+          {/* Right — expand toggle */}
+          <TouchableOpacity
+            style={styles.ExpandBtn}
+            hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}
+            onPress={e => {
+              e.stopPropagation();
+              toggleExpand(item.account);
+            }}>
+            <Text style={styles.ExpandBtnText}>{expanded ? '▲' : '▼'}</Text>
+          </TouchableOpacity>
+        </TouchableOpacity>
+
+        {/* Expanded actions */}
+        {expanded && (
+          <View style={styles.CardActions}>
+            <TouchableOpacity
+              style={[styles.CardActionBtn, {backgroundColor: '#5A55CA'}]}
+              onPress={() => statementClick(item)}>
+              <Text style={styles.CardActionText}> Statement</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.CardActionBtn, {backgroundColor: '#30B3A4'}]}
+              onPress={() => outStandingClick(item)}>
+              <Text style={styles.CardActionText}> Outstanding</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+      </View>
+    );
+  };
+
   return (
     <>
-      <View contentContainerStyle={styles.HomeWrap}>
-        {/* <Header /> */}
-
+      <View style={styles.HomeWrap}>
         <HeaderUiNew name={'Collections'} />
-
         <ToastManager width={350} height={100} textStyle={{fontSize: 17}} />
 
         <KeyboardAvoidingView
           behavior="padding"
           keyboardVerticalOffset={Platform.OS === 'ios' ? 120 : 0}
           style={styles.HomeCont}>
-          {/* <View style={styles.HomeTextCont}>
-                        <TouchableOpacity onPress={() => navigation.navigate('Home')}>
-                            <Image style={styles.HeadIcon} source={require('../images/backIcon.png')} />
-                        </TouchableOpacity>
-                        <Text style={styles.HomeText}>Customer Details</Text>
-                    </View> */}
-
-          <View style={[styles.TANDCInpCont, {width: '90%'}]}>
-            {/* <View style={styles.InputImageCont}>
-                            <Image style={styles.SearchIcon} source={require('../images/orangeLens.png')} />
-                        </View> */}
+          <View style={styles.SearchBar}>
+            {/* <Text style={styles.SearchIcon}>🔍</Text> */}
             <TextInput
-              style={styles.SrchPlaceHolderInput}
-              placeholder="Enter Customer name..."
+              style={styles.SearchInput}
+              placeholder="Search customer name..."
               value={searchItem}
               onChangeText={text => setSearchItem(text)}
-              placeholderTextColor="#2b2b2b"
+              placeholderTextColor="#999"
             />
+            {searchItem.length > 0 && (
+              <TouchableOpacity onPress={() => setSearchItem('')}>
+                <Text style={{color: '#999', fontSize: 16, paddingRight: 8}}>
+                  ✕
+                </Text>
+              </TouchableOpacity>
+            )}
           </View>
 
-          {showActivity && <ActivityIndicator />}
-
-          {showLoader && <ActivityIndicator />}
-
-          {stockData?.length > 0 ? (
-            <>
-              {stockData && !selectedStock && searchItem !== '' && (
-                <ScrollView
-                  contentContainerStyle={[styles.CheckStockListView]}
-                  keyboardShouldPersistTaps="always">
-                  {stockData &&
-                    stockData.length > 0 &&
-                    stockData.map((item, index) => (
-                      <View style={styles.StockListItem} key={index}>
-                        <View style={styles.CustomerListCont}>
-                          <View style={styles.CustomerImgWrap}>
-                            <Image
-                              style={styles.CustomerImage}
-                              source={require('../images/customerList.png')}
-                            />
-                          </View>
-
-                          <View style={styles.CustomerListMid}>
-                            <View
-                              style={{
-                                flexDirection: 'row',
-                                justifyContent: 'space-between',
-                                width: '100%',
-                              }}>
-                              <TouchableOpacity
-                                style={[
-                                  styles.StockListDescText,
-                                  {width: '75%'},
-                                ]}
-                                onPress={() => setSelectedStock(item)}>
-                                <Text style={[styles.StockListDescText]}>
-                                  {item.Custname}
-                                </Text>
-                              </TouchableOpacity>
-                              <Text
-                                style={[
-                                  styles.StockListDescTextSmall,
-                                  {
-                                    color: '#30B3A4',
-                                    fontFamily: 'Lexend-Regular',
-                                  },
-                                ]}>
-                                {item.Avai_Bal}
-                              </Text>
-                            </View>
-                            <View
-                              style={{
-                                flexDirection: 'row',
-                                width: '100%',
-                                paddingVertical: 6,
-                              }}>
-                              <Text style={styles.StockListDescTextSmall}>
-                                {item.account}
-                              </Text>
-                              <View
-                                style={{
-                                  marginLeft: 24,
-                                  flexDirection: 'row',
-                                }}>
-                                <Text style={[styles.StockListDescTextSmall]}>
-                                  C.Limit:
-                                </Text>
-                                <Text style={[styles.StockListDescTextSmall]}>
-                                  {item.Credit_Limit}
-                                </Text>
-                              </View>
-
-                              <TouchableOpacity
-                                style={[
-                                  styles.PlusMinusCont,
-                                  {marginLeft: 'auto'},
-                                ]}
-                                onPress={() => toggleExpand(item.account)}>
-                                {expandedItems.includes(item.account) ? (
-                                  <Image
-                                    style={styles.PlusMinusImg}
-                                    source={require('../images/chkMinus.png')}
-                                  />
-                                ) : (
-                                  <Image
-                                    style={styles.PlusMinusImg}
-                                    source={require('../images/chkPlus.png')}
-                                  />
-                                )}
-                              </TouchableOpacity>
-                            </View>
-                          </View>
-                        </View>
-
-                        {expandedItems.includes(item.account) && (
-                          <View style={styles.QtyAvlQtyCont}>
-                            <TouchableOpacity
-                              style={[
-                                styles.QtyCont,
-                                {backgroundColor: '#D8D8DA', marginRight: 16},
-                              ]}
-                              onPress={() => statementClick(item)}>
-                              <Text style={styles.QtyText}>Statement</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                              style={[
-                                styles.QtyCont,
-                                {backgroundColor: '#D8D8DA'},
-                              ]}
-                              onPress={() => outStandingClick(item)}>
-                              <Text style={styles.AvlText}>Outstanding</Text>
-                            </TouchableOpacity>
-                          </View>
-                        )}
-                      </View>
-                    ))}
-                </ScrollView>
-              )}
-            </>
-          ) : (
-            <View>
-              <Text style={{marginTop: 10, fontSize: 18}}>No Data Found</Text>
-            </View>
+          {(showActivity || showLoader) && (
+            <ActivityIndicator color="#5A55CA" style={{marginTop: 12}} />
           )}
+
+          {searchItem !== '' && stockData && !selectedStock && (
+            <ScrollView
+              style={{width: '100%'}}
+              contentContainerStyle={styles.ListContainer}
+              keyboardShouldPersistTaps="always">
+              {stockData.length === 0 ? (
+                <View style={styles.EmptyWrap}>
+                  <Text style={styles.EmptyText}>No customers found</Text>
+                </View>
+              ) : (
+                stockData.map((item, index) =>
+                  renderCustomerCard(item, index, false),
+                )
+              )}
+            </ScrollView>
+          )}
+
           {!stockData && !selectedStock && !searchItem && top50Customers && (
-            <>
-              {/* <View style={{ marginHorizontal: 12, marginVertical: 12 }}>
-                                <Text style={styles.StockLabel}>Top 50 Customers</Text>
-                            </View> */}
-              {/* <View style={styles.TableContainer}>
-                                <View style={styles.tableRow}>
-                                    <Text
-                                        style={[styles.headerCell, {
-                                            borderTopLeftRadius: 4
-                                        }]}
-                                    >
-                                        Name
-                                    </Text>
-                                    <Text style={styles.headerCell}>
-                                        Account Number
-                                    </Text>
-                                    <Text
-                                        style={[styles.headerCell, {
-                                            borderTopRightRadius: 4
-                                        }]}
-                                    >
-                                        OpenBalance
-                                    </Text>
-                                </View>
-
-                                <ScrollView style={styles.ScrollView}>
-                                    {
-                                        top50Customers && top50Customers.length > 0 && top50Customers.slice(0, 25).map((item, index) => (
-                                            <TouchableOpacity style={styles.tableRow} key={index} onPress={() => setSelectedStock(item)}>
-                                                <Text style={styles.dataCell}>{item.Custname}</Text>
-                                                <Text style={styles.dataCell}>{item.account}</Text>
-                                                <Text style={styles.dataCell}>{item.openbal}</Text>
-                                            </TouchableOpacity>
-
-                                        ))
-                                    }
-                                </ScrollView>
-
-
-
-                                {
-                                    top50Customers && top50Customers.length === 0 &&
-                                    <View>
-                                        <Text style={{
-                                            color: 'red'
-                                        }}>No data available</Text>
-                                    </View>
-                                }
-
-                            </View> */}
-              <ScrollView
-                contentContainerStyle={[styles.CheckStockListView]}
-                keyboardShouldPersistTaps="always">
-                {top50Customers &&
-                  top50Customers.length > 0 &&
-                  top50Customers.map((item, index) => (
-                    <View style={styles.StockListItem} key={index}>
-                      <View style={styles.CustomerListCont}>
-                        <View style={styles.CustomerImgWrap}>
-                          <Image
-                            style={styles.CustomerImage}
-                            source={require('../images/customerList.png')}
-                          />
-                        </View>
-
-                        <View style={styles.CustomerListMid}>
-                          <View
-                            style={{
-                              flexDirection: 'row',
-                              justifyContent: 'space-between',
-                              width: '100%',
-                            }}>
-                            <TouchableOpacity
-                              style={[styles.StockListDescText, {width: '75%'}]}
-                              onPress={() => setSelectedStock(item)}>
-                              <Text style={[styles.StockListDescText]}>
-                                {item.Custname}
-                              </Text>
-                            </TouchableOpacity>
-                            <Text
-                              style={[
-                                styles.StockListDescTextSmall,
-                                {
-                                  color: '#30B3A4',
-                                  fontFamily: 'Lexend-Regular',
-                                },
-                              ]}>
-                              {item.Balance}
-                            </Text>
-                          </View>
-                          <View
-                            style={{
-                              flexDirection: 'row',
-                              width: '100%',
-                              paddingVertical: 6,
-                            }}>
-                            <Text style={styles.StockListDescTextSmall}>
-                              {item.account}
-                            </Text>
-                            <View
-                              style={{
-                                marginLeft: 24,
-                                flexDirection: 'row',
-                              }}>
-                              <Text style={[styles.StockListDescTextSmall]}>
-                                C.Limit:
-                              </Text>
-                              <Text style={[styles.StockListDescTextSmall]}>
-                                {item.Credit_Limit}
-                              </Text>
-                            </View>
-                          </View>
-
-                          {/* showed Avail.Bal here */}
-                          <View
-                            style={{
-                              flexDirection: 'row',
-                              justifyContent: 'space-between',
-                              width: '100%',
-                            }}>
-                            <View style={{flexDirection: 'row'}}>
-                              <Text style={styles.StockListDescTextSmall}>
-                                Avail.Bal:{' '}
-                              </Text>
-
-                              {(() => {
-                                // 1. Calculate the raw balance once
-                                const balance =
-                                  Number(item?.credit || 0) -
-                                  Number(item?.debit || 0);
-
-                                // 2. Determine color based on the number
-                                const balanceColor =
-                                  balance > 0
-                                    ? 'green'
-                                    : balance < 0
-                                    ? 'red'
-                                    : 'gray';
-
-                                return (
-                                  <Text
-                                    style={[
-                                      styles.StockListDescTextSmall,
-                                      {color: balanceColor, fontWeight: 'bold'},
-                                    ]}>
-                                    {/* 3. Apply toFixed(2) for the 2-digit decimal display */}
-                                    {balance.toFixed(2)}
-                                  </Text>
-                                );
-                              })()}
-                            </View>
-                            <TouchableOpacity
-                              style={[styles.PlusMinusCont]}
-                              onPress={() => toggleExpand(item.account)}>
-                              {expandedItems.includes(item.account) ? (
-                                <Image
-                                  style={styles.PlusMinusImg}
-                                  source={require('../images/chkMinus.png')}
-                                />
-                              ) : (
-                                <Image
-                                  style={styles.PlusMinusImg}
-                                  source={require('../images/chkPlus.png')}
-                                />
-                              )}
-                            </TouchableOpacity>
-                          </View>
-                        </View>
-                      </View>
-
-                      {expandedItems.includes(item.account) && (
-                        <View style={styles.QtyAvlQtyCont}>
-                          <TouchableOpacity
-                            style={[
-                              styles.QtyCont,
-                              {backgroundColor: '#D8D8DA', marginRight: 16},
-                            ]}
-                            onPress={() => statementClick(item)}>
-                            <Text style={styles.QtyText}>Statement</Text>
-                          </TouchableOpacity>
-                          <TouchableOpacity
-                            style={[
-                              styles.QtyCont,
-                              {backgroundColor: '#D8D8DA'},
-                            ]}
-                            onPress={() => outStandingClick(item)}>
-                            <Text style={styles.AvlText}>Outstanding</Text>
-                          </TouchableOpacity>
-                        </View>
-                      )}
-                    </View>
-                  ))}
-              </ScrollView>
-            </>
+            <ScrollView
+              style={{width: '100%'}}
+              contentContainerStyle={styles.ListContainer}
+              keyboardShouldPersistTaps="always">
+              <Text style={styles.ListSectionHeader}>Recent Customers</Text>
+              {top50Customers.length === 0 ? (
+                <View style={styles.EmptyWrap}>
+                  <Text style={styles.EmptyText}>No customers available</Text>
+                </View>
+              ) : (
+                top50Customers.map((item, index) =>
+                  renderCustomerCard(item, index, true),
+                )
+              )}
+            </ScrollView>
           )}
 
           {selectedStock && !showLoader && (
-            <>
-              {/* <View style={styles.FromToDateButtonWrap}>
+            <ScrollView
+              style={{width: '100%'}}
+              contentContainerStyle={{paddingBottom: 60}}
+              keyboardShouldPersistTaps="always">
+              <View style={styles.SelectedCustomerCard}>
+                <TouchableOpacity style={styles.BackBtn} onPress={goBack}>
+                  <Image
+                    style={styles.HeadIcon}
+                    source={require('../images/lftArr.png')}
+                  />
+                </TouchableOpacity>
+                <View style={styles.SelectedCustomerInfo}>
+                  <Text style={styles.SelectedName}>
+                    {selectedStock.Custname}
+                  </Text>
+                  <Text style={styles.SelectedMeta}>
+                    {selectedStock.account}
+                  </Text>
+                </View>
+              </View>
 
-                                <View style={styles.DateButtonWrap}>
-                                    <Button title="From Date" onPress={showFromDatePicker} />
-                                    {fromDate && (
-                                        <Text style={styles.dateText}>
-                                            {fromDate}
-                                        </Text>
-                                    )}
-                                </View>
-
-                                <View style={styles.DateButtonWrap}>
-                                    <Button title="To Date" onPress={showToDatePicker} />
-                                    {toDate && (
-                                        <Text style={styles.dateText}>
-                                            {toDate}
-                                        </Text>
-                                    )}
-                                </View>
-
-                                <View>
-                                    <TouchableOpacity style={styles.ViewButton} onPress={() => fetchStatementData()}>
-                                        <Text style={styles.ViewText}>View</Text>
-                                    </TouchableOpacity>
-                                </View>
-
-
-                                <DateTimePickerModal
-                                    isVisible={isFromDatePickerVisible}
-                                    mode="date"
-                                    onConfirm={handleFromDateConfirm}
-                                    onCancel={hideFromDatePicker}
-                                />
-
-                                <DateTimePickerModal
-                                    isVisible={isToDatePickerVisible}
-                                    mode="date"
-                                    onConfirm={handleToDateConfirm}
-                                    onCancel={hideToDatePicker}
-                                />
-                            </View> */}
-
-              {/* <View style={{
-                                marginTop: 8,
-                                maxHeight: 560,
-                                marginBottom: 16,
-                                shadowColor: '#000',
-                                shadowOffset: { width: 0, height: 2 },
-                                shadowOpacity: 0.25,
-                                shadowRadius: 3,
-                                elevation: 5,
-                                flex: 1
-                            }}> */}
-              {statementData && statementData.length > 0 && (
-                <>
-                  {showLoader && (
-                    <View>
-                      <ActivityIndicator />
-                    </View>
-                  )}
-
-                  <View
-                    style={{
-                      paddingVertical: 2,
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                    }}>
-                    <TouchableOpacity
-                      style={styles.SettingsWrap}
-                      onPress={() => goBack()}>
-                      <Image
-                        style={styles.HeadIcon}
-                        source={require('../images/lftArr.png')}
-                      />
-                    </TouchableOpacity>
-                    <Text style={styles.StockLabel}>
-                      Selected Customer: {selectedStock.Custname}
-                    </Text>
-                  </View>
-
-                  <View
-                    style={{
-                      paddingVertical: 2,
-                    }}>
-                    <Text style={styles.StockLabel}>
-                      Selected Invoices: {selectedtInv.join(', ')}
-                    </Text>
-                  </View>
-
-                  <View
-                    style={{
-                      paddingVertical: 2,
-                    }}>
-                    <Text style={styles.StockLabel}>
-                      Total Selected Balance: {selectedBalanceSum.toFixed(2)}
-                    </Text>
-                  </View>
-
-                  <View style={[styles.TANDCInpCont, {width: '90%'}]}>
-                    <TextInput
-                      style={styles.PlaceHolderInput}
-                      placeholder="Enter RV Amount"
-                      keyboardType="numeric" // This ensures the numeric keyboard appears
-                      onChangeText={text => {
-                        const numericText = text.replace(/[^0-9.]/g, ''); // This removes any non-numeric characters
-
-                        console.log(
-                          'st>>>',
-                          numericText,
-                          statementData.reduce((arr, curr) => {
-                            return arr + curr.BALANCE;
-                          }, 0),
-                        );
-                        setRvAmnt(numericText);
-
-                        // if (
-                        //   numericText <=
-                        //   statementData.reduce((arr, curr) => {
-                        //     return arr + curr.BALANCE;
-                        //   }, 0)
-                        // ) {
-                        //   setRvAmnt(numericText);
-                        // } else {
-                        //   Alert.alert('Cannot enter more than invoice total');
-                        //   return;
-                        // }
-                      }}
-                      value={rvAmnt}
-                      // onChangeText={text => setRvAmnt(text)}
-                      placeholderTextColor="#aaa"
-                    />
-                  </View>
-
-                  <View
-                    style={[
-                      styles.TANDCInpCont,
-                      {width: '90%', marginTop: 12},
-                    ]}>
-                    <TextInput
-                      style={styles.PlaceHolderInput}
-                      placeholder="Enter Remarks"
-                      value={remarks}
-                      onChangeText={text => setRemarks(text)}
-                      placeholderTextColor="#aaa"
-                    />
-                  </View>
-
-                  <View
-                    style={{
-                      paddingVertical: 4,
-                    }}>
-                    <Text style={styles.StockLabel}>
-                      Outstanding bills, Click to Select
-                    </Text>
-                  </View>
-
-                  {!showLoader && (
-                    <ScrollView
-                      horizontal={true}
-                      contentContainerStyle={{width: '100%', maxHeight: 350}}
-                      keyboardShouldPersistTaps="always">
-                      <>
-                        <View style={styles.CollTableContainer}>
-                          <ScrollView
-                            nestedScrollEnabled={true}
-                            keyboardShouldPersistTaps="always">
-                            <FlatList
-                              data={statementData}
-                              keyExtractor={(item, index) => index.toString()}
-                              contentContainerStyle={{width: '100%'}}
-                              renderItem={({item}) => (
-                                <>
-                                  {/* <TouchableOpacity style={[
-                                                                        styles.NewItemList,
-                                                                        selectedtInv.includes(item.INV) ? styles.selectedRow : {},
-                                                                    ]}
-                                                                        onPress={() => handlePress(item.INV, item.BALANCE)}>
-
-                                                                        <View style={{ width: '100%', flexDirection: 'row', justifyContent: 'space-between' }}>
-                                                                            <Text style={styles.StockListDescText}>INV : {item.INV}</Text>
-                                                                            <Text style={styles.StockListDescText}>Amount : {(item.BALANCE.toFixed(3))}</Text>
-                                                                        </View>
-                                                                        <View>
-                                                                            <Text style={styles.StockListDescText}>Date : {item.INVDATE.split('T')[0]}</Text>
-                                                                        </View>
-                                                                    </TouchableOpacity> */}
-
-                                  <TouchableOpacity
-                                    style={[
-                                      styles.StockListItem,
-                                      selectedtInv.includes(item.INV)
-                                        ? styles.selectedRow
-                                        : {},
-                                    ]}
-                                    onPress={() =>
-                                      handlePress(item.INV, item.BALANCE)
-                                    }>
-                                    <View style={styles.CustomerListCont}>
-                                      <View style={styles.CustomerImgWrap}>
-                                        <Image
-                                          style={styles.CustomerImage}
-                                          source={require('../images/listWhite.png')}
-                                        />
-                                      </View>
-
-                                      <View style={styles.CustomerListMid}>
-                                        <View
-                                          style={{
-                                            flexDirection: 'row',
-                                            justifyContent: 'space-between',
-                                            width: '100%',
-                                          }}>
-                                          <Text
-                                            style={[
-                                              styles.StockListDescText,
-                                              {width: '75%'},
-                                            ]}>
-                                            INV : {item.INV}
-                                          </Text>
-                                          <Text
-                                            style={[
-                                              styles.StockListDescTextSmall,
-                                              {
-                                                color: '#30B3A4',
-                                                fontFamily: 'Lexend-Regular',
-                                              },
-                                            ]}>
-                                            {item.BALANCE.toFixed(3)}
-                                          </Text>
-                                        </View>
-                                        <View
-                                          style={{
-                                            flexDirection: 'row',
-                                            width: '100%',
-                                            paddingVertical: 6,
-                                          }}>
-                                          <Text
-                                            style={
-                                              styles.StockListDescTextSmall
-                                            }>
-                                            Date : {item.INVDATE.split('T')[0]}
-                                          </Text>
-                                          <View
-                                            style={{
-                                              marginLeft: 24,
-                                              flexDirection: 'row',
-                                            }}></View>
-                                        </View>
-                                      </View>
-                                    </View>
-                                  </TouchableOpacity>
-                                </>
-                              )}
-                              ListEmptyComponent={
-                                <View>
-                                  <Text style={{color: 'red'}}>
-                                    No data available
-                                  </Text>
-                                </View>
-                              }
-                            />
-                          </ScrollView>
-                        </View>
-
-                        {/* <View style={styles.CollTableContainer}>
-                                                <View style={styles.ColltableRow}>
-                                                    <Text style={[styles.CollheaderCell, { borderTopLeftRadius: 4 }]}>INVDATE</Text>
-                                                    <Text style={styles.CollheaderCell}>INV</Text>
-                                                  
-                                                    <Text style={[styles.CollheaderCell, { borderTopRightRadius: 4 }]}>AMOUNT</Text>
-                                                </View>
-
-
-                                                <ScrollView nestedScrollEnabled={true}>
-
-                                                    <FlatList
-                                                        data={statementData}
-                                                        keyExtractor={(item, index) => index.toString()}
-                                                        contentContainerStyle={{}}
-                                                        renderItem={({ item }) => (
-                                                            <>
-                                                                <TouchableOpacity style={[
-                                                                    styles.ColltableRow,
-                                                                    selectedtInv.includes(item.INV) ? styles.selectedRow : {},
-                                                                ]}
-                                                                    onPress={() => handlePress(item.INV, item.BALANCE)}>
-                                                                    <Text style={[styles.ColldataCell, selectedtInv.includes(item.INV) ? styles.selectedRow : {}]}>{item.INVDATE.split('T')[0]}</Text>
-                                                                    <Text style={[styles.ColldataCell, selectedtInv.includes(item.INV) ? styles.selectedRow : {}]}>{item.INV}</Text>
-                                                                    <Text style={[styles.ColldataCell, selectedtInv.includes(item.INV) ? styles.selectedRow : {}]}>{(item.BALANCE.toFixed(3))}</Text>
-                                                                </TouchableOpacity>
-                                                            </>
-                                                        )}
-                                                        ListEmptyComponent={
-                                                            <View>
-                                                                <Text style={{ color: 'red' }}>No data available</Text>
-                                                            </View>
-                                                        }
-                                                    />
-
-
-                                                </ScrollView>
-
-
-                                            </View> */}
-                      </>
-                    </ScrollView>
-                  )}
-
-                  <View style={styles.RadioWrap}>
-                    <View style={{width: '60%'}}>
-                      <RadioGroup
-                        radioButtons={radioButtons}
-                        onPress={setSelectedId}
-                        selectedId={selectedId}
-                        layout="row"
-                      />
-                    </View>
-
-                    <View style={{width: '20%'}}>
-                      <TouchableOpacity
-                        style={styles.StatementButton}
-                        onPress={() => postData()}>
-                        {loading ? (
-                          <ActivityIndicator size={'large'} color={'white'} />
-                        ) : (
-                          <Text style={styles.StatementText}>Save</Text>
-                        )}
-                      </TouchableOpacity>
-                    </View>
-                    {/* {
-                                            rvAmnt && selectedId && selectedtInv && (
-                                                <View style={{ width: '20%' }}>
-                                                    <TouchableOpacity style={styles.StatementButton} onPress={() => postData()}>
-                                                        {
-                                                            loading ?
-                                                                <ActivityIndicator size={'large'} color={'white'} /> :
-
-                                                                <Text style={styles.StatementText}>Save</Text>
-                                                        }
-                                                    </TouchableOpacity>
-                                                </View>
-                                            )
-                                        } */}
-                  </View>
-                </>
+              {showLoader && (
+                <ActivityIndicator color="#5A55CA" style={{marginTop: 12}} />
               )}
 
               {statementData && statementData.length === 0 && !showLoader && (
-                <View
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                  }}>
-                  <TouchableOpacity
-                    style={styles.SettingsWrap}
-                    onPress={() => goBack()}>
-                    <Image
-                      style={styles.HeadIcon}
-                      source={require('../images/lftArr.png')}
-                    />
-                  </TouchableOpacity>
-                  <Text
-                    style={{
-                      color: 'red',
-                      fontSize: 14,
-                      fontFamily: 'Lexend-Bold',
-                    }}>
-                    No Data Available
-                  </Text>
+                <View style={styles.EmptyWrap}>
+                  <Text style={styles.EmptyText}>No outstanding invoices</Text>
                 </View>
               )}
-              {/* </View> */}
-            </>
+
+              {statementData && statementData.length > 0 && (
+                <>
+                  <View style={styles.SummaryPills}>
+                    <View style={styles.Pill}>
+                      <Text style={styles.PillLabel}>Selected Bills</Text>
+                      <Text style={styles.PillValue}>
+                        {selectedtInv.length}
+                      </Text>
+                    </View>
+                    <View style={[styles.Pill, {backgroundColor: '#EEF5FF'}]}>
+                      <Text style={styles.PillLabel}>Total Selected</Text>
+                      <Text style={[styles.PillValue, {color: '#5A55CA'}]}>
+                        {selectedBalanceSum.toFixed(2)}
+                      </Text>
+                    </View>
+                  </View>
+
+                  <View style={styles.InputGroup}>
+                    <Text style={styles.InputLabel}>RV Amount</Text>
+                    <TextInput
+                      style={styles.ModernInput}
+                      placeholder="Enter amount..."
+                      keyboardType="numeric"
+                      onChangeText={text =>
+                        setRvAmnt(text.replace(/[^0-9.]/g, ''))
+                      }
+                      value={rvAmnt}
+                      placeholderTextColor="#bbb"
+                    />
+                  </View>
+
+                  <View style={styles.InputGroup}>
+                    <Text style={styles.InputLabel}>Remarks</Text>
+                    <TextInput
+                      style={styles.ModernInput}
+                      placeholder="Enter remarks..."
+                      value={remarks}
+                      onChangeText={setRemarks}
+                      placeholderTextColor="#bbb"
+                    />
+                  </View>
+
+                  {/* Invoice list header */}
+                  <Text style={styles.InvoiceListHeader}>
+                    Outstanding Bills — tap to select
+                  </Text>
+
+                  {/* Invoice cards */}
+                  <FlatList
+                    data={statementData}
+                    keyExtractor={(item, index) => index.toString()}
+                    scrollEnabled={false}
+                    renderItem={({item}) => {
+                      const isSelected = selectedtInv.includes(item.INV);
+                      return (
+                        <TouchableOpacity
+                          activeOpacity={0.7}
+                          style={[
+                            styles.InvoiceCard,
+                            isSelected && styles.InvoiceCardSelected,
+                          ]}
+                          onPress={() => handlePress(item.INV, item.BALANCE)}>
+                          <View style={styles.InvoiceCardLeft}>
+                            <Text style={styles.InvoiceNo}>
+                              INV: {item.INV}
+                            </Text>
+                            <Text style={styles.InvoiceDate}>
+                              {item.INVDATE.split('T')[0]}
+                            </Text>
+                          </View>
+                          <View style={styles.InvoiceCardRight}>
+                            <Text
+                              style={[
+                                styles.InvoiceBalance,
+                                isSelected && {color: '#22A45D'},
+                              ]}>
+                              {item.BALANCE.toFixed(3)}
+                            </Text>
+                            {isSelected && (
+                              <Text style={styles.SelectedTick}>✓</Text>
+                            )}
+                          </View>
+                        </TouchableOpacity>
+                      );
+                    }}
+                    ListEmptyComponent={
+                      <Text style={styles.EmptyText}>No invoices</Text>
+                    }
+                  />
+
+                  {/* Payment type + Save */}
+                  <View style={styles.PaymentRow}>
+                    <RadioGroup
+                      radioButtons={radioButtons}
+                      onPress={setSelectedId}
+                      selectedId={selectedId}
+                      layout="row"
+                    />
+                    <TouchableOpacity style={styles.SaveBtn} onPress={postData}>
+                      {loading ? (
+                        <ActivityIndicator color="white" size="small" />
+                      ) : (
+                        <Text style={styles.SaveBtnText}>Save</Text>
+                      )}
+                    </TouchableOpacity>
+                  </View>
+                </>
+              )}
+            </ScrollView>
           )}
         </KeyboardAvoidingView>
       </View>
@@ -1964,354 +1529,398 @@ const NewCollections = () => {
 };
 
 const styles = StyleSheet.create({
+  // ── Root layout ───────────────────────────────────────────────
   HomeWrap: {
-    flexDirection: 'column',
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#EFEFEF',
+    flex: 1,
+    backgroundColor: '#F2F3F8',
   },
   HomeCont: {
-    width: '98%',
+    flex: 1,
+    width: '100%',
     flexDirection: 'column',
     alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 12,
-    // borderTopLeftRadius: 18,
-    // borderTopRightRadius: 18,
-    backgroundColor: '#EFEFEF',
-    height: Dimensions.get('window').height - 70,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
   },
-  HomeTextCont: {
-    width: '100%',
+
+  // ── Search bar ────────────────────────────────────────────────
+  SearchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'flex-start',
-  },
-  HomeText: {
-    fontSize: 18,
-    color: 'black',
-    borderBottomColor: 'gold',
-    borderBottomWidth: 2,
-    marginTop: 6,
-    marginLeft: 6,
-    paddingBottom: 8,
-    fontFamily: 'Lexend-Bold',
-  },
-  InputCont: {
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
     width: '100%',
-    backgroundColor: 'white',
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-    marginTop: 16,
-    borderWidth: 1,
-    borderColor: '#dbdbdb',
-    borderRadius: 6,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  InputImageCont: {
-    // backgroundColor: '#EAEDF5',
-    padding: 8,
-    borderRadius: 6,
-    // position: 'absolute',
-    // right: 10
+    marginBottom: 8,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 1},
+    shadowOpacity: 0.07,
+    shadowRadius: 3,
+    elevation: 2,
   },
   SearchIcon: {
-    width: 25,
-    height: 25,
+    fontSize: 16,
+    marginRight: 8,
+    color: '#999',
   },
-  TextInput: {
-    width: '100%',
-    fontFamily: 'Lexend-Bold',
+  SearchInput: {
+    flex: 1,
+    fontFamily: 'Lexend-Regular',
+    color: '#222',
+    fontSize: 14,
+    paddingVertical: 0,
   },
 
-  TableContainer: {
+  // ── List container ────────────────────────────────────────────
+  ListContainer: {
+    paddingBottom: 120,
+    paddingTop: 4,
     width: '100%',
-    // padding: 10,
-    marginTop: 8,
-    alignItems: 'center',
   },
-  tableRow: {
-    flexDirection: 'row',
-    width: '100%',
-    // justifyContent: 'space-between',
-    // marginBottom: 5,
-    // paddingVertical: 5,
-  },
-  headerCell: {
-    // flex: 1,
-    // backgroundColor: '#5A55CA',
-    backgroundColor: 'white',
-    padding: 10,
-    textAlign: 'center',
-    fontWeight: 'bold',
-    flexWrap: 'nowrap',
-    width: '33%',
-    color: '#3A80EA',
+  ListSectionHeader: {
     fontFamily: 'Lexend-Bold',
-    borderTopWidth: 1,
-    borderLeftWidth: 1,
-    borderRightWidth: 1,
-    borderColor: '#dbdbdb',
+    fontSize: 12,
+    color: '#888',
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+    paddingVertical: 8,
+    paddingHorizontal: 4,
   },
-  dataCell: {
-    // flex: 1,
-    // backgroundColor: '#F3F3F3',
-    backgroundColor: 'white',
-    padding: 10,
-    textAlign: 'center',
-    width: '33%',
-    borderTopWidth: 1,
-    borderLeftWidth: 1,
-    borderRightWidth: 1,
-    borderColor: '#dbdbdb',
-    color: '#3A80EA',
-    fontFamily: 'Lexend-Regular',
-  },
-  ScrollView: {
-    height: Dimensions.get('window').height - 300,
+
+  // ── Customer card ─────────────────────────────────────────────
+  CustomerCard: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
     marginBottom: 8,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 1},
+    shadowOpacity: 0.07,
+    shadowRadius: 4,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: '#ECECEC',
   },
-  SelectedStockWrap: {
-    flexDirection: 'column',
-    alignItems: 'center',
-    width: '100%',
-    marginTop: 8,
+  CustomerCardSelected: {
+    borderColor: '#5A55CA',
+    borderWidth: 1.5,
   },
-  NameDescCont: {
+  CustomerCardBody: {
     flexDirection: 'row',
-    width: '95%',
-    paddingHorizontal: 8,
-    paddingVertical: 12,
     alignItems: 'center',
-    flexWrap: 'wrap',
-  },
-  AddressCont: {
-    flexDirection: 'row',
-    width: '95%',
-    paddingHorizontal: 8,
-    paddingVertical: 12,
-    // alignItems: 'center',
-    flexWrap: 'wrap',
-  },
-  TextNameDesc: {
-    fontSize: 16,
-    fontFamily: 'Lexend-Regular',
-    color: 'black',
-  },
-  TextNameDescValue: {
-    fontSize: 14,
-    fontFamily: 'Lexend-Bold',
-    color: 'black',
-    marginLeft: 12,
-    backgroundColor: 'white',
-    paddingVertical: 8,
-    paddingHorizontal: 6,
-    borderTopWidth: 1,
-    borderLeftWidth: 1,
-    borderColor: '#dbdbdb',
-  },
-  TextAddressValue: {
-    fontSize: 16,
-    fontFamily: 'Lexend-Bold',
-    color: 'black',
-    marginLeft: 12,
-    backgroundColor: 'white',
-    paddingVertical: 8,
-    paddingHorizontal: 6,
-    borderTopWidth: 1,
-    borderLeftWidth: 1,
-    borderColor: '#dbdbdb',
-    marginVertical: 4,
-  },
-  StockValueWrap: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    width: '95%',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  PriceCard: {
-    backgroundColor: 'white',
-    paddingVertical: 12,
-    paddingHorizontal: 8,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    width: '100%',
-    borderTopWidth: 1,
-    borderLeftWidth: 1,
-    borderColor: '#dbdbdb',
-    borderRadius: 4,
-    marginVertical: 8,
-  },
-  PriceText: {
-    color: '#189A2E',
-    fontSize: 18,
-    fontFamily: 'Lexend-Regular',
-  },
-  PriceValue: {
-    backgroundColor: '#189A2E',
-    color: 'white',
-    paddingVertical: 6,
     paddingHorizontal: 12,
-    borderRadius: 4,
-    fontFamily: 'Lexend-Bold',
+    paddingVertical: 12,
   },
-  AddressBox: {
-    flexDirection: 'column',
+  Avatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#5A55CA',
     alignItems: 'center',
     justifyContent: 'center',
-    width: '100%',
+    marginRight: 12,
+  },
+  AvatarText: {
+    color: '#fff',
+    fontFamily: 'Lexend-Bold',
+    fontSize: 18,
+  },
+  CardMid: {
+    flex: 1,
+  },
+  CardName: {
+    fontFamily: 'Lexend-Regular',
+    fontSize: 15,
+    color: '#222',
+    marginBottom: 3,
+  },
+  CardMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+  },
+  CardMeta: {
+    fontFamily: 'Lexend-Light',
+    fontSize: 12,
+    color: '#888',
+  },
+  CardMetaSep: {
+    marginHorizontal: 5,
+    color: '#ccc',
+  },
+  CardBalance: {
+    fontFamily: 'Lexend-Bold',
+    fontSize: 12,
+    marginTop: 3,
+  },
+  ExpandBtn: {
+    padding: 8,
+  },
+  ExpandBtnText: {
+    fontSize: 10,
+    color: '#999',
+  },
+  CardActions: {
+    flexDirection: 'row',
+    borderTopWidth: 1,
+    borderTopColor: '#F0F0F0',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    gap: 10,
+  },
+  CardActionBtn: {
+    flex: 1,
+    paddingVertical: 8,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  CardActionText: {
+    color: '#fff',
+    fontFamily: 'Lexend-Regular',
+    fontSize: 13,
+  },
+
+  // ── Empty state ───────────────────────────────────────────────
+  EmptyWrap: {
+    paddingVertical: 24,
+    alignItems: 'center',
+  },
+  EmptyText: {
+    fontFamily: 'Lexend-Regular',
+    color: '#aaa',
+    fontSize: 14,
+  },
+
+  // ── Selected customer header ──────────────────────────────────
+  SelectedCustomerCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#5A55CA',
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 12,
+    marginTop: 4,
+  },
+  BackBtn: {
+    padding: 6,
+    marginRight: 8,
   },
   HeadIcon: {
-    width: 25,
-    height: 25,
+    width: 20,
+    height: 20,
+    tintColor: '#fff',
+  },
+  SelectedCustomerInfo: {
+    flex: 1,
+  },
+  SelectedName: {
+    fontFamily: 'Lexend-Bold',
+    fontSize: 16,
+    color: '#fff',
+  },
+  SelectedMeta: {
+    fontFamily: 'Lexend-Light',
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.75)',
+    marginTop: 2,
   },
 
-  PlaceHolderInput: {
-    width: '100%',
-    fontFamily: 'Lexend-Regular',
-    color: '#3A80EA',
+  // ── Summary pills ─────────────────────────────────────────────
+  SummaryPills: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 14,
   },
-  TableHeadSpan: {
-    backgroundColor: '#D9D9D9',
+  Pill: {
+    flex: 1,
+    backgroundColor: '#F0EFF9',
+    borderRadius: 10,
     padding: 12,
+    alignItems: 'center',
   },
-
-  StockDescWrap: {
-    flexDirection: 'column',
-    width: '95%',
-    marginTop: 8,
-    backgroundColor: 'white',
-    padding: 18,
-  },
-  StockItem: {
-    padding: 8,
+  PillLabel: {
+    fontFamily: 'Lexend-Light',
+    fontSize: 11,
+    color: '#888',
     marginBottom: 4,
   },
+  PillValue: {
+    fontFamily: 'Lexend-Bold',
+    fontSize: 18,
+    color: '#333',
+  },
+
+  // ── Input fields ──────────────────────────────────────────────
+  InputGroup: {
+    marginBottom: 12,
+  },
+  InputLabel: {
+    fontFamily: 'Lexend-Regular',
+    fontSize: 12,
+    color: '#888',
+    marginBottom: 4,
+    marginLeft: 2,
+  },
+  ModernInput: {
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    fontFamily: 'Lexend-Regular',
+    color: '#222',
+    fontSize: 14,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 1},
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+
+  // ── Invoice list ──────────────────────────────────────────────
+  InvoiceListHeader: {
+    fontFamily: 'Lexend-Bold',
+    fontSize: 12,
+    color: '#888',
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+    marginBottom: 8,
+    marginTop: 4,
+    paddingLeft: 2,
+  },
+  InvoiceCard: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    marginBottom: 6,
+    borderWidth: 1,
+    borderColor: '#EEE',
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 1},
+    shadowOpacity: 0.04,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  InvoiceCardSelected: {
+    backgroundColor: '#F0FFF5',
+    borderColor: '#22A45D',
+  },
+  InvoiceCardLeft: {
+    flex: 1,
+  },
+  InvoiceNo: {
+    fontFamily: 'Lexend-Regular',
+    fontSize: 14,
+    color: '#333',
+    marginBottom: 3,
+  },
+  InvoiceDate: {
+    fontFamily: 'Lexend-Light',
+    fontSize: 12,
+    color: '#888',
+  },
+  InvoiceCardRight: {
+    alignItems: 'flex-end',
+  },
+  InvoiceBalance: {
+    fontFamily: 'Lexend-Bold',
+    fontSize: 15,
+    color: '#5A55CA',
+  },
+  SelectedTick: {
+    fontSize: 16,
+    color: '#22A45D',
+    marginTop: 2,
+  },
+
+  // ── Payment row ───────────────────────────────────────────────
+  PaymentRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 16,
+    marginBottom: 24,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#EEE',
+  },
+  SaveBtn: {
+    backgroundColor: '#5A55CA',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 10,
+    minWidth: 80,
+    alignItems: 'center',
+    shadowColor: '#5A55CA',
+    shadowOffset: {width: 0, height: 3},
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  SaveBtnText: {
+    fontFamily: 'Lexend-Bold',
+    color: '#fff',
+    fontSize: 15,
+  },
+
+  // ── Modal (result) ────────────────────────────────────────────
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    position: 'absolute',
+    width: '100%',
+    height: '100%',
+    zIndex: 10,
+  },
+  modalContent2: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    width: '90%',
+    padding: 24,
+  },
+  SuccessText: {
+    color: '#22A45D',
+    fontSize: 16,
+    fontFamily: 'Lexend-Bold',
+    marginBottom: 16,
+  },
+  CloseModalBtn: {
+    backgroundColor: '#E74C3C',
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  CloseModalText: {
+    color: '#fff',
+    fontFamily: 'Lexend-Bold',
+    fontSize: 15,
+  },
+  CancelText: {
+    color: '#fff',
+    fontSize: 15,
+    fontFamily: 'Lexend-Regular',
+  },
+
+  // ── Legacy / still-used styles ────────────────────────────────
   StockLabel: {
     fontFamily: 'Lexend-Regular',
     color: '#2b2b2b',
     fontSize: 14,
   },
-  StockTextValue: {
-    fontFamily: 'Lexend-Bold',
-    color: 'black',
-    fontSize: 16,
-  },
-  StateOutWrap: {
-    width: '100%',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: 6,
-    paddingVertical: 14,
-  },
-
-  StatementButton: {
-    backgroundColor: '#1A6CF6',
-    paddingHorizontal: 6,
-    paddingVertical: 8,
-    borderRadius: 6,
-  },
-  StatementText: {
-    fontFamily: 'Lexend-Regular',
-    color: 'white',
-    fontSize: 13,
-  },
-
-  FromToDateButtonWrap: {
-    width: '100%',
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-  },
-
-  DateButtonWrap: {
-    flexDirection: 'column',
-    alignItems: 'center',
-  },
-  dateText: {
+  radioButtonText: {
     fontSize: 14,
-    color: '#1A6CF6',
-    paddingBottom: 8,
-    fontFamily: 'Lexend-Regular',
-  },
-
-  ViewButton: {
-    backgroundColor: 'green',
-    padding: 8,
-    borderRadius: 4,
-  },
-  ViewText: {
-    fontSize: 14,
-    color: 'white',
-    fontFamily: 'Lexend-Regular',
-  },
-
-  CollTableContainer: {
-    width: '100%',
-    // padding: 10,
-    marginTop: 8,
-    alignItems: 'center',
-    // paddingBottom: 50,
-    // height: 500,
-
-    flex: 1,
-    // width: 1200,
-  },
-  ColltableRow: {
-    flexDirection: 'row',
-    width: '100%',
-    // justifyContent: 'space-between',
-    // marginBottom: 5,
-    // paddingVertical: 5,
-  },
-  CollheaderCell: {
-    // flex: 1,
-    backgroundColor: '#5A55CA',
-    padding: 10,
-    textAlign: 'center',
-    fontWeight: 'bold',
-    flexWrap: 'nowrap',
-    width: 125,
-    color: 'white',
-    fontFamily: 'Lexend-Bold',
-    borderTopWidth: 1,
-    borderLeftWidth: 1,
-    borderRightWidth: 1,
-    borderColor: '#dbdbdb',
-  },
-  ColldataCell: {
-    // flex: 1,
-    // backgroundColor: '#F3F3F3',
-    backgroundColor: 'white',
-    padding: 10,
-    textAlign: 'center',
-    width: 125,
-    borderTopWidth: 1,
-    borderLeftWidth: 1,
-    borderRightWidth: 1,
-    borderColor: '#dbdbdb',
     color: 'black',
-    fontFamily: 'Lexend-Regular',
+    fontFamily: 'Lexend-Light',
   },
-
-  selectedRow: {
-    backgroundColor: '#cce5cc',
-  },
-
-  RadioWrap: {
-    width: '100%',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginVertical: 16,
-    paddingBottom: 32,
-  },
-
   StatementButton: {
     backgroundColor: '#64558E',
     paddingHorizontal: 10,
@@ -2323,362 +1932,31 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 14,
   },
-
-  SrchInputCont: {
-    width: '95%',
-    backgroundColor: '#c7e2de',
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-    marginTop: 16,
-    borderWidth: 1,
-    borderColor: '#D9D9D9',
-    borderRadius: 6,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-
-  SrchPlaceHolderInput: {
-    width: '100%',
-    fontFamily: 'Lexend-Regular',
-    color: '#2b2b2b',
-  },
-
-  CheckStockListView: {
-    // backgroundColor: '#FDFDFD',
-    width: '100%',
-    display: 'flex',
-    flexDirection: 'column',
-    padding: 8,
-  },
-
-  StockListItem: {
-    display: 'flex',
-    flexDirection: 'column',
-    marginBottom: 8,
-    backgroundColor: '#FDFDFD',
-    paddingVertical: 12,
-    paddingHorizontal: 8,
-    borderRadius: 14,
-    width: '100%',
-  },
-
-  StockItemListHead: {
-    width: '100%',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  StockListCodeText: {
-    fontFamily: 'Lexend-Light',
-    color: '#2B2B2B',
-  },
-  PlusMinusImg: {
-    width: 18,
-    height: 18,
-  },
-  PlusMinusCont: {
-    padding: 4,
-    backgroundColor: '#EFEFEF',
-  },
-
-  StockItemDescCont: {
-    paddingVertical: 8,
-  },
-  StockListDescText: {
-    fontSize: 16,
-    fontFamily: 'Lexend-Regular',
-    color: '#4B5290',
-  },
-  QtyAvlQtyCont: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    paddingVertical: 8,
-  },
-  QtyCont: {
-    padding: 8,
-    flexDirection: 'row',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: 'orange',
-  },
-  QtyText: {
-    fontFamily: 'Lexend-Light',
-    // color: '#4B5290'
-    color: 'black',
-  },
-  AvlText: {
-    fontFamily: 'Lexend-Light',
-    // color: '#8f6924'
-    color: 'black',
-  },
-  DynamicPriceView: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    flexWrap: 'wrap',
-  },
-  PriceTag: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginRight: 8,
-  },
-  PriceValueText: {
-    fontFamily: 'Lexend-Regular',
-    color: '#2B2B2B',
-    marginLeft: 12,
-  },
-
-  CustomerListCont: {
-    flexDirection: 'row',
-    width: '100%',
-    // justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  CustomerImage: {
-    width: 30,
-    height: 30,
-  },
-  CustomerImgWrap: {
-    backgroundColor: 'grey',
-    borderRadius: 50,
-    padding: 8,
-    // width: 'auto'
-  },
-
-  CustomerListMid: {
-    flexDirection: 'column',
-    alignItems: 'flex-start',
-    width: '80%',
-    marginLeft: 12,
-  },
-  StockListDescText: {
-    fontSize: 14,
-    fontFamily: 'Lexend-Regular',
-    color: '#2b2b2b',
-  },
-  StockListDescTextSmall: {
-    fontSize: 14,
-    fontFamily: 'Lexend-Light',
-    color: '#2b2b2b',
-  },
-  CustomerListRight: {
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 12,
-  },
-
   SettingsWrap: {
-    // backgroundColor: '#189A2E',
-    // backgroundColor: 'red',
-    // borderRadius: 50,
     padding: 6,
   },
-  HeadIcon: {
-    width: 20,
-    height: 20,
+  selectedRow: {
+    backgroundColor: '#cce5cc',
   },
-
-  radioButtonText: {
-    fontSize: 14,
-    color: 'black',
-    fontFamily: 'Lexend-Light',
-  },
-
-  NewItemList: {
-    flexDirection: 'column',
-    alignItems: 'flex-start',
+  PlaceHolderInput: {
     width: '100%',
-    backgroundColor: 'white',
-    marginVertical: 4,
-    paddingVertical: 10,
-    paddingHorizontal: 8,
-    borderRadius: 8,
-
-    shadowColor: '#000', // Shadow color for iOS
-    shadowOffset: {width: 0, height: 2}, // Shadow offset for iOS
-    shadowOpacity: 0.25, // Shadow opacity for iOS
-    shadowRadius: 3.84, // Shadow radius for iOS
-    elevation: 1.5, // Elevation for Android
-
-    borderColor: 'grey',
-    borderWidth: 0.5,
-  },
-
-  StockListItem: {
-    display: 'flex',
-    flexDirection: 'column',
-    marginBottom: 8,
-    backgroundColor: '#FDFDFD',
-    paddingVertical: 12,
-    paddingHorizontal: 8,
-    borderRadius: 14,
-    width: '100%',
-  },
-
-  StockItemListHead: {
-    width: '100%',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  StockListCodeText: {
-    fontFamily: 'Lexend-Light',
-    color: '#2B2B2B',
-  },
-  PlusMinusImg: {
-    width: 18,
-    height: 18,
-  },
-  PlusMinusCont: {
-    padding: 4,
-    backgroundColor: '#EFEFEF',
-  },
-
-  StockItemDescCont: {
-    paddingVertical: 8,
-  },
-  StockListDescText: {
-    fontSize: 16,
     fontFamily: 'Lexend-Regular',
-    color: '#4B5290',
+    color: '#3A80EA',
   },
-  QtyAvlQtyCont: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    paddingVertical: 8,
-  },
-  QtyCont: {
-    padding: 8,
-    flexDirection: 'row',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: 'orange',
-  },
-  QtyText: {
-    fontFamily: 'Lexend-Light',
-    // color: '#4B5290'
-    color: 'black',
-  },
-  AvlText: {
-    fontFamily: 'Lexend-Light',
-    // color: '#8f6924'
-    color: 'black',
-  },
-  DynamicPriceView: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    flexWrap: 'wrap',
-  },
-  PriceTag: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginRight: 8,
-  },
-  PriceValueText: {
-    fontFamily: 'Lexend-Regular',
-    color: '#2B2B2B',
-    marginLeft: 12,
-  },
-
-  CustomerListCont: {
-    flexDirection: 'row',
-    width: '100%',
-    // justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  CustomerImage: {
-    width: 30,
-    height: 30,
-  },
-  CustomerImgWrap: {
-    backgroundColor: 'grey',
-    borderRadius: 50,
-    padding: 8,
-    // width: 'auto'
-  },
-
-  CustomerListMid: {
-    flexDirection: 'column',
-    alignItems: 'flex-start',
-    width: '80%',
-    marginLeft: 12,
-  },
-  StockListDescText: {
-    fontSize: 14,
-    fontFamily: 'Lexend-Regular',
-    color: '#2b2b2b',
-  },
-  StockListDescTextSmall: {
-    fontSize: 14,
-    fontFamily: 'Lexend-Light',
-    color: '#2b2b2b',
-  },
-  CustomerListRight: {
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 12,
-  },
-
   TANDCInpCont: {
-    width: '75%',
     backgroundColor: '#F0F4FD',
-    borderWidth: 1,
-    borderColor: '#dbdbdb',
+    borderWidth: 0.5,
+    borderColor: 'grey',
     borderRadius: 6,
     flexDirection: 'row',
     justifyContent: 'center',
-    // justifyContent: 'space-between',
     alignItems: 'center',
     marginLeft: 12,
-
-    shadowColor: '#000', // Shadow color for iOS
-    shadowOffset: {width: 0, height: 2}, // Shadow offset for iOS
-    shadowOpacity: 0.25, // Shadow opacity for iOS
-    shadowRadius: 3.84, // Shadow radius for iOS
-    elevation: 1.5, // Elevation for Android
-
-    borderColor: 'grey',
-    borderWidth: 0.5,
-  },
-
-  modalContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-
-    zIndex: 2,
-    backgroundColor: '#00000080',
-    position: 'absolute',
-    width: '100%',
-    height: '100%',
-  },
-  modalContent2: {
-    // backgroundColor: '#F7F7F7',
-    // backgroundColor: '#5A55CA',
-    backgroundColor: 'white',
-    // paddingHorizontal: 8,
-    borderRadius: 5,
-    // alignItems: 'center',
-    width: '95%',
-    minHeight: 160,
-    maxHeight: Dimensions.get('window').height - 80,
-    padding: 16,
-    flexDirection: 'column',
-    justifyContent: 'center',
-  },
-
-  SuccessText: {
-    color: 'green',
-    fontSize: 16,
-    fontFamily: 'Lexend-Bold',
-  },
-  CancelText: {
-    color: 'white',
-    fontSize: 16,
-    fontFamily: 'Lexend-Regular',
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 1.5,
   },
   PDFText: {
     color: 'white',

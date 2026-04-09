@@ -425,7 +425,7 @@ const InvoiceList = () => {
       // 🔹 ITEMS LOOP
       data.forEach(item => {
         const lineExcl = parseFloat(item.LINE_TOTAL) || 0;
-        const lineVat = parseFloat(item.w) || 0;
+        const lineVat = parseFloat(item.LINE_TOTAL * 0.05) || 0;
         const lineWithVat = lineExcl + lineVat;
 
         SunmiPrinter.printColumnsString(

@@ -16,10 +16,16 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 
 export default function SalesReturnEntry({route, navigation}) {
-  const {selectedItems, customer, invoiceId, invoiceDetailObject, salesMan, deptNo} =
-    route.params;
+  const {
+    selectedItems,
+    customer,
+    invoiceId,
+    invoiceDetailObject,
+    salesMan,
+    deptNo,
+  } = route.params;
 
-const [glSettings, setGLSettings] = useState(null)
+  const [glSettings, setGLSettings] = useState(null);
 
   const [loading, setLoading] = useState(false);
 
@@ -44,35 +50,55 @@ const [glSettings, setGLSettings] = useState(null)
   const vatRate = parseFloat(vatPercent) || 0;
 
   const updateQty = (id, value) => {
-    // Basic validation: prevent entering more than original invoice quantity
     const item = selectedItems.find(i => i.id === id);
-    const numValue = parseFloat(value) || 0;
 
-    if (numValue > (item?.qty || 0)) {
-      alert(`Cannot return more than purchased (${item?.qty})`);
+    // Calculate remaining balance: (Original - Already Returned)
+    // Ensure your API/Previous screen sends 'returnedQty' or similar field
+    const alreadyReturned = parseFloat(item?.RetQty || item?.retQty) || 0;
+    const originalQty = parseFloat(item?.qty) || 0;
+    const availableToReturn = originalQty - alreadyReturned;
+
+    if (value === '') {
+      setQtys(prev => ({...prev, [id]: ''}));
       return;
     }
+
+    const numValue = parseFloat(value);
+    if (isNaN(numValue)) return;
+
+    // STRICT CHECK: Comparison against available balance
+    if (numValue > availableToReturn) {
+      Alert.alert(
+        'Limit Exceeded',
+        `Original: ${originalQty}\nAlready Returned: ${alreadyReturned}\nAvailable now: ${availableToReturn}`,
+      );
+      return;
+    }
+
+    if (numValue < 0) return;
+
     setQtys(prev => ({...prev, [id]: value}));
   };
-
   const handleSubmit = async () => {
+    const SR_VT_D_Account = glSettings?.find(
+      item => item.Scrn_code === 'SR-VT-D',
+    )?.ACCOUNT;
 
-
-    const SR_VT_D_Account = glSettings?.find(item => item.Scrn_code === "SR-VT-D")?.ACCOUNT;
-
-    if(!SR_VT_D_Account){
-      Alert.alert("Cannot find accounts, please contact admin")
-      return
+    if (!SR_VT_D_Account) {
+      Alert.alert('Cannot find accounts, please contact admin');
+      return;
     }
-    const SR_CR_D_Account = glSettings?.find(item => item.Scrn_code === "SR-CR-D")?.ACCOUNT;
-    if(!SR_CR_D_Account){
-      Alert.alert("Cannot find accounts, please contact admin")
-      return
+    const SR_CR_D_Account = glSettings?.find(
+      item => item.Scrn_code === 'SR-CR-D',
+    )?.ACCOUNT;
+    if (!SR_CR_D_Account) {
+      Alert.alert('Cannot find accounts, please contact admin');
+      return;
     }
 
-    if(deptNo == "----"){
+    if (deptNo == '----') {
       Alert.alert('Department missing');
-      return
+      return;
     }
 
     // 1. Check if EVERY item has a quantity entered and it's greater than 0
@@ -82,7 +108,9 @@ const [glSettings, setGLSettings] = useState(null)
     });
 
     if (!allItemsHaveQty) {
-      Alert.alert('Please enter a valid quantity for ALL items before submitting.');
+      Alert.alert(
+        'Please enter a valid quantity for ALL items before submitting.',
+      );
       return; // Stop execution
     }
 
@@ -135,17 +163,19 @@ const [glSettings, setGLSettings] = useState(null)
         jobCode: '',
         upd: '',
         retQty: parseFloat(
-          selectedItems.reduce((sum, item) => {
-            const qty = parseFloat(qtys[item.id]) || 0;
-            const unitPrice = item.price ?? 0;
-            const lineSubtotal = qty * unitPrice;
-            const lineDiscount = lineSubtotal * discountRatio;
-            const lineNet = lineSubtotal - lineDiscount;
-            const lineVat = lineNet * (vatRate / 100);
-            return sum + lineVat;
-          }, 0).toFixed(2)
-        ), // earlier i send total of qty returned but after checking backend found out vat amount should be send here 
-        vatAcc: SR_VT_D_Account,  // for vat account take SR-VT-D from glsettings api
+          selectedItems
+            .reduce((sum, item) => {
+              const qty = parseFloat(qtys[item.id]) || 0;
+              const unitPrice = item.price ?? 0;
+              const lineSubtotal = qty * unitPrice;
+              const lineDiscount = lineSubtotal * discountRatio;
+              const lineNet = lineSubtotal - lineDiscount;
+              const lineVat = lineNet * (vatRate / 100);
+              return sum + lineVat;
+            }, 0)
+            .toFixed(2),
+        ), // earlier i send total of qty returned but after checking backend found out vat amount should be send here
+        vatAcc: SR_VT_D_Account, // for vat account take SR-VT-D from glsettings api
         stkAcc: '',
         cosAcc: '',
         commAcc: '',
@@ -206,8 +236,7 @@ const [glSettings, setGLSettings] = useState(null)
       console.log('------------------------------------------');
 
       const postData = JSON.stringify(payload);
-      console.log("stringified json", postData)
-      
+      console.log('stringified json', postData);
 
       const appUrl = await AsyncStorage.getItem('appUrl');
 
@@ -216,21 +245,18 @@ const [glSettings, setGLSettings] = useState(null)
         (storedUserDataArray && JSON.parse(storedUserDataArray)) || [];
 
       let company_code = parsedUserDataArray[0].cmpcode.trim();
-      const url = `${appUrl}SalesReturnTransaction?cmpcode=${company_code}`
+      const url = `${appUrl}SalesReturnTransaction?cmpcode=${company_code}`;
 
-      console.log("url for api", url)
+      console.log('url for api', url);
       // --- AXIOS CALL ---
-      const response = await axios.post(url,
-        payload,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          timeout: 10000, // 10 second timeout
+      const response = await axios.post(url, payload, {
+        headers: {
+          'Content-Type': 'application/json',
         },
-      );
+        timeout: 10000, // 10 second timeout
+      });
 
-      console.log("response from api success", response, response.data)
+      console.log('response from api success', response, response.data);
 
       // Axios puts the response body in .data
       if (response.data.message?.toUpperCase() === 'SAVED SUCCESSFULLY') {
@@ -238,8 +264,7 @@ const [glSettings, setGLSettings] = useState(null)
         navigation.goBack();
       }
     } catch (err) {
-
-        console.log("response from api", err)
+      console.log('response from api', err);
 
       // Axios Error Handling
       if (err.response) {
@@ -263,7 +288,6 @@ const [glSettings, setGLSettings] = useState(null)
     }
   };
 
-
   const getGLSettings = async () => {
     const appUrl = await AsyncStorage.getItem('appUrl');
 
@@ -274,26 +298,21 @@ const [glSettings, setGLSettings] = useState(null)
     let company_code = parsedUserDataArray[0].cmpcode.trim();
 
     try {
-      let apiUrl = `${appUrl}CRMGLSettings/${company_code}/Scrn_code/Sr/-/${deptNo}/-`
+      let apiUrl = `${appUrl}CRMGLSettings/${company_code}/Scrn_code/Sr/-/${deptNo}/-`;
       console.log('GL Settings: url', apiUrl);
       const response = await axios.get(apiUrl);
-  
+
       console.log('GL Settings:', response.data);
-      setGLSettings(response.data)
+      setGLSettings(response.data);
       return response.data;
-  
     } catch (error) {
       console.error('Error fetching GL Settings:', error.message);
     }
   };
-  
-  
 
-  useEffect(()=>{
-
-
+  useEffect(() => {
     getGLSettings();
-  },[])
+  }, []);
 
   return (
     <KeyboardAvoidingView
@@ -361,6 +380,7 @@ const [glSettings, setGLSettings] = useState(null)
               <TextInput
                 placeholder="0"
                 keyboardType="numeric"
+                selectTextOnFocus={true}
                 value={qtys[item.id] || ''}
                 onChangeText={v => updateQty(item.id, v)}
                 style={[
