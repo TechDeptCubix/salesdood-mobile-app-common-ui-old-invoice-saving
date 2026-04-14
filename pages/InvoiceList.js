@@ -295,118 +295,115 @@ const InvoiceList = () => {
           console.log(err);
         });
     });
-  const printSunmiInvoice = async data => {
+  const COMPANY_CONFIG = {
+    ICUP: {
+      lineLength: 48,
+    },
+    ICELAB: {
+      lineLength: 48,
+    },
+    ICELAB_TEST: {
+      lineLength: 38,
+    },
+  };
+  const getLineLength = companyCode => {
+    return COMPANY_CONFIG?.[companyCode]?.lineLength || 48;
+  };
+
+  const printDivider = length => {
+    SunmiPrinter.printerText('-'.repeat(length) + '\n');
+  };
+  const printSunmiInvoiceUniversal = async (data, taxRate = 0.05) => {
     try {
       if (!data || data.length === 0) return;
 
       const header = data[0];
-      console.log('Inovice header data', header);
 
-      // 🔹 CALCULATIONS
-      const totalExclusive = data.reduce(
-        (sum, item) => sum + (parseFloat(item.LINE_TOTAL) || 0),
-        0,
-      );
-      const totalVat = data.reduce(
-        (sum, item) => sum + (parseFloat(item.w) || 0),
-        0,
-      );
-      const grandTotal = totalExclusive + totalVat;
+      const lineLength = getLineLength(cmpcode);
+      const divider = () => printDivider(lineLength);
+
+      // 🔹 BASE TOTAL (before discount)
+      const baseTotal = data.reduce((sum, item) => {
+        const price = parseFloat(item.PRICE) || 0;
+        const qty = parseFloat(item.QTY) || 0;
+        return sum + price * qty;
+      }, 0);
+
+      const totalDiscount = parseFloat(header.disc_amt || 0);
+
+      // 🔥 PROPORTIONAL DISCOUNT DISTRIBUTION
+      const totalVat = data.reduce((sum, item) => {
+        const price = parseFloat(item.PRICE) || 0;
+        const qty = parseFloat(item.QTY) || 0;
+
+        const lineBase = price * qty;
+
+        // proportion of discount for this line
+        const lineDiscount =
+          baseTotal > 0 ? (lineBase / baseTotal) * totalDiscount : 0;
+
+        const net = lineBase - lineDiscount;
+        const vat = net * taxRate;
+
+        return sum + vat;
+      }, 0);
+
+      const netTotalAfterDiscount = baseTotal - totalDiscount;
+      const grandTotal = netTotalAfterDiscount + totalVat;
 
       SunmiPrinter.printerInit();
-      try {
-        SunmiPrinter.setAlignment(AlignValue.CENTER);
 
-        // Remove header if it exists (e.g., data:image/png;base64,)
-        const cleanBase64 = ICUP_LOGO_BASE64.replace(
-          /^data:image\/[a-z]+;base64,/,
-          '',
-        );
+      // 🔹 HEADER
+      SunmiPrinter.setAlignment(AlignValue.CENTER);
+      SunmiPrinter.setFontSize(32);
+      SunmiPrinter.setFontWeight(true);
+      SunmiPrinter.printerText('TAX INVOICE\n');
 
-        // 384 is the standard pixel width for Sunmi 58mm paper
-        await SunmiPrinter.printBitmap(cleanBase64, 384);
-        SunmiPrinter.lineWrap(1);
-      } catch (imgError) {
-        console.log('Logo Print Error:', imgError);
+      SunmiPrinter.setFontSize(28);
+      SunmiPrinter.printerText(`${header.custref || ''}\n`);
+
+      SunmiPrinter.setFontSize(20);
+      SunmiPrinter.setFontWeight(false);
+      SunmiPrinter.printerText(`${header.ADDRESS || ''}\n`);
+
+      if (header.TRN) {
+        SunmiPrinter.setFontWeight(true);
+        SunmiPrinter.printerText(`TRN: ${header.TRN}\n`);
+        SunmiPrinter.setFontWeight(false);
       }
 
-      // 🔹 HEADER
-      SunmiPrinter.setAlignment(AlignValue.CENTER);
-      SunmiPrinter.setFontSize(32);
-      SunmiPrinter.setFontWeight(true);
-      SunmiPrinter.printerText('TAX INVOICE\n');
+      divider();
 
-      // 1. ADD PADDING BOTTOM FOR TAX INVOICE
-      SunmiPrinter.lineWrap(1); // Adds one line of vertical space
-
-      SunmiPrinter.setFontSize(28);
-      SunmiPrinter.printerText('ICECUP FOOD INDUSTRIES L.L.C\n');
-
-      SunmiPrinter.setFontSize(20);
-      SunmiPrinter.setFontWeight(false);
-      SunmiPrinter.printerText(
-        'Warehouse 23, First Industrial Area, Jebel Ali, Dubai.\n',
-      );
-
-      SunmiPrinter.printerText('Tel: +971 547642223 , +971 43264233\n');
-
-      SunmiPrinter.setFontWeight(true);
-      SunmiPrinter.printerText('TRN: 104173070400003\n');
-      SunmiPrinter.setFontWeight(false); // Reset weight for subsequent text
-
-      SunmiPrinter.lineWrap(1);
-
-      // 🔹 WIDER DIVIDER
-      // Increased number of dashes to ensure it spans the full width
-      const divider = '----------------------------------------------------\n';
-      // SunmiPrinter.printerText(divider);
-
-      // 🔹 INVOICE INFO
+      // 🔹 INFO
       const infoWeights = [200, 360];
-
-      // Determine the Payment Type Label
-      const paymentType = header.cashcred === 'C' ? 'CASH' : 'CREDIT';
-
       SunmiPrinter.setAlignment(AlignValue.LEFT);
 
-      // 1. Invoice Number
       SunmiPrinter.printColumnsString(
-        ['Invoice No:', header.inv_no.toString()],
+        ['Invoice No:', header.inv_no?.toString() || '-'],
         infoWeights,
         [AlignValue.LEFT, AlignValue.RIGHT],
       );
 
-      // 2. NEW: Payment Mode
-      SunmiPrinter.setFontWeight(true); // Make it bold so it's clear
       SunmiPrinter.printColumnsString(
-        ['Payment Mode:', paymentType],
-        infoWeights,
-        [AlignValue.LEFT, AlignValue.RIGHT],
-      );
-      SunmiPrinter.setFontWeight(false);
-
-      // 3. Customer
-      SunmiPrinter.printColumnsString(
-        ['Customer:', header.custref],
+        ['Customer:', header.custref || '-'],
         infoWeights,
         [AlignValue.LEFT, AlignValue.RIGHT],
       );
 
-      // 4. Date
       SunmiPrinter.printColumnsString(
-        ['Date:', header.inv_date.split('T')[0]],
+        ['Date:', header.inv_date?.split('T')[0] || '-'],
         infoWeights,
         [AlignValue.LEFT, AlignValue.RIGHT],
       );
 
-      SunmiPrinter.printerText(
-        '--------------------------------------------------------\n',
-      );
+      divider();
 
+      // 🔹 TABLE HEADER
       const tableWeights = [240, 40, 90, 70, 120];
 
       SunmiPrinter.setFontWeight(true);
       SunmiPrinter.setFontSize(18);
+
       SunmiPrinter.printColumnsString(
         ['Description', 'Qty', 'Price', 'VAT', 'Total'],
         tableWeights,
@@ -418,23 +415,31 @@ const InvoiceList = () => {
           AlignValue.RIGHT,
         ],
       );
+
       SunmiPrinter.setFontWeight(false);
-      SunmiPrinter.printerText(
-        '--------------------------------------------------------------\n',
-      );
-      // 🔹 ITEMS LOOP
+      divider();
+
+      // 🔹 ITEMS (DISCOUNT FIRST, THEN VAT)
       data.forEach(item => {
-        const lineExcl = parseFloat(item.LINE_TOTAL) || 0;
-        const lineVat = parseFloat(item.LINE_TOTAL * 0.05) || 0;
-        const lineWithVat = lineExcl + lineVat;
+        const price = parseFloat(item.PRICE) || 0;
+        const qty = parseFloat(item.QTY) || 0;
+
+        const lineBase = price * qty;
+
+        const lineDiscount =
+          baseTotal > 0 ? (lineBase / baseTotal) * totalDiscount : 0;
+
+        const net = lineBase - lineDiscount;
+        const vat = net * taxRate;
+        const total = net + vat;
 
         SunmiPrinter.printColumnsString(
           [
-            item.DESCRIPTION,
-            item.QTY.toString(),
-            parseFloat(item.PRICE).toFixed(2),
-            lineVat.toFixed(2),
-            lineWithVat.toFixed(2),
+            item.DESCRIPTION || item.ITEM_CODE,
+            qty.toString(),
+            price.toFixed(2),
+            vat.toFixed(2),
+            total.toFixed(2),
           ],
           tableWeights,
           [
@@ -447,18 +452,23 @@ const InvoiceList = () => {
         );
       });
 
-      SunmiPrinter.printerText(
-        '--------------------------------------------------------------\n',
-      );
-      // 🔹 TOTAL SECTION
+      divider();
+
+      // 🔹 TOTALS
       const totalWeights = [340, 220];
-      SunmiPrinter.setFontSize(20);
 
       SunmiPrinter.printColumnsString(
-        ['Total (Excl):', totalExclusive.toFixed(2)],
+        ['Subtotal:', baseTotal.toFixed(2)],
         totalWeights,
         [AlignValue.LEFT, AlignValue.RIGHT],
       );
+
+      SunmiPrinter.printColumnsString(
+        ['Discount:', totalDiscount.toFixed(2)],
+        totalWeights,
+        [AlignValue.LEFT, AlignValue.RIGHT],
+      );
+
       SunmiPrinter.printColumnsString(
         ['VAT Amount:', totalVat.toFixed(2)],
         totalWeights,
@@ -467,165 +477,21 @@ const InvoiceList = () => {
 
       SunmiPrinter.setFontWeight(true);
       SunmiPrinter.setFontSize(26);
+
       SunmiPrinter.printColumnsString(
         ['GRAND TOTAL:', grandTotal.toFixed(2) + ' AED'],
         totalWeights,
         [AlignValue.LEFT, AlignValue.RIGHT],
       );
 
-      SunmiPrinter.setFontSize(20);
       SunmiPrinter.setFontWeight(false);
-      //   SunmiPrinter.printColumnsString(
-      //     ['Closing Bal:', parseFloat(header.Closing_Balance).toFixed(2)],
-      //     totalWeights,
-      //     [AlignValue.LEFT, AlignValue.RIGHT],
-      //   );
 
       SunmiPrinter.setAlignment(AlignValue.CENTER);
       SunmiPrinter.printerText('\n*** Thank You ***\n');
+
       SunmiPrinter.lineWrap(4);
     } catch (error) {
-      console.log('Sunmi Invoice Print Error:', error);
-    }
-  };
-  const printSunmiInvoiceSM = data => {
-    try {
-      if (!data || data.length === 0) return;
-
-      const header = data[0];
-
-      // 🔹 CALCULATIONS
-      const totalExclusive = data.reduce(
-        (sum, item) => sum + (parseFloat(item.LINE_TOTAL) || 0),
-        0,
-      );
-      const totalVat = data.reduce(
-        (sum, item) => sum + (parseFloat(item.w) || 0),
-        0,
-      );
-      const grandTotal = totalExclusive + totalVat;
-
-      SunmiPrinter.printerInit();
-
-      // 🔹 HEADER
-      SunmiPrinter.setAlignment(AlignValue.CENTER);
-      SunmiPrinter.setFontSize(32);
-      SunmiPrinter.setFontWeight(true);
-      SunmiPrinter.printerText('TAX INVOICE\n');
-
-      SunmiPrinter.setFontSize(28);
-      SunmiPrinter.printerText('VAN SALES INDUSTRIES\n');
-      SunmiPrinter.setFontSize(20);
-      SunmiPrinter.setFontWeight(false);
-      SunmiPrinter.printerText('Jabal Ali, Industrial 4\n');
-      SunmiPrinter.printerText('TRN: 100XXXXXXXXXXXX\n');
-
-      // 🔹 WIDER DIVIDER
-      // Increased number of dashes to ensure it spans the full width
-      const divider = '--------------------------------------\n';
-      SunmiPrinter.printerText(divider);
-
-      // 🔹 INVOICE INFO
-      const infoWeights = [200, 360]; // Shifted weight to allow longer values on the right
-      SunmiPrinter.setAlignment(AlignValue.LEFT);
-      SunmiPrinter.printColumnsString(
-        ['Invoice No:', header.inv_no.toString()],
-        infoWeights,
-        [AlignValue.LEFT, AlignValue.RIGHT],
-      );
-      SunmiPrinter.printColumnsString(
-        ['Customer:', header.custref],
-        infoWeights,
-        [AlignValue.LEFT, AlignValue.RIGHT],
-      );
-      SunmiPrinter.printColumnsString(
-        ['Date:', header.inv_date.split('T')[0]],
-        infoWeights,
-        [AlignValue.LEFT, AlignValue.RIGHT],
-      );
-
-      SunmiPrinter.printerText('--------------------------------------\n');
-
-      const tableWeights = [240, 40, 90, 70, 120];
-
-      SunmiPrinter.setFontWeight(true);
-      SunmiPrinter.setFontSize(18);
-      SunmiPrinter.printColumnsString(
-        ['Description', 'Qty', 'Price', 'VAT', 'Total'],
-        tableWeights,
-        [
-          AlignValue.LEFT,
-          AlignValue.CENTER,
-          AlignValue.RIGHT,
-          AlignValue.RIGHT,
-          AlignValue.RIGHT,
-        ],
-      );
-      SunmiPrinter.setFontWeight(false);
-      SunmiPrinter.printerText('------------------------------------------\n');
-      // 🔹 ITEMS LOOP
-      data.forEach(item => {
-        const lineExcl = parseFloat(item.LINE_TOTAL) || 0;
-        const lineVat = parseFloat(item.w) || 0;
-        const lineWithVat = lineExcl + lineVat;
-
-        SunmiPrinter.printColumnsString(
-          [
-            item.DESCRIPTION,
-            item.QTY.toString(),
-            parseFloat(item.PRICE).toFixed(2),
-            lineVat.toFixed(2),
-            lineWithVat.toFixed(2),
-          ],
-          tableWeights,
-          [
-            AlignValue.LEFT,
-            AlignValue.CENTER,
-            AlignValue.RIGHT,
-            AlignValue.RIGHT,
-            AlignValue.RIGHT,
-          ],
-        );
-      });
-
-      SunmiPrinter.printerText('------------------------------------------\n');
-
-      // 🔹 TOTAL SECTION
-      const totalWeights = [340, 220];
-      SunmiPrinter.setFontSize(20);
-
-      SunmiPrinter.printColumnsString(
-        ['Total (Excl):', totalExclusive.toFixed(2)],
-        totalWeights,
-        [AlignValue.LEFT, AlignValue.RIGHT],
-      );
-      SunmiPrinter.printColumnsString(
-        ['VAT Amount:', totalVat.toFixed(2)],
-        totalWeights,
-        [AlignValue.LEFT, AlignValue.RIGHT],
-      );
-
-      SunmiPrinter.setFontWeight(true);
-      SunmiPrinter.setFontSize(26);
-      SunmiPrinter.printColumnsString(
-        ['GRAND TOTAL:', grandTotal.toFixed(2) + ' AED'],
-        totalWeights,
-        [AlignValue.LEFT, AlignValue.RIGHT],
-      );
-
-      SunmiPrinter.setFontSize(20);
-      SunmiPrinter.setFontWeight(false);
-      //   SunmiPrinter.printColumnsString(
-      //     ['Closing Bal:', parseFloat(header.Closing_Balance).toFixed(2)],
-      //     totalWeights,
-      //     [AlignValue.LEFT, AlignValue.RIGHT],
-      //   );
-
-      SunmiPrinter.setAlignment(AlignValue.CENTER);
-      SunmiPrinter.printerText('\n*** Thank You ***\n');
-      SunmiPrinter.lineWrap(4);
-    } catch (error) {
-      console.log('Sunmi Invoice Print Error:', error);
+      console.log('Universal Print Error:', error);
     }
   };
   const toWords = new ToWords();
@@ -1128,13 +994,61 @@ const InvoiceList = () => {
   console.log('subTotal', subTotal);
 
   console.log('discount', discount);
+  const handleDirectPrint = async (items, header) => {
+    try {
+      const receiptLines = items
+        .map(
+          item =>
+            `${item.QTY} x ${item.DESCRIPTION.slice(0, 15).padEnd(15)} ${
+              item.LINE_TOTAL
+            }\n`,
+        )
+        .join('');
 
+      // Use [C] for Center or [L] for Left if your library supports ESC/POS tags
+      const receiptText = `
+INVOICE: ${header.inv_no}
+DATE: ${header.inv_date}
+--------------------------------
+${receiptLines}
+--------------------------------
+TOTAL: ${header.inv_total}
+--------------------------------
+Thank you!
+\n\n\n\n`;
+
+      const devices = await ThermalPrinterModule.getBluetoothDeviceList();
+
+      if (devices && devices.length > 0) {
+        const targetDevice = devices[0];
+
+        // LOGS for debugging
+        console.log('Target MAC:', targetDevice.macAddress);
+
+        await ThermalPrinterModule.printBluetooth({
+          payload: receiptText,
+          macAddress: targetDevice.macAddress, // Based on your log
+          printerAddress: targetDevice.macAddress, // Fallback for some library versions
+          autoCut: true,
+          printerWidth: 384,
+        });
+
+        // Fixed the log: use deviceName as per your console output
+        console.log('Print command sent to:', targetDevice.deviceName);
+        alert('Print command sent!');
+      } else {
+        alert('No printer found.');
+      }
+    } catch (error) {
+      console.error('Native Print Error:', error);
+      alert('Printing failed: ' + error.message);
+    }
+  };
   return (
     <View style={styles.HomeWrap}>
       {/* <Header /> */}
 
       <HeaderUiNew name={'Previous Invoices'} />
-
       <View style={styles.HomeCont}>
         {/* <View style={styles.HomeTextCont}>
                     <TouchableOpacity onPress={() => navigation.navigate('Home')}>
@@ -1154,17 +1068,29 @@ const InvoiceList = () => {
             <Text style={styles.ErrorText}>{apiError}</Text>
           </View>
         )}
-        {/* 
-                {
-                    data.length === 0 && !loading &&
-                    <View>
-                        <Text style={{
-                            color: 'red',
-                            fontSize: 16,
-                            fontFamily: 'Lexend-Bold',
-                        }}>No Data Available</Text>
-                    </View>
-                } */}
+
+        {/* <View style={{marginVertical: 10}}>
+          <TouchableOpacity
+            style={{backgroundColor: '#5A55CA', padding: 15, borderRadius: 8}}
+            onPress={() => {
+              const dummyItems = [
+                {DESCRIPTION: 'Test Product A', QTY: 2, LINE_TOTAL: 21},
+                {DESCRIPTION: 'Test Product B', QTY: 1, LINE_TOTAL: 15},
+              ];
+
+              const dummyHeader = {
+                inv_no: 'INV12345',
+                inv_date: '2026-04-10',
+                inv_total: 36.0,
+              };
+
+              handleDirectPrint(dummyItems, dummyHeader);
+            }}>
+            <Text style={{color: 'white', textAlign: 'center'}}>
+              DIRECT TEST PRINT
+            </Text>
+          </TouchableOpacity>
+        </View> */}
 
         <FlatList
           data={getPaginatedData()}
@@ -1299,16 +1225,7 @@ const InvoiceList = () => {
                             setSlelecetdInvNo(item.INVNO);
                             setLoginUser(item.USER);
 
-                            // 🔹 BRAND SPECIFIC LOGIC
-                            if (
-                              cmpcode?.toUpperCase().trim() === 'ICELAB_TEST'
-                            ) {
-                              // Use the SM version for ICELAB
-                              printSunmiInvoiceSM(response.data);
-                            } else {
-                              // Use the standard version for ICUP
-                              printSunmiInvoice(response.data);
-                            }
+                            printSunmiInvoiceUniversal(response.data);
                           } else {
                             console.log(
                               'No invoice data found for Sunmi print.',

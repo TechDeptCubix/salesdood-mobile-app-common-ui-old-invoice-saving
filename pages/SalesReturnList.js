@@ -38,26 +38,47 @@ const SalesReturnList = () => {
   const [showSunmiLoader, setShowSunmiLoader] = useState(false);
 
   // ─── Helpers ──────────────────────────────────────────────────────────────
-  const getTRNnumber = code => {
-    const trns = {
-      MALBAR: '100335207500003',
-      PREMIER: '10027835690000',
-      ICELAB: '104112430400003',
-      MESHARI: '100449215100003',
-      ICUP: '104173070400003',
-    };
-    return trns[code] || '-';
-  };
+  const COMPANY_CONFIG = {
+    ICUP: {
+      name: 'ICECUP FOOD INDUSTRIES L.L.C',
+      trn: '104173070400003',
+      address: 'Warehouse 23, First Industrial Area, Jebel Ali, Dubai.',
+      phone: 'Tel: +971 547642223 , +971 43264233',
+      logo: ICUP_LOGO_BASE64,
+    },
 
-  const getCompanyname = code => {
-    const names = {
-      PREMIER: 'PREMIER AUTO PARTS LLC',
-      MESHARI: 'MESHARI FOODSTUFF TRADING LLC',
-      ICELAB: 'THE ICE LAB MANUFACTURING LLC',
-      ICUP: 'ICECUP FOOD INDUSTRIES L.L.C',
-    };
-    return names[code] || code || '-';
+    ICELAB: {
+      name: 'THE ICE LAB MANUFACTURING LLC',
+      trn: '104112430400003',
+      address: 'Dubai Industrial City, Dubai.',
+      phone: 'Tel: +971 XXXXXXXX',
+      // logo: ICELAB_LOGO_BASE64,
+    },
+    ICELAB_TEST: {
+      name: 'THE ICE LAB MANUFACTURING LLC',
+      trn: '104112430400003',
+      address: 'Dubai Industrial City, Dubai.',
+      phone: 'Tel: +971 XXXXXXXX',
+      // logo: ICELAB_LOGO_BASE64,
+    },
+
+    PREMIER: {
+      name: 'PREMIER AUTO PARTS LLC',
+      trn: '10027835690000',
+      address: 'Dubai, UAE',
+      phone: 'Tel: +971 XXXXXXXX',
+      // logo: PREMIER_LOGO_BASE64,
+    },
+
+    MESHARI: {
+      name: 'MESHARI FOODSTUFF TRADING LLC',
+      trn: '100449215100003',
+      address: 'Dubai, UAE',
+      phone: 'Tel: +971 XXXXXXXX',
+      // logo: MESHARI_LOGO_BASE64,
+    },
   };
+  const company = COMPANY_CONFIG[cmpcode?.toUpperCase()];
 
   const formattedDate = date => {
     try {
@@ -157,6 +178,11 @@ const SalesReturnList = () => {
       grandTotal: totalExcl + totalVat,
     };
   };
+  const printSeparator = (length = 48) => {
+    const line = '-'.repeat(length);
+    SunmiPrinter.printerText(line + '\n');
+  };
+  const LINE_LENGTH = 38;
 
   const printSunmiReturn = async item => {
     try {
@@ -171,16 +197,20 @@ const SalesReturnList = () => {
 
       SunmiPrinter.printerInit();
 
-      // Logo
-      try {
-        const cleanBase64 = ICUP_LOGO_BASE64.replace(
-          /^data:image\/[a-z]+;base64,/,
-          '',
-        );
-        SunmiPrinter.setAlignment(AlignValue.CENTER);
-        await SunmiPrinter.printBitmap(cleanBase64, 384);
-        SunmiPrinter.lineWrap(1);
-      } catch (e) {}
+      if (company?.logo) {
+        try {
+          const cleanBase64 = company.logo.replace(
+            /^data:image\/[a-z]+;base64,/,
+            '',
+          );
+
+          SunmiPrinter.setAlignment(AlignValue.CENTER);
+          await SunmiPrinter.printBitmap(cleanBase64, 384);
+          SunmiPrinter.lineWrap(1);
+        } catch (e) {
+          console.log('Logo error:', e);
+        }
+      }
 
       // Header Text
       SunmiPrinter.setAlignment(AlignValue.CENTER);
@@ -188,19 +218,26 @@ const SalesReturnList = () => {
       SunmiPrinter.setFontWeight(true);
       SunmiPrinter.printerText('SALES RETURN\n');
       SunmiPrinter.lineWrap(1);
-
       SunmiPrinter.setFontSize(28);
-      SunmiPrinter.printerText('ICECUP FOOD INDUSTRIES L.L.C\n');
+      SunmiPrinter.printerText(`${company?.name || ''}\n`);
 
       SunmiPrinter.setFontSize(20);
       SunmiPrinter.setFontWeight(false);
-      SunmiPrinter.printerText(
-        'Warehouse 23, First Industrial Area, Jebel Ali, Dubai.\n',
-      );
-      SunmiPrinter.printerText('Tel: +971 547642223 , +971 43264233\n');
+
+      if (company?.address) {
+        SunmiPrinter.printerText(`${company.address}\n`);
+      }
+
+      if (company?.phone) {
+        SunmiPrinter.printerText(`${company.phone}\n`);
+      }
 
       SunmiPrinter.setFontWeight(true);
-      SunmiPrinter.printerText('TRN: 104173070400003\n');
+
+      if (company?.trn) {
+        SunmiPrinter.printerText(`TRN: ${company.trn}\n`);
+      }
+
       SunmiPrinter.lineWrap(1);
 
       // Info Section
@@ -228,11 +265,9 @@ const SalesReturnList = () => {
       );
 
       // --- Table Start ---
-      SunmiPrinter.setFontSize(20); // Reset to standard size for separators
+      SunmiPrinter.setFontSize(20);
       SunmiPrinter.setFontWeight(false);
-      SunmiPrinter.printerText(
-        '--------------------------------------------------------\n',
-      );
+      printSeparator(LINE_LENGTH);
 
       const tableWeights = [240, 40, 90, 70, 120];
       SunmiPrinter.setFontWeight(true);
@@ -243,15 +278,13 @@ const SalesReturnList = () => {
         [0, 1, 2, 2, 2],
       );
 
-      SunmiPrinter.setFontSize(20); // Reset to standard size for separators
+      SunmiPrinter.setFontSize(20);
       SunmiPrinter.setFontWeight(false);
-      SunmiPrinter.printerText(
-        '--------------------------------------------------------\n',
-      );
+      printSeparator(LINE_LENGTH);
 
       // Items
       processedItems.forEach(i => {
-        SunmiPrinter.setFontSize(18); // Use table font size for items
+        SunmiPrinter.setFontSize(18);
         SunmiPrinter.printColumnsString(
           [
             i.DESC || i.CODE,
@@ -265,10 +298,8 @@ const SalesReturnList = () => {
         );
       });
 
-      SunmiPrinter.setFontSize(20); // Reset to standard size for separators
-      SunmiPrinter.printerText(
-        '--------------------------------------------------------\n',
-      );
+      SunmiPrinter.setFontSize(20);
+      printSeparator(LINE_LENGTH);
 
       // Totals
       const totalWeights = [340, 220];
@@ -318,8 +349,8 @@ const SalesReturnList = () => {
         customerName: item.CUSTOMER || item.CUST_ACC,
         salesMan: item.SALES_MAN,
         itemList: processedItems,
-        getCompanyname,
-        getTRNnumber,
+        // getCompanyname,
+        // getTRNnumber,
         resultClosePress: () => {
           setShowPrintButtonLoader(false);
           setSelectedReturnNo('');
@@ -387,7 +418,7 @@ const SalesReturnList = () => {
                     )}
                   </TouchableOpacity>
 
-                  {cmpcode?.toUpperCase() === 'ICUP' && (
+                  {['ICUP', 'ICELAB_TEST'].includes(cmpcode?.toUpperCase()) && (
                     <TouchableOpacity
                       style={styles.BtnSunmi}
                       onPress={() => printSunmiReturn(item)}>
