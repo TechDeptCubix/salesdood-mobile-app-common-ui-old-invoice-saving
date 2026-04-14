@@ -46,38 +46,32 @@ const SalesReturnList = () => {
       phone: 'Tel: +971 547642223 , +971 43264233',
       logo: ICUP_LOGO_BASE64,
     },
-
     ICELAB: {
       name: 'THE ICE LAB MANUFACTURING LLC',
       trn: '104112430400003',
       address: 'Dubai Industrial City, Dubai.',
       phone: 'Tel: +971 XXXXXXXX',
-      // logo: ICELAB_LOGO_BASE64,
     },
     ICELAB_TEST: {
       name: 'THE ICE LAB MANUFACTURING LLC',
       trn: '104112430400003',
       address: 'Dubai Industrial City, Dubai.',
       phone: 'Tel: +971 XXXXXXXX',
-      // logo: ICELAB_LOGO_BASE64,
     },
-
     PREMIER: {
       name: 'PREMIER AUTO PARTS LLC',
       trn: '10027835690000',
       address: 'Dubai, UAE',
       phone: 'Tel: +971 XXXXXXXX',
-      // logo: PREMIER_LOGO_BASE64,
     },
-
     MESHARI: {
       name: 'MESHARI FOODSTUFF TRADING LLC',
       trn: '100449215100003',
       address: 'Dubai, UAE',
       phone: 'Tel: +971 XXXXXXXX',
-      // logo: MESHARI_LOGO_BASE64,
     },
   };
+
   const company = COMPANY_CONFIG[cmpcode?.toUpperCase()];
 
   const formattedDate = date => {
@@ -126,6 +120,7 @@ const SalesReturnList = () => {
     fetchAsyncUser();
   }, []);
 
+  // ─── Fetch List ───────────────────────────────────────────────────────────
   useEffect(() => {
     if (appUrl && cmpcode && deptNo) {
       const fetchList = async () => {
@@ -134,6 +129,7 @@ const SalesReturnList = () => {
         try {
           const cleanCmp = cmpcode.toLowerCase().trim();
           const url = `${appUrl}CRMDocListView/${cleanCmp}/SRET/ALL/-/-/-/-/${deptNo}/1/100`;
+          console.log('url sret', url);
           const response = await axios.get(url);
           if (response.status === 200) {
             setData(response.data);
@@ -149,7 +145,7 @@ const SalesReturnList = () => {
     }
   }, [appUrl, cmpcode, deptNo]);
 
-  // ─── Manual VAT & Total Logic ─────────────────────────────────────────────
+  // ─── VAT & Totals ─────────────────────────────────────────────────────────
   const calculateTotals = items => {
     let totalExcl = 0;
     let totalVat = 0;
@@ -158,7 +154,7 @@ const SalesReturnList = () => {
       const qty = parseFloat(i.QTY) || 0;
       const price = parseFloat(i.PRICE) || 0;
       const lineExcl = qty * price;
-      const lineVat = lineExcl * 0.05; // 5% VAT
+      const lineVat = lineExcl * 0.05;
       const lineTotal = lineExcl + lineVat;
 
       totalExcl += lineExcl;
@@ -178,10 +174,13 @@ const SalesReturnList = () => {
       grandTotal: totalExcl + totalVat,
     };
   };
+
+  // ─── Sunmi Printer ────────────────────────────────────────────────────────
   const printSeparator = (length = 48) => {
     const line = '-'.repeat(length);
     SunmiPrinter.printerText(line + '\n');
   };
+
   const LINE_LENGTH = 38;
 
   const printSunmiReturn = async item => {
@@ -203,7 +202,6 @@ const SalesReturnList = () => {
             /^data:image\/[a-z]+;base64,/,
             '',
           );
-
           SunmiPrinter.setAlignment(AlignValue.CENTER);
           await SunmiPrinter.printBitmap(cleanBase64, 384);
           SunmiPrinter.lineWrap(1);
@@ -212,7 +210,6 @@ const SalesReturnList = () => {
         }
       }
 
-      // Header Text
       SunmiPrinter.setAlignment(AlignValue.CENTER);
       SunmiPrinter.setFontSize(32);
       SunmiPrinter.setFontWeight(true);
@@ -220,27 +217,22 @@ const SalesReturnList = () => {
       SunmiPrinter.lineWrap(1);
       SunmiPrinter.setFontSize(28);
       SunmiPrinter.printerText(`${company?.name || ''}\n`);
-
       SunmiPrinter.setFontSize(20);
       SunmiPrinter.setFontWeight(false);
 
       if (company?.address) {
         SunmiPrinter.printerText(`${company.address}\n`);
       }
-
       if (company?.phone) {
         SunmiPrinter.printerText(`${company.phone}\n`);
       }
 
       SunmiPrinter.setFontWeight(true);
-
       if (company?.trn) {
         SunmiPrinter.printerText(`TRN: ${company.trn}\n`);
       }
-
       SunmiPrinter.lineWrap(1);
 
-      // Info Section
       SunmiPrinter.setAlignment(AlignValue.LEFT);
       const infoWeights = [200, 360];
       SunmiPrinter.printColumnsString(
@@ -264,7 +256,6 @@ const SalesReturnList = () => {
         [0, 2],
       );
 
-      // --- Table Start ---
       SunmiPrinter.setFontSize(20);
       SunmiPrinter.setFontWeight(false);
       printSeparator(LINE_LENGTH);
@@ -282,7 +273,6 @@ const SalesReturnList = () => {
       SunmiPrinter.setFontWeight(false);
       printSeparator(LINE_LENGTH);
 
-      // Items
       processedItems.forEach(i => {
         SunmiPrinter.setFontSize(18);
         SunmiPrinter.printColumnsString(
@@ -301,7 +291,6 @@ const SalesReturnList = () => {
       SunmiPrinter.setFontSize(20);
       printSeparator(LINE_LENGTH);
 
-      // Totals
       const totalWeights = [340, 220];
       SunmiPrinter.setFontSize(20);
       SunmiPrinter.printColumnsString(
@@ -335,31 +324,62 @@ const SalesReturnList = () => {
       setSelectedReturnNo('');
     }
   };
-  const printPdfReturn = async item => {
-    try {
-      setShowPrintButtonLoader(true);
-      setSelectedReturnNo(item.SR_NO);
-      const lineItemsRaw = data.filter(i => i.SR_NO === item.SR_NO);
-      const {processedItems} = calculateTotals(lineItemsRaw);
 
-      await generateSalesReturnPDF({
-        cmpcode,
-        returnNo: item.SR_NO,
-        returnDate: formattedDate(item.SR_DATE),
-        customerName: item.CUSTOMER || item.CUST_ACC,
-        salesMan: item.SALES_MAN,
-        itemList: processedItems,
-        // getCompanyname,
-        // getTRNnumber,
-        resultClosePress: () => {
-          setShowPrintButtonLoader(false);
-          setSelectedReturnNo('');
-        },
-      });
-    } catch (error) {
-      setShowPrintButtonLoader(false);
-    }
-  };
+  // ─── PDF Print ────────────────────────────────────────────────────────────
+  const printPdfReturn = async item => {
+  try {
+    setShowPrintButtonLoader(true);
+    setSelectedReturnNo(item.SR_NO);
+
+    const cleanCmp = cmpcode.toLowerCase().trim();
+    const url = `${appUrl}CRMDocListView/${cleanCmp}/SRET/${item.SR_NO}/-/-/-/-/${deptNo}/1/100`;
+    
+    const response = await axios.get(url);
+    const lineItemsRaw = response.data; // This is your single-object array
+
+    // 1. Map API keys to the EXACT Uppercase keys used in SalesReturnPdf.js
+    const singleMappedItem = lineItemsRaw.map(i => ({
+      CODE: i.code,             // API 'code' -> PDF 'CODE'
+      DESC: i.idesc,            // API 'idesc' -> PDF 'DESC'
+      QTY: parseFloat(i.tr_qty2) || 0,
+      PRICE: parseFloat(i.unit_price) || 0,
+      UNIT: i.unit,
+      BATCH: i.batch,
+      LINE_TOTAL: parseFloat(i.line_total) || 0,
+      LINE_VAT: (parseFloat(i.line_total) || 0) * 0.05,
+      LINE_TOTAL_INCL: (parseFloat(i.line_total) || 0) * 1.05,
+    }));
+
+    // 2. Calculate totals using this specific new array
+    const totals = calculateTotals(singleMappedItem);
+
+    // 3. Capture header info from the first (and only) item
+    const header = lineItemsRaw[0] || {};
+
+    await generateSalesReturnPDF({
+      cmpcode,
+      returnNo: item.SR_NO,
+      returnDate: formattedDate(item.SR_DATE),
+      customerName: item.CUSTOMER || item.CUST_ACC,
+      customerAddress: header.blno, // Address from 'blno'
+      invNo: item.INV_NO,
+      salesMan: item.SALES_MAN,
+      reason: header.comments,     // Reason from 'comments'
+      totalExcl: totals.totalExcl,
+      totalVat: totals.totalVat,
+      grandTotal: totals.grandTotal,
+      itemList: singleMappedItem,   // Send only the freshly mapped single item
+      resultClosePress: () => {
+        setShowPrintButtonLoader(false);
+        setSelectedReturnNo('');
+      },
+    });
+  } catch (error) {
+    console.log('printPdfReturn error', error);
+    setShowPrintButtonLoader(false);
+    setSelectedReturnNo('');
+  }
+};
 
   // ─── Render ───────────────────────────────────────────────────────────────
   return (
@@ -418,7 +438,9 @@ const SalesReturnList = () => {
                     )}
                   </TouchableOpacity>
 
-                  {['ICUP', 'ICELAB_TEST'].includes(cmpcode?.toUpperCase()) && (
+                  {['ICUP', 'ICELAB_TEST'].includes(
+                    cmpcode?.toUpperCase(),
+                  ) && (
                     <TouchableOpacity
                       style={styles.BtnSunmi}
                       onPress={() => printSunmiReturn(item)}>
@@ -438,7 +460,9 @@ const SalesReturnList = () => {
         {data.length > 0 && !loading && (
           <View style={styles.pagination}>
             <TouchableOpacity
-              onPress={() => currentPage > 1 && setCurrentPage(currentPage - 1)}
+              onPress={() =>
+                currentPage > 1 && setCurrentPage(currentPage - 1)
+              }
               style={[
                 styles.pageButton,
                 {opacity: currentPage === 1 ? 0.5 : 1},

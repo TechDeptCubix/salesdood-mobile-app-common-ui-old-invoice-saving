@@ -1518,6 +1518,8 @@ const QuotationPop = ({
   const validateCustomerLimit = amount => {
     if (!selectedCustomer) return true;
 
+    console.log("selectedCustomer", selectedCustomer)
+
     const availableLimit = Number(selectedCustomer.Avai_Bal || 0);
 
     if (
@@ -1928,7 +1930,8 @@ const QuotationPop = ({
       pump: '',
       // governor: trn ? `${trn}(TRN)` : '',
       governor: trn ? trn : '',
-      feedpump: cashCustomerAddress ? cashCustomerAddress : '',
+      feedpump: '',
+      injector: cashCustomerAddress ? cashCustomerAddress : '', // in pulled code inhector was missing thats why error on saving
       // starter: customer ? `${(customer.phone).trim()} (TELEPHONE)` : '',
       starter: customer
         ? customer.phone.trim()

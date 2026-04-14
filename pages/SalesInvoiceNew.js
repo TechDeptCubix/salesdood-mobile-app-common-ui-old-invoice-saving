@@ -1162,7 +1162,7 @@ const SalesInvoiceNew = ({route}) => {
   };
 
   const showItemExistError = () => {
-    Toast.error(`Item already selected`);
+    Toast.error(`Item already selected ---++`); // this is where add to cart checking happens
   };
 
   const showMoreThan10ItemError = () => {
@@ -1365,6 +1365,18 @@ const SalesInvoiceNew = ({route}) => {
         console.log('error is ', err);
       });
   };
+  
+  useEffect(() => {
+    const loadSavedItems = async () => {
+      const savedItemDataString = await AsyncStorage.getItem('savedItemDataInv');
+      if (savedItemDataString) {
+        const parsed = JSON.parse(savedItemDataString);
+        setSavedItemData(parsed);
+        updateTotalUnitPrice(parsed);
+      }
+    };
+    loadSavedItems();
+  }, []);
 
   return (
     <>
