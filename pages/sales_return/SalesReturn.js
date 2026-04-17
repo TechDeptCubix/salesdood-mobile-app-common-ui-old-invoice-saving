@@ -413,7 +413,7 @@ export default function SalesReturn({navigation}) {
                             ? styles.credTagCreditText
                             : styles.credTagCashText,
                         ]}>
-                        {item.cashCred === 'C' ? 'Credit' : 'Cash'}
+                        {item.cashCred === 'C' ? 'Cash' : 'Credit'}
                       </Text>
                     </View>
                   </View>

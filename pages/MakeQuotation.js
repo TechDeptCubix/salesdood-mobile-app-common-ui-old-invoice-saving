@@ -433,25 +433,24 @@ const MakeQuotation = ({route}) => {
   const searchStock = async value => {
     let encodedvalue = encodeURIComponent(value);
 
-    console.log('value before and after ', value, encodedvalue);
-    console.log(
-      'search api url ',
-      `${appUrl}Search_Items/${cmpcode}/Sitem/${encodedvalue} `,
-    );
+    const url = `${appUrl}Search_Items/${cmpcode}/Sitem/${encodedvalue}`;
+
+    console.log('value before and after:', value, encodedvalue);
+    console.log('search api url:', url);
 
     setShowItemSrchAct(true);
+
     try {
-      await axios
-        .get(`${appUrl}Search_Items/${cmpcode}/Sitem/${encodedvalue} `)
-        .then(res => {
-          console.log('searched item ', res.data);
-          setStockData(res.data);
-        });
-      setShowItemSrchAct(false);
+      const res = await axios.get(url);
+
+      console.log('searched item:', res.data);
+
+      setStockData(res.data);
     } catch (error) {
-      console.log('searchStockError', error);
-      setShowItemSrchAct(false);
+      console.log('searchStockError:', error);
       setStockSearchError('Some Error Occured, Please Try again Later');
+    } finally {
+      setShowItemSrchAct(false);
     }
   };
 
@@ -2840,6 +2839,16 @@ const MakeQuotation = ({route}) => {
                                       ]}>
                                       Cash: {item['Cash Price']}
                                     </Text>
+                                    {cmpcode?.trim().toUpperCase() ===
+                                      'STARLINK' && (
+                                      <Text
+                                        style={[
+                                          styles.StockListDescTextSmall,
+                                          {color: '#2563EB'},
+                                        ]}>
+                                        Cost: {item.Cost_Avg}
+                                      </Text>
+                                    )}
 
                                     <Text
                                       style={[

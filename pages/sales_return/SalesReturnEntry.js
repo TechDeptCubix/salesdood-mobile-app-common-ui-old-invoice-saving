@@ -34,18 +34,26 @@ export default function SalesReturnEntry({route, navigation}) {
   const [vatPercent, setVatPercent] = useState('5');
 
   // --- GLOBAL LOGIC CONSTANTS ---
-  // 1. Original Subtotal (Price * Original Qty) e.g., 53
-  const originalSubtotal = selectedItems.reduce(
+  // 1. Total Original Subtotal (Price * Original Qty) of the ENTIRE invoice
+  const allInvoiceItems = invoiceDetailObject?.items || selectedItems;
+  const originalInvoiceSubtotal = allInvoiceItems.reduce(
     (sum, item) => sum + item.price * item.qty,
     0,
   );
 
-  // 2. Global Discount (6)
-  const globalDiscountValue = selectedItems[0]?.discount_amount || 0;
+  // 2. Global Discount (bottom discount, not per line)
+  // Always use the invoice-level discount (from invoiceDetailObject.disc_amt or similar)
+  // Fallback to selectedItems[0]?.discount_amount for backward compatibility
+  const globalDiscountValue =
+    invoiceDetailObject?.disc_amt != null
+      ? parseFloat(invoiceDetailObject.disc_amt)
+      : selectedItems[0]?.discount_amount || 0;
 
-  // 3. Discount Ratio (Percentage) e.g., 6 / 53 = 0.1132
+  // 3. Discount Ratio (Percentage) based on the full invoice
   const discountRatio =
-    originalSubtotal > 0 ? globalDiscountValue / originalSubtotal : 0;
+    originalInvoiceSubtotal > 0
+      ? globalDiscountValue / originalInvoiceSubtotal
+      : 0;
 
   const vatRate = parseFloat(vatPercent) || 0;
 
@@ -78,6 +86,14 @@ export default function SalesReturnEntry({route, navigation}) {
     if (numValue < 0) return;
 
     setQtys(prev => ({...prev, [id]: value}));
+  };
+  const getLineDiscount = (item, returnQty) => {
+    const originalLineSubtotal = item.qty * item.price;
+    const lineDiscountShare =
+      originalInvoiceSubtotal > 0
+        ? (originalLineSubtotal / originalInvoiceSubtotal) * globalDiscountValue
+        : 0;
+    return (returnQty / (item.qty || 1)) * lineDiscountShare;
   };
   const handleSubmit = async () => {
     const SR_VT_D_Account = glSettings?.find(
@@ -132,11 +148,13 @@ export default function SalesReturnEntry({route, navigation}) {
         return sum + qty * item.price;
       }, 0);
 
-      const totalReturnDiscount = returnSubtotal * discountRatio;
+      const totalReturnDiscount = selectedItems.reduce((sum, item) => {
+        const qty = parseFloat(qtys[item.id]) || 0;
+        return sum + getLineDiscount(item, qty);
+      }, 0);
       const netReturnAmount = returnSubtotal - totalReturnDiscount;
       const totalReturnVat = netReturnAmount * (vatRate / 100);
       const finalReturnTotal = netReturnAmount + totalReturnVat;
-
       const payload = {
         modeOp: 'SAVE',
         srNo: 0,
@@ -149,7 +167,7 @@ export default function SalesReturnEntry({route, navigation}) {
         srInvNo: invoiceDetailObject.id + '',
         saleMan: salesMan,
         discAmt: parseFloat(totalReturnDiscount.toFixed(2)),
-        glSr: SR_CR_D_Account, // income account take SR-CR-D from gl settings api
+        glSr: SR_CR_D_Account,
         nextSrNo: 0,
         lpoNo: '',
         doNo: 0,
@@ -168,7 +186,7 @@ export default function SalesReturnEntry({route, navigation}) {
               const qty = parseFloat(qtys[item.id]) || 0;
               const unitPrice = item.price ?? 0;
               const lineSubtotal = qty * unitPrice;
-              const lineDiscount = lineSubtotal * discountRatio;
+              const lineDiscount = getLineDiscount(item, qty); // ✅ fixed
               const lineNet = lineSubtotal - lineDiscount;
               const lineVat = lineNet * (vatRate / 100);
               return sum + lineVat;
@@ -192,7 +210,7 @@ export default function SalesReturnEntry({route, navigation}) {
           const qty = parseFloat(qtys[item.id]) || 0;
           const unitPrice = item.price ?? 0;
           const lineSubtotal = qty * unitPrice;
-          const lineDiscount = lineSubtotal * discountRatio;
+          const lineDiscount = getLineDiscount(item, qty);
           const lineNet = lineSubtotal - lineDiscount;
           const lineVat = lineNet * (vatRate / 100);
           const lineTotal = lineNet + lineVat;
@@ -226,7 +244,7 @@ export default function SalesReturnEntry({route, navigation}) {
       console.log('------------------------------------------');
       console.log('payload', payload);
       console.log('🚀 SALES RETURN PAYLOAD GENERATED');
-      console.log(`Original Inv Subtotal: ${originalSubtotal.toFixed(2)}`);
+      // console.log(`Original Inv Subtotal: ${originalSubtotal.toFixed(2)}`);
       console.log(`Global Discount Rate: ${(discountRatio * 100).toFixed(2)}%`);
       console.log(`Return Subtotal: ${returnSubtotal.toFixed(2)}`);
       console.log(`Applied Discount: -${totalReturnDiscount.toFixed(2)}`);
@@ -354,6 +372,24 @@ export default function SalesReturnEntry({route, navigation}) {
             </View>
           </View>
         </View>
+        {globalDiscountValue > 0 && (
+          <View style={styles.discountInfoBanner}>
+            <View style={styles.discountInfoContent}>
+              <Text style={styles.discountInfoTitle}>
+                Original Invoice Discount
+              </Text>
+              <View style={styles.discountBadge}>
+                <Text style={styles.discountBadgeText}>
+                  AED {globalDiscountValue.toFixed(2)} (
+                  {(discountRatio * 100).toFixed(1)}% OFF)
+                </Text>
+              </View>
+            </View>
+            <Text style={styles.discountInfoSub}>
+              Note: Returns will be adjusted proportionally based on this rate.
+            </Text>
+          </View>
+        )}
 
         {/* Item Selection Cards */}
         {selectedItems.map(item => (
@@ -417,18 +453,22 @@ export default function SalesReturnEntry({route, navigation}) {
 
             <View style={styles.divider} />
 
-            {/* Item List */}
+            {/* Item List (optional: can add returned items list here) */}
 
             <View style={styles.summaryDivider} />
 
             {/* Calculations Block */}
             {(() => {
+              // Calculate gross, discount, VAT, net for the returned items
               const currentGross = selectedItems.reduce(
                 (sum, item) =>
                   sum + (parseFloat(qtys[item.id]) || 0) * item.price,
                 0,
               );
-              const currentDiscount = currentGross * discountRatio;
+              const currentDiscount = selectedItems.reduce((sum, item) => {
+                const qty = parseFloat(qtys[item.id]) || 0;
+                return sum + getLineDiscount(item, qty); // ✅ fixed
+              }, 0);
               const currentVAT =
                 (currentGross - currentDiscount) * (vatRate / 100);
               const currentNet = currentGross - currentDiscount + currentVAT;
@@ -443,14 +483,26 @@ export default function SalesReturnEntry({route, navigation}) {
                     </Text>
                   </View>
 
-                  {/* 2. Discount Amount (Only show if > 0) */}
-                  {currentDiscount > 0 && (
+                  {/* 2. Discount Amount or Note */}
+                  {discountRatio > 0 ? (
+                    currentDiscount > 0 && (
+                      <View style={styles.summaryRowLine}>
+                        <Text style={[styles.detailLabel, {color: '#e74c3c'}]}>
+                          Total Discount ({(discountRatio * 100).toFixed(1)}%)
+                        </Text>
+                        <Text style={[styles.detailValue, {color: '#e74c3c'}]}>
+                          -AED {currentDiscount.toFixed(2)}
+                        </Text>
+                      </View>
+                    )
+                  ) : (
                     <View style={styles.summaryRowLine}>
-                      <Text style={[styles.detailLabel, {color: '#e74c3c'}]}>
-                        Total Discount ({(discountRatio * 100).toFixed(1)}%)
-                      </Text>
-                      <Text style={[styles.detailValue, {color: '#e74c3c'}]}>
-                        -AED {currentDiscount.toFixed(2)}
+                      <Text
+                        style={[
+                          styles.detailLabel,
+                          {color: '#64748b', fontStyle: 'italic'},
+                        ]}>
+                        No discount applied on this invoice.
                       </Text>
                     </View>
                   )}
@@ -580,6 +632,42 @@ const styles = StyleSheet.create({
     textAlign: 'right',
     flex: 1,
     marginLeft: 12,
+  },
+  discountInfoBanner: {
+    backgroundColor: '#fffbeb', // Light amber/yellow
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#fef3c7',
+    borderStyle: 'dashed',
+  },
+  discountInfoContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  discountInfoTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#92400e',
+  },
+  discountBadge: {
+    backgroundColor: '#f59e0b',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  discountBadgeText: {
+    color: '#fff',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  discountInfoSub: {
+    fontSize: 11,
+    color: '#b45309',
+    fontStyle: 'italic',
   },
   divider: {height: 0.5, backgroundColor: '#e2e8f0'},
   fieldRow: {

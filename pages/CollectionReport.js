@@ -229,6 +229,7 @@ const CollectionReport = () => {
     setShowLoader(true);
     setShowError('');
     let apiUrl = `${appUrl}DailyReport/${cmpCode}/COLLECTION/${deptNo}/${salesperson}/${fromData}`;
+    console.log('Fetching collection data from:', apiUrl);
     if (isAdmin) {
       apiUrl = `${appUrl}DailyReport/${cmpCode}/COLLECTION/${deptNo}/${accessGroup.replaceAll(
         ' ',

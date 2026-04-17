@@ -466,6 +466,14 @@ const CheckStock = () => {
                               {formatPrice3Decimal(item['Credit Price'])}
                             </Text>
                           </View>
+                          {cmpcode?.trim().toUpperCase() === 'STARLINK' && (
+                            <View style={styles.PriceTag}>
+                              <Text style={styles.StockListCodeText}>Cost</Text>
+                              <Text style={styles.PriceValueText}>
+                                {formatPrice3Decimal(item.Cost)}
+                              </Text>
+                            </View>
+                          )}
                           <View style={styles.PriceTag}>
                             <Text style={styles.StockListCodeText}>
                               Block Price
@@ -882,6 +890,14 @@ const CheckStock = () => {
                               {formatPrice3Decimal(item['Credit Price'])}
                             </Text>
                           </View>
+                          {cmpcode?.trim().toUpperCase() === 'STARLINK' && (
+                            <View style={styles.PriceTag}>
+                              <Text style={styles.StockListCodeText}>Cost</Text>
+                              <Text style={styles.PriceValueText}>
+                                {formatPrice3Decimal(item.Cost)}
+                              </Text>
+                            </View>
+                          )}
 
                           {cmpcode?.trim().toUpperCase() != 'SOCA' ? (
                             <View style={styles.PriceTag}>

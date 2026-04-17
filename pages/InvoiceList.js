@@ -313,6 +313,8 @@ const InvoiceList = () => {
   const printDivider = length => {
     SunmiPrinter.printerText('-'.repeat(length) + '\n');
   };
+  const divider = '---------------------------------------------------------\n';
+
   const printSunmiInvoiceUniversal = async (data, taxRate = 0.05) => {
     try {
       if (!data || data.length === 0) return;
@@ -320,7 +322,7 @@ const InvoiceList = () => {
       const header = data[0];
 
       const lineLength = getLineLength(cmpcode);
-      const divider = () => printDivider(lineLength);
+      // const divider = () => printDivider(lineLength);
 
       // 🔹 BASE TOTAL (before discount)
       const baseTotal = data.reduce((sum, item) => {
@@ -352,6 +354,21 @@ const InvoiceList = () => {
       const grandTotal = netTotalAfterDiscount + totalVat;
 
       SunmiPrinter.printerInit();
+      try {
+        SunmiPrinter.setAlignment(AlignValue.CENTER);
+
+        // Remove header if it exists (e.g., data:image/png;base64,)
+        const cleanBase64 = ICUP_LOGO_BASE64.replace(
+          /^data:image\/[a-z]+;base64,/,
+          '',
+        );
+
+        // 384 is the standard pixel width for Sunmi 58mm paper
+        await SunmiPrinter.printBitmap(cleanBase64, 384);
+        SunmiPrinter.lineWrap(1);
+      } catch (imgError) {
+        console.log('Logo Print Error:', imgError);
+      }
 
       // 🔹 HEADER
       SunmiPrinter.setAlignment(AlignValue.CENTER);
@@ -359,20 +376,28 @@ const InvoiceList = () => {
       SunmiPrinter.setFontWeight(true);
       SunmiPrinter.printerText('TAX INVOICE\n');
 
+      // 1. ADD PADDING BOTTOM FOR TAX INVOICE
+      SunmiPrinter.lineWrap(1); // Adds one line of vertical space
+
       SunmiPrinter.setFontSize(28);
-      SunmiPrinter.printerText(`${header.custref || ''}\n`);
+      SunmiPrinter.printerText('ICECUP FOOD INDUSTRIES L.L.C\n');
 
       SunmiPrinter.setFontSize(20);
       SunmiPrinter.setFontWeight(false);
-      SunmiPrinter.printerText(`${header.ADDRESS || ''}\n`);
+      SunmiPrinter.printerText(
+        'Warehouse 23, First Industrial Area, Jebel Ali, Dubai.\n',
+      );
 
-      if (header.TRN) {
-        SunmiPrinter.setFontWeight(true);
-        SunmiPrinter.printerText(`TRN: ${header.TRN}\n`);
-        SunmiPrinter.setFontWeight(false);
-      }
+      SunmiPrinter.printerText('Tel: +971 547642223 , +971 43264233\n');
 
-      divider();
+      SunmiPrinter.setFontWeight(true);
+      SunmiPrinter.printerText('TRN: 104173070400003\n');
+      SunmiPrinter.setFontWeight(false); // Reset weight for subsequent text
+
+      SunmiPrinter.lineWrap(1);
+
+      // 🔹 WIDER DIVIDER
+      // Increased number of dashes to ensure it spans the full width
 
       // 🔹 INFO
       const infoWeights = [200, 360];
@@ -396,7 +421,7 @@ const InvoiceList = () => {
         [AlignValue.LEFT, AlignValue.RIGHT],
       );
 
-      divider();
+      SunmiPrinter.printerText(divider);
 
       // 🔹 TABLE HEADER
       const tableWeights = [240, 40, 90, 70, 120];
@@ -417,7 +442,9 @@ const InvoiceList = () => {
       );
 
       SunmiPrinter.setFontWeight(false);
-      divider();
+      SunmiPrinter.printerText(
+        '---------------------------------------------------------------\n',
+      );
 
       // 🔹 ITEMS (DISCOUNT FIRST, THEN VAT)
       data.forEach(item => {
@@ -452,8 +479,9 @@ const InvoiceList = () => {
         );
       });
 
-      divider();
-
+      SunmiPrinter.printerText(
+        '---------------------------------------------------------------\n',
+      );
       // 🔹 TOTALS
       const totalWeights = [340, 220];
 
@@ -463,11 +491,11 @@ const InvoiceList = () => {
         [AlignValue.LEFT, AlignValue.RIGHT],
       );
 
-      SunmiPrinter.printColumnsString(
-        ['Discount:', totalDiscount.toFixed(2)],
-        totalWeights,
-        [AlignValue.LEFT, AlignValue.RIGHT],
-      );
+      // SunmiPrinter.printColumnsString(
+      //   ['Discount:', totalDiscount.toFixed(2)],
+      //   totalWeights,
+      //   [AlignValue.LEFT, AlignValue.RIGHT],
+      // );
 
       SunmiPrinter.printColumnsString(
         ['VAT Amount:', totalVat.toFixed(2)],

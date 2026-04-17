@@ -1,5 +1,6 @@
-import {PermissionsAndroid, Platform, Share} from 'react-native';
+import {PermissionsAndroid, Platform} from 'react-native';
 import RNHTMLtoPDF from 'react-native-html-to-pdf';
+import Share from 'react-native-share'; // Ensure this is installed via npm/yarn
 
 const COMPANY_CONFIG = {
   ICUP: {
@@ -49,8 +50,8 @@ export const generateSalesReturnPDF = async ({
   itemList,
   resultClosePress,
 }) => {
+  console.log('Generating PDF for ItemList:', itemList);
 
-  console.log("itemList ", itemList)
   // ── Android storage permission ─────────────────────────────────────────
   if (Platform.OS === 'android') {
     try {
@@ -105,9 +106,13 @@ export const generateSalesReturnPDF = async ({
         <td style="width:28%;">${item.DESC || '-'}</td>
         <td style="width:10%; text-align:center;">${fmt(item.QTY, 3)}</td>
         <td style="width:10%; text-align:right;">${fmt(item.PRICE || 0)}</td>
-        <td style="width:10%; text-align:right;">${fmt((parseFloat(item.QTY) || 0) * (parseFloat(item.PRICE) || 0))}</td>
+        <td style="width:10%; text-align:right;">${fmt(
+          (parseFloat(item.QTY) || 0) * (parseFloat(item.PRICE) || 0),
+        )}</td>
         <td style="width:9%; text-align:right;">${fmt(item.LINE_VAT || 0)}</td>
-        <td style="width:9%; text-align:right;">${fmt(item.LINE_TOTAL_INCL || 0)}</td>
+        <td style="width:9%; text-align:right;">${fmt(
+          item.LINE_TOTAL_INCL || 0,
+        )}</td>
       </tr>`,
         )
         .join('')
@@ -206,17 +211,14 @@ export const generateSalesReturnPDF = async ({
 <body>
 <div class="page">
 
-  <!-- Company Header -->
   <div style="text-align:center; padding: 10px 0 6px 0;">
     <div style="font-size:22px; font-weight:bold;">${companyName}</div>
     <div style="font-size:13px; margin-top:4px;">${companyAddress}<br/>${companyPhone}</div>
     <div style="font-size:12px; font-weight:bold; margin-top:4px;">TRN: ${trnNumber}</div>
   </div>
 
-  <!-- Title -->
   <div class="title-band">SALES RETURN</div>
 
-  <!-- Info Grid -->
   <div class="info-grid">
     <div class="info-col">
       <div class="info-row">
@@ -229,13 +231,17 @@ export const generateSalesReturnPDF = async ({
       </div>
       <div class="info-row">
         <span class="info-label">Reason:</span>
-        <span class="info-value"><span class="reason-tag">${reason || '-'}</span></span>
+        <span class="info-value"><span class="reason-tag">${
+          reason || '-'
+        }</span></span>
       </div>
     </div>
     <div class="info-col" style="text-align:right;">
       <div class="info-row" style="justify-content:flex-end;">
         <span class="info-label">Return No:</span>
-        <span class="info-value" style="font-weight:bold;">&nbsp;${returnNo || '-'}</span>
+        <span class="info-value" style="font-weight:bold;">&nbsp;${
+          returnNo || '-'
+        }</span>
       </div>
       <div class="info-row" style="justify-content:flex-end;">
         <span class="info-label">Invoice No:</span>
@@ -252,7 +258,6 @@ export const generateSalesReturnPDF = async ({
     </div>
   </div>
 
-  <!-- Items Table -->
   <table>
     <thead>
       <tr>
@@ -269,7 +274,6 @@ export const generateSalesReturnPDF = async ({
     <tbody>${itemRowsHtml}</tbody>
   </table>
 
-  <!-- Totals -->
   <div class="totals-wrap">
     <div class="totals-table">
       <div class="total-row">
@@ -291,7 +295,6 @@ export const generateSalesReturnPDF = async ({
     </div>
   </div>
 
-  <!-- Signatures -->
   <div class="footer-sig">
     <div class="sig-box">
       <div class="sig-line"></div>
@@ -313,7 +316,6 @@ export const generateSalesReturnPDF = async ({
 
   // ── Generate & Share PDF ───────────────────────────────────────────────
   try {
-    console.log("html is", html)
     const file = await RNHTMLtoPDF.convert({
       html,
       fileName: `SalesReturn_${returnNo || 'unknown'}`,
@@ -322,13 +324,22 @@ export const generateSalesReturnPDF = async ({
 
     console.log('PDF generated at:', file.filePath);
 
-    await Share.share({
-      title: `Sales Return ${returnNo}`,
+    // Using Share.open (react-native-share) for the preview functionality
+    await Share.open({
+      title: 'Share Sales Return PDF',
       url: `file://${file.filePath}`,
       type: 'application/pdf',
+      failOnCancel: false, // Prevents throwing error if user cancels
     });
   } catch (error) {
-    console.log('generateSalesReturnPDF error:', error);
+    // Only log if it's a real error, not just a user cancellation
+    if (
+      error &&
+      error.message &&
+      !error.message.includes('User did not share')
+    ) {
+      console.log('generateSalesReturnPDF error:', error);
+    }
   } finally {
     if (resultClosePress) resultClosePress();
   }

@@ -12,7 +12,6 @@ import React, {useEffect, useState} from 'react';
 import Header from './Header';
 import {useNavigation} from '@react-navigation/native';
 import axios from 'axios';
-import REACT_APP_BASE_URL from '../url/AppUrl';
 import StatusLogPop from '../popups/StatusLogPop';
 import HeaderUiNew from './HeaderUiNew';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -28,7 +27,6 @@ const QuotationList = () => {
 
   const [salesMan, setSalesMan] = useState('');
 
-  const [itemList, setItemList] = useState(null);
   const [showStatusLogPop, setShowStatusLogPop] = useState(false);
   const [orderIdPop, setOrderIdPop] = useState(null);
 

@@ -325,61 +325,76 @@ const SalesReturnList = () => {
     }
   };
 
-  // ─── PDF Print ────────────────────────────────────────────────────────────
   const printPdfReturn = async item => {
-  try {
-    setShowPrintButtonLoader(true);
-    setSelectedReturnNo(item.SR_NO);
+    console.log('printPdfReturn (SRET_PRINT) called for SR_NO:', item.SR_NO);
+    try {
+      setShowPrintButtonLoader(true);
+      setSelectedReturnNo(item.SR_NO);
 
-    const cleanCmp = cmpcode.toLowerCase().trim();
-    const url = `${appUrl}CRMDocListView/${cleanCmp}/SRET/${item.SR_NO}/-/-/-/-/${deptNo}/1/100`;
-    
-    const response = await axios.get(url);
-    const lineItemsRaw = response.data; // This is your single-object array
+      const cleanCmp = cmpcode.toLowerCase().trim();
 
-    // 1. Map API keys to the EXACT Uppercase keys used in SalesReturnPdf.js
-    const singleMappedItem = lineItemsRaw.map(i => ({
-      CODE: i.code,             // API 'code' -> PDF 'CODE'
-      DESC: i.idesc,            // API 'idesc' -> PDF 'DESC'
-      QTY: parseFloat(i.tr_qty2) || 0,
-      PRICE: parseFloat(i.unit_price) || 0,
-      UNIT: i.unit,
-      BATCH: i.batch,
-      LINE_TOTAL: parseFloat(i.line_total) || 0,
-      LINE_VAT: (parseFloat(i.line_total) || 0) * 0.05,
-      LINE_TOTAL_INCL: (parseFloat(i.line_total) || 0) * 1.05,
-    }));
+      // ── New API URL ──────────────────────────────────────────────────────
+      // Path: /api/CRMDocListView/{CMP}/SRET_PRINT/-/-/-/{SR_NO}/-/{DEPT}/1/100
+      const url = `${appUrl}CRMDocListView/${cleanCmp}/SRET_PRINT/-/-/-/${item.SR_NO}/-/${deptNo}/1/100`;
 
-    // 2. Calculate totals using this specific new array
-    const totals = calculateTotals(singleMappedItem);
+      const response = await axios.get(url);
+      const lineItemsRaw = response.data || [];
 
-    // 3. Capture header info from the first (and only) item
-    const header = lineItemsRaw[0] || {};
-
-    await generateSalesReturnPDF({
-      cmpcode,
-      returnNo: item.SR_NO,
-      returnDate: formattedDate(item.SR_DATE),
-      customerName: item.CUSTOMER || item.CUST_ACC,
-      customerAddress: header.blno, // Address from 'blno'
-      invNo: item.INV_NO,
-      salesMan: item.SALES_MAN,
-      reason: header.comments,     // Reason from 'comments'
-      totalExcl: totals.totalExcl,
-      totalVat: totals.totalVat,
-      grandTotal: totals.grandTotal,
-      itemList: singleMappedItem,   // Send only the freshly mapped single item
-      resultClosePress: () => {
+      if (lineItemsRaw.length === 0) {
+        alert('No data found for this return.');
         setShowPrintButtonLoader(false);
-        setSelectedReturnNo('');
-      },
-    });
-  } catch (error) {
-    console.log('printPdfReturn error', error);
-    setShowPrintButtonLoader(false);
-    setSelectedReturnNo('');
-  }
-};
+        return;
+      }
+
+      // 1. Map API keys based on your JSON response
+      const mappedItems = lineItemsRaw.map(i => ({
+        CODE: i.code,
+        DESC: i.idesc,
+        QTY: parseFloat(i.tr_qty2) || 0,
+        PRICE: parseFloat(i.unit_price) || 0,
+        UNIT: i.unit,
+        BATCH: i.batch || '-',
+        LINE_TOTAL: parseFloat(i.line_total) || 0,
+        // Manual VAT calculation (5%)
+        LINE_VAT: (parseFloat(i.line_total) || 0) * 0.05,
+        LINE_TOTAL_INCL: (parseFloat(i.line_total) || 0) * 1.05,
+      }));
+
+      // 2. Use the first item to extract header details
+      const header = lineItemsRaw[0];
+
+      // 3. Calculate totals for the PDF footer
+      const totals = {
+        totalExcl: mappedItems.reduce((sum, i) => sum + i.LINE_TOTAL, 0),
+        totalVat: mappedItems.reduce((sum, i) => sum + i.LINE_VAT, 0),
+        grandTotal: mappedItems.reduce((sum, i) => sum + i.LINE_TOTAL_INCL, 0),
+      };
+
+      // 4. Generate the PDF
+      await generateSalesReturnPDF({
+        cmpcode,
+        returnNo: header.sr_no?.toString() || item.SR_NO,
+        returnDate: formattedDate(header.sr_date),
+        customerName: header.tr_desc || item.CUSTOMER, // From "tr_desc" in your JSON
+        customerAddress: header.blno, // From "blno" in your JSON
+        invNo: header.sr_inv_no?.toString() || '-', // From "sr_inv_no" in your JSON
+        salesMan: header.sale_man || '-', // From "sale_man" in your JSON
+        reason: header.comments || '-', // From "comments" in your JSON
+        totalExcl: totals.totalExcl,
+        totalVat: totals.totalVat,
+        grandTotal: totals.grandTotal,
+        itemList: mappedItems,
+        resultClosePress: () => {
+          setShowPrintButtonLoader(false);
+          setSelectedReturnNo('');
+        },
+      });
+    } catch (error) {
+      console.log('printPdfReturn error', error);
+      setShowPrintButtonLoader(false);
+      setSelectedReturnNo('');
+    }
+  };
 
   // ─── Render ───────────────────────────────────────────────────────────────
   return (
@@ -438,9 +453,7 @@ const SalesReturnList = () => {
                     )}
                   </TouchableOpacity>
 
-                  {['ICUP', 'ICELAB_TEST'].includes(
-                    cmpcode?.toUpperCase(),
-                  ) && (
+                  {['ICUP', 'ICELAB_TEST'].includes(cmpcode?.toUpperCase()) && (
                     <TouchableOpacity
                       style={styles.BtnSunmi}
                       onPress={() => printSunmiReturn(item)}>
@@ -460,9 +473,7 @@ const SalesReturnList = () => {
         {data.length > 0 && !loading && (
           <View style={styles.pagination}>
             <TouchableOpacity
-              onPress={() =>
-                currentPage > 1 && setCurrentPage(currentPage - 1)
-              }
+              onPress={() => currentPage > 1 && setCurrentPage(currentPage - 1)}
               style={[
                 styles.pageButton,
                 {opacity: currentPage === 1 ? 0.5 : 1},
