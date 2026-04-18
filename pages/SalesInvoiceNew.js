@@ -128,8 +128,8 @@ const SalesInvoiceNew = ({route}) => {
 
   const qtyInpRef = useRef(null);
 
-  const unitPriceInpRef = useState(null);
-  const unitPriceInpRefToShowUser = useState(null);
+  const unitPriceInpRef = useRef(null);
+  const unitPriceInpRefToShowUser = useRef(null);
 
   const cashCustNameRef = useRef(null);
 
@@ -534,122 +534,216 @@ const SalesInvoiceNew = ({route}) => {
     let checkUnitPrice = parseFloat(unitPrice).toFixed(2);
 
     if (cmpcode.toUpperCase().trim() != 'ICUP') {
-      if (checkQuantity > selectedStock.Qty) {
+      if (selectedStock && checkQuantity > selectedStock.Qty) {
         Alert.alert('Quantity exceeded available quantity');
         return;
       }
     }
 
-    if (checkQuantity == 0 || checkUnitPrice == 0) {
-      Alert.alert('Please enter Quantity and Price');
+    if (checkQuantity == 0) {
+      Alert.alert('Please enter Quantity');
       return;
     }
 
-    // Retrieve existing savedItemData from AsyncStorage
-    const savedItemDataString = await AsyncStorage.getItem('savedItemDataInv');
-    const savedItemDataArray = savedItemDataString
-      ? JSON.parse(savedItemDataString)
-      : [];
-
-    console.log('savedItemDataArray', savedItemDataArray.length);
-
-    if (!selectedStock) {
-      showAddToCartErr();
-      return;
-    }
-
-    // Only check for duplicates if there are items in the cart
-    let itemExists = false;
-    if (savedItemDataArray.length > 0) {
-      itemExists = savedItemDataArray.some(
-        item => item.Code === selectedStock.Code,
+    const proceedSave = async () => {
+      // Retrieve existing savedItemData from AsyncStorage
+      const savedItemDataString = await AsyncStorage.getItem(
+        'savedItemDataInv',
       );
-    }
+      const savedItemDataArray = savedItemDataString
+        ? JSON.parse(savedItemDataString)
+        : [];
 
-    console.log('itemExists >> Sales invoice++ ', itemExists);
-    console.log(
-      'selected account before showAddToCartCustomerErr',
-      selectedCustomer,
-    );
+      console.log('savedItemDataArray', savedItemDataArray.length);
 
-    // For unregistered (walk-in) customers, only show duplicate error if cart is not empty and item exists
-    if (selectedUserType === 'unreg') {
-      if (savedItemDataArray.length > 0 && itemExists) {
-        showItemExistError();
-        setQuantity('');
-        setUnitPrice('');
-        setUnitPriceToShowUser('');
-        setSelectedStock(null);
-        return; // Exit the function
-      }
-    } else {
-      // For registered customers, show duplicate error as before
-      if (itemExists) {
-        showItemExistError();
-        setQuantity('');
-        setUnitPrice('');
-        setUnitPriceToShowUser('');
-        setSelectedStock(null);
-        return; // Exit the function
-      }
-    }
-
-    if (selectedStock['Block Price'] && selectedStock['Block Price'] > 0) {
-      // If Block Price is 50 and unitPrice is 50, this will trigger (>=)
-      // The user MUST enter 50.01 or more to pass.
-      if (selectedStock['Block Price'] >= unitPrice) {
-        Alert.alert(
-          'Invalid Price',
-          `Entered price must be more than the block price (${selectedStock['Block Price']})`,
-        );
+      if (!selectedStock) {
+        showAddToCartErr();
         return;
       }
-    }
 
-    if (cmpcode.toUpperCase().trim() == 'MALBAR') {
-      if (!itemExists && savedItemDataArray.length > 9) {
-        showMoreThan10ItemError();
-        setQuantity('');
-        setUnitPrice('');
-        setUnitPriceToShowUser('');
-        setSelectedStock(null);
-        return; // Exit the function
+      // Only check for duplicates if there are items in the cart
+      let itemExists = false;
+      if (savedItemDataArray.length > 0) {
+        itemExists = savedItemDataArray.some(
+          item => item.Code === selectedStock.Code,
+        );
       }
-    }
 
-    if (
-      selectedStock &&
-      quantity &&
-      unitPrice &&
-      selectedCustomer &&
-      !cashCustomerName &&
-      selectedCustomer.CREDITMETHOD == 'CREDIT BLOCK'
-    ) {
-      const newItem = {
-        ...selectedStock,
-        quantity: parseFloat(quantity).toFixed(3),
-        unitPrice: parseFloat(unitPrice).toFixed(2),
-        unitPriceToShowUser: parseFloat(unitPriceToShowUser).toFixed(2),
-        total: quantity * unitPrice,
-      };
+      console.log('itemExists >> Sales invoice++ ', itemExists);
+      console.log(
+        'selected account before showAddToCartCustomerErr',
+        selectedCustomer,
+      );
 
-      // Add the new item to the list
-      const updatedSavedItemData = [...savedItemDataArray, newItem];
-      console.log('Payload  to save', updatedSavedItemData);
-      const totalIncludingVAT = calculateTotalWithVAT(updatedSavedItemData);
+      // For unregistered (walk-in) customers, only show duplicate error if cart is not empty and item exists
+      if (selectedUserType === 'unreg') {
+        if (savedItemDataArray.length > 0 && itemExists) {
+          showItemExistError();
+          setQuantity('');
+          setUnitPrice('');
+          setUnitPriceToShowUser('');
+          setSelectedStock(null);
+          return; // Exit the function
+        }
+      } else {
+        // For registered customers, show duplicate error as before
+        if (itemExists) {
+          showItemExistError();
+          setQuantity('');
+          setUnitPrice('');
+          setUnitPriceToShowUser('');
+          setSelectedStock(null);
+          return; // Exit the function
+        }
+      }
+
+      if (selectedStock['Block Price'] && selectedStock['Block Price'] > 0) {
+        // If Block Price is 50 and unitPrice is 50, this will trigger (>=)
+        // The user MUST enter 50.01 or more to pass.
+        if (selectedStock['Block Price'] >= unitPrice && unitPrice > 0) {
+          Alert.alert(
+            'Invalid Price',
+            `Entered price must be more than the block price (${selectedStock['Block Price']})`,
+          );
+          return;
+        }
+      }
+
+      if (cmpcode.toUpperCase().trim() == 'MALBAR') {
+        if (!itemExists && savedItemDataArray.length > 9) {
+          showMoreThan10ItemError();
+          setQuantity('');
+          setUnitPrice('');
+          setUnitPriceToShowUser('');
+          setSelectedStock(null);
+          return; // Exit the function
+        }
+      }
 
       if (
-        totalIncludingVAT &&
-        totalIncludingVAT > selectedCustomer.Avai_Bal &&
-        selectedRadio === 'CREDIT'
+        selectedStock &&
+        quantity &&
+        // unitPrice && // Removed this from check to allow 0 if FOC
+        selectedCustomer &&
+        !cashCustomerName &&
+        selectedCustomer.CREDITMETHOD == 'CREDIT BLOCK'
       ) {
-        Alert.alert(
-          'Amount Exceed',
-          'Amount exceed available limit. Please choose cash customer to add more items.',
-          [{text: 'OK'}],
+        const newItem = {
+          ...selectedStock,
+          quantity: parseFloat(quantity).toFixed(3),
+          unitPrice: parseFloat(unitPrice).toFixed(2),
+          unitPriceToShowUser: parseFloat(unitPriceToShowUser).toFixed(2),
+          total: quantity * unitPrice,
+        };
+
+        // Add the new item to the list
+        const updatedSavedItemData = [...savedItemDataArray, newItem];
+        console.log('Payload  to save', updatedSavedItemData);
+        const totalIncludingVAT = calculateTotalWithVAT(updatedSavedItemData);
+
+        if (
+          totalIncludingVAT &&
+          totalIncludingVAT > selectedCustomer.Avai_Bal &&
+          selectedRadio === 'CREDIT'
+        ) {
+          Alert.alert(
+            'Amount Exceed',
+            'Amount exceed available limit. Please choose cash customer to add more items.',
+            [{text: 'OK'}],
+          );
+          return;
+        } else {
+          // Save the updated list back to AsyncStorage
+          await AsyncStorage.setItem(
+            'savedItemDataInv',
+            JSON.stringify(updatedSavedItemData),
+          );
+
+          await AsyncStorage.setItem(
+            'selectedCustomerInv',
+            JSON.stringify(selectedCustomer),
+          );
+          // await AsyncStorage.setItem('savedItemDataInv', JSON.stringify(savedItemData))
+          await AsyncStorage.setItem(
+            'orderRemarkInv',
+            orderRemark ? orderRemark : '',
+          );
+          await AsyncStorage.setItem('trnInv', trn ? trn : '');
+          await AsyncStorage.setItem('paymentInv', payment ? payment : '');
+          await AsyncStorage.setItem('deliveryInv', delivery ? delivery : '');
+          await AsyncStorage.setItem('validityInv', validity ? validity : '');
+          // await AsyncStorage.setItem('totalUnitPrice', totalUnitPrice)
+          await AsyncStorage.setItem(
+            'cashCustomerNameInv',
+            cashCustomerName ? cashCustomerName : '',
+          );
+          await AsyncStorage.setItem(
+            'cashCustomerAddressInv',
+            cashCustomerAddress ? cashCustomerAddress : '',
+          );
+          await AsyncStorage.setItem(
+            'cashCustomerPhoneInv',
+            cashCustomerPhone ? cashCustomerPhone : '',
+          );
+
+          setSavedItemData([...savedItemData, newItem]);
+          setQuantity('');
+          setUnitPrice('');
+          setUnitPriceToShowUser('');
+          setSelectedStock(null);
+          // showSaveItemSuccess()
+
+          // logAsyncData();
+
+          if (selectedCustomer && searchItemInpRef.current) {
+            searchItemInpRef.current.focus();
+          }
+        }
+      }
+
+      if (
+        selectedStock &&
+        quantity &&
+        // unitPriceToShowUser && // Removed this from check to allow 0 if FOC
+        selectedCustomer &&
+        (selectedCustomer.CREDITMETHOD == 'OPEN' ||
+          selectedCustomer.creditmethod == 'OPEN')
+      ) {
+        const newItem = {
+          ...selectedStock,
+          quantity: parseFloat(quantity).toFixed(3),
+          unitPrice: parseFloat(unitPrice).toFixed(2),
+          unitPriceToShowUser: parseFloat(unitPriceToShowUser).toFixed(2),
+          total: quantity * unitPrice,
+        };
+
+        console.log('newItem', newItem);
+
+        // Retrieve existing savedItemData from AsyncStorage
+        // const savedItemDataString = await AsyncStorage.getItem('savedItemData');
+        // const savedItemDataArray = savedItemDataString ? JSON.parse(savedItemDataString) : [];
+
+        // console.log('savedItemDataArray', savedItemDataArray)
+
+        // // Check if the item already exists in the list
+        // const itemExists = savedItemDataArray.some(item => item.Code === selectedStock.Code);
+
+        // if (itemExists) {
+        //     showItemExistError()
+        //     return; // Exit the function
+        // }
+
+        // Retrieve existing savedItemData from AsyncStorage
+        const savedItemDataString = await AsyncStorage.getItem(
+          'savedItemDataInv',
         );
-        return;
-      } else {
+        const savedItemDataArray = savedItemDataString
+          ? JSON.parse(savedItemDataString)
+          : [];
+
+        // Add the new item to the list
+        const updatedSavedItemData = [...savedItemDataArray, newItem];
+
         // Save the updated list back to AsyncStorage
         await AsyncStorage.setItem(
           'savedItemDataInv',
@@ -688,6 +782,7 @@ const SalesInvoiceNew = ({route}) => {
         setUnitPrice('');
         setUnitPriceToShowUser('');
         setSelectedStock(null);
+        setChecked(false);
         // showSaveItemSuccess()
 
         // logAsyncData();
@@ -696,168 +791,109 @@ const SalesInvoiceNew = ({route}) => {
           searchItemInpRef.current.focus();
         }
       }
-    }
 
-    if (
-      selectedStock &&
-      quantity &&
-      unitPriceToShowUser &&
-      selectedCustomer &&
-      (selectedCustomer.CREDITMETHOD == 'OPEN' ||
-        selectedCustomer.creditmethod == 'OPEN')
-    ) {
-      const newItem = {
-        ...selectedStock,
-        quantity: parseFloat(quantity).toFixed(3),
-        unitPrice: parseFloat(unitPrice).toFixed(2),
-        unitPriceToShowUser: parseFloat(unitPriceToShowUser).toFixed(2),
-        total: quantity * unitPrice,
-      };
+      if (
+        selectedStock &&
+        quantity &&
+        // unitPriceToShowUser && // Removed this from check to allow 0 if FOC
+        cashCustomerName
+      ) {
+        const newItem = {
+          ...selectedStock,
+          quantity: parseFloat(quantity).toFixed(3),
+          unitPrice: parseFloat(unitPrice).toFixed(2),
+          unitPriceToShowUser: parseFloat(unitPriceToShowUser).toFixed(2),
+          total: quantity * unitPrice,
+        };
 
-      console.log('newItem', newItem);
+        // Retrieve existing savedItemData from AsyncStorage
+        const savedItemDataString = await AsyncStorage.getItem(
+          'savedItemDataInv',
+        );
+        const savedItemDataArray = savedItemDataString
+          ? JSON.parse(savedItemDataString)
+          : [];
 
-      // Retrieve existing savedItemData from AsyncStorage
-      // const savedItemDataString = await AsyncStorage.getItem('savedItemData');
-      // const savedItemDataArray = savedItemDataString ? JSON.parse(savedItemDataString) : [];
+        // Duplicate item check is handled in the main SaveItem logic above
 
-      // console.log('savedItemDataArray', savedItemDataArray)
+        // Add the new item to the list
+        const updatedSavedItemData = [...savedItemDataArray, newItem];
 
-      // // Check if the item already exists in the list
-      // const itemExists = savedItemDataArray.some(item => item.Code === selectedStock.Code);
+        // Save the updated list back to AsyncStorage
+        await AsyncStorage.setItem(
+          'savedItemDataInv',
+          JSON.stringify(updatedSavedItemData),
+        );
 
-      // if (itemExists) {
-      //     showItemExistError()
-      //     return; // Exit the function
-      // }
+        await AsyncStorage.setItem(
+          'selectedCustomerInv',
+          JSON.stringify(selectedCustomer),
+        );
+        await AsyncStorage.setItem(
+          'orderRemarkInv',
+          orderRemark ? orderRemark : '',
+        );
+        await AsyncStorage.setItem('trnInv', trn ? trn : '');
+        await AsyncStorage.setItem('paymentInv', payment ? payment : '');
+        await AsyncStorage.setItem('deliveryInv', delivery ? delivery : '');
+        await AsyncStorage.setItem('validityInv', validity ? validity : '');
+        await AsyncStorage.setItem(
+          'cashCustomerNameInv',
+          cashCustomerName ? cashCustomerName : '',
+        );
+        await AsyncStorage.setItem(
+          'cashCustomerAddressInv',
+          cashCustomerAddress ? cashCustomerAddress : '',
+        );
+        await AsyncStorage.setItem(
+          'cashCustomerPhoneInv',
+          cashCustomerPhone ? cashCustomerPhone : '',
+        );
 
-      // Retrieve existing savedItemData from AsyncStorage
-      const savedItemDataString = await AsyncStorage.getItem(
-        'savedItemDataInv',
-      );
-      const savedItemDataArray = savedItemDataString
-        ? JSON.parse(savedItemDataString)
-        : [];
+        setSavedItemData([...savedItemData, newItem]);
+        setQuantity('');
+        setUnitPrice('');
+        setUnitPriceToShowUser('');
+        setSelectedStock(null);
+        // showSaveItemSuccess()
 
-      // Add the new item to the list
-      const updatedSavedItemData = [...savedItemDataArray, newItem];
+        // logAsyncData();
 
-      // Save the updated list back to AsyncStorage
-      await AsyncStorage.setItem(
-        'savedItemDataInv',
-        JSON.stringify(updatedSavedItemData),
-      );
-
-      await AsyncStorage.setItem(
-        'selectedCustomerInv',
-        JSON.stringify(selectedCustomer),
-      );
-      // await AsyncStorage.setItem('savedItemDataInv', JSON.stringify(savedItemData))
-      await AsyncStorage.setItem(
-        'orderRemarkInv',
-        orderRemark ? orderRemark : '',
-      );
-      await AsyncStorage.setItem('trnInv', trn ? trn : '');
-      await AsyncStorage.setItem('paymentInv', payment ? payment : '');
-      await AsyncStorage.setItem('deliveryInv', delivery ? delivery : '');
-      await AsyncStorage.setItem('validityInv', validity ? validity : '');
-      // await AsyncStorage.setItem('totalUnitPrice', totalUnitPrice)
-      await AsyncStorage.setItem(
-        'cashCustomerNameInv',
-        cashCustomerName ? cashCustomerName : '',
-      );
-      await AsyncStorage.setItem(
-        'cashCustomerAddressInv',
-        cashCustomerAddress ? cashCustomerAddress : '',
-      );
-      await AsyncStorage.setItem(
-        'cashCustomerPhoneInv',
-        cashCustomerPhone ? cashCustomerPhone : '',
-      );
-
-      setSavedItemData([...savedItemData, newItem]);
-      setQuantity('');
-      setUnitPrice('');
-      setUnitPriceToShowUser('');
-      setSelectedStock(null);
-      setChecked(false);
-      // showSaveItemSuccess()
-
-      // logAsyncData();
-
-      if (selectedCustomer && searchItemInpRef.current) {
-        searchItemInpRef.current.focus();
+        if (cashCustomerName && searchItemInpRef.current) {
+          searchItemInpRef.current.focus();
+        }
+      } else if (!selectedCustomer && !cashCustomerName) {
+        showAddToCartCustomerErr();
+      } else if ((selectedCustomer || cashCustomerName) && !selectedStock) {
+        showAddToCartErr();
       }
-    }
+    };
 
-    if (selectedStock && quantity && unitPriceToShowUser && cashCustomerName) {
-      const newItem = {
-        ...selectedStock,
-        quantity: parseFloat(quantity).toFixed(3),
-        unitPrice: parseFloat(unitPrice).toFixed(2),
-        unitPriceToShowUser: parseFloat(unitPriceToShowUser).toFixed(2),
-        total: quantity * unitPrice,
-      };
-
-      // Retrieve existing savedItemData from AsyncStorage
-      const savedItemDataString = await AsyncStorage.getItem(
-        'savedItemDataInv',
-      );
-      const savedItemDataArray = savedItemDataString
-        ? JSON.parse(savedItemDataString)
-        : [];
-
-      // Duplicate item check is handled in the main SaveItem logic above
-
-      // Add the new item to the list
-      const updatedSavedItemData = [...savedItemDataArray, newItem];
-
-      // Save the updated list back to AsyncStorage
-      await AsyncStorage.setItem(
-        'savedItemDataInv',
-        JSON.stringify(updatedSavedItemData),
-      );
-
-      await AsyncStorage.setItem(
-        'selectedCustomerInv',
-        JSON.stringify(selectedCustomer),
-      );
-      await AsyncStorage.setItem(
-        'orderRemarkInv',
-        orderRemark ? orderRemark : '',
-      );
-      await AsyncStorage.setItem('trnInv', trn ? trn : '');
-      await AsyncStorage.setItem('paymentInv', payment ? payment : '');
-      await AsyncStorage.setItem('deliveryInv', delivery ? delivery : '');
-      await AsyncStorage.setItem('validityInv', validity ? validity : '');
-      await AsyncStorage.setItem(
-        'cashCustomerNameInv',
-        cashCustomerName ? cashCustomerName : '',
-      );
-      await AsyncStorage.setItem(
-        'cashCustomerAddressInv',
-        cashCustomerAddress ? cashCustomerAddress : '',
-      );
-      await AsyncStorage.setItem(
-        'cashCustomerPhoneInv',
-        cashCustomerPhone ? cashCustomerPhone : '',
-      );
-
-      setSavedItemData([...savedItemData, newItem]);
-      setQuantity('');
-      setUnitPrice('');
-      setUnitPriceToShowUser('');
-      setSelectedStock(null);
-      // showSaveItemSuccess()
-
-      // logAsyncData();
-
-      if (cashCustomerName && searchItemInpRef.current) {
-        searchItemInpRef.current.focus();
+    if (checkUnitPrice == 0) {
+      if (cmpcode.toUpperCase().trim() === 'ICUP') {
+        Alert.alert('FOC Item', 'Do you want to make this item as FOC item?', [
+          {
+            text: 'No',
+            onPress: () => {
+              if (unitPriceInpRefToShowUser.current) {
+                unitPriceInpRefToShowUser.current.focus();
+              }
+            },
+            style: 'cancel',
+          },
+          {
+            text: 'Yes',
+            onPress: () => proceedSave(),
+          },
+        ]);
+      } else {
+        Alert.alert('Please enter Price');
+        if (unitPriceInpRefToShowUser.current) {
+          unitPriceInpRefToShowUser.current.focus();
+        }
       }
-    } else if (!selectedCustomer && !cashCustomerName) {
-      showAddToCartCustomerErr();
-    } else if ((selectedCustomer || cashCustomerName) && !selectedStock) {
-      showAddToCartErr();
+    } else {
+      proceedSave();
     }
   };
 
@@ -1365,10 +1401,12 @@ const SalesInvoiceNew = ({route}) => {
         console.log('error is ', err);
       });
   };
-  
+
   useEffect(() => {
     const loadSavedItems = async () => {
-      const savedItemDataString = await AsyncStorage.getItem('savedItemDataInv');
+      const savedItemDataString = await AsyncStorage.getItem(
+        'savedItemDataInv',
+      );
       if (savedItemDataString) {
         const parsed = JSON.parse(savedItemDataString);
         setSavedItemData(parsed);
