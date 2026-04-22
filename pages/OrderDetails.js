@@ -232,6 +232,7 @@ const OrderDetails = ({route}) => {
       }
       .header-left{max-width:60%;}
       .cmp-name{font-size:18px;font-weight:700;letter-spacing:0.5px;margin-bottom:4px;}
+      .cmp-trn{font-size:14px;font-weight:700;letter-spacing:0.5px;margin-bottom:4px;}
       .doc-label{font-size:22px;font-weight:300;letter-spacing:2px;color:#e0e0e0;margin-top:8px;}
       .header-right{text-align:right;}
       .order-no{font-size:15px;font-weight:700;background:rgba(255,255,255,0.15);padding:4px 10px;border-radius:4px;display:inline-block;}
@@ -269,7 +270,7 @@ const OrderDetails = ({route}) => {
     <div class="header">
       <div class="header-left">
         <div class="cmp-name">${companyLabel}</div>
-        <div class="cmp-name">TRN:${companyTRN}</div>
+        <div class="cmp-trn">TRN:${companyTRN}</div>
         <div class="doc-label">SALES ORDER</div>
       </div>
       <div class="header-right">

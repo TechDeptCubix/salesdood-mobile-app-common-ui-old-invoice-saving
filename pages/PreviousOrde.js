@@ -186,15 +186,42 @@ const PreviousOrde = () => {
   };
 
   // ── Company label helper ────────────────────────────────────────────────────
-  const getCompanyLabel = code => {
+  const getCompanyDetails = code => {
     const c = (code || '').trim().toUpperCase();
-    if (c === 'SOCA') return 'SOCA TOOLS INTERNATIONAL TRADING LLC';
-    if (c === 'POPULAR') return 'POPULAR AUTO SPARE PARTS TRADING LLC';
-    if (c === 'ICELAB' || c === 'ICELAB_TEST')
-      return 'THE ICE LAB MANUFACTURING LLC';
-    if (c === 'ICUP') return 'ICECUP FOOD INDUSTRIES L.L.C';
-    if (c === 'ICUP') return 'ICECUP FOOD INDUSTRIES L.L.C';
-    return cmpName || code || 'Company';
+
+    const companyMap = {
+      SOCA: {
+        name: 'SOCA TOOLS INTERNATIONAL TRADING LLC',
+        trn: '100123456700003',
+      },
+
+      POPULAR: {
+        name: 'POPULAR AUTO SPARE PARTS TRADING LLC',
+        trn: '100327766000003',
+      },
+
+      ICELAB: {
+        name: 'THE ICE LAB MANUFACTURING LLC',
+        trn: '100345678900003',
+      },
+
+      ICELAB_TEST: {
+        name: 'THE ICE LAB MANUFACTURING LLC',
+        trn: '100345678900003',
+      },
+
+      ICUP: {
+        name: 'ICECUP FOOD INDUSTRIES L.L.C',
+        trn: '100456789000003',
+      },
+    };
+
+    return (
+      companyMap[c] || {
+        name: cmpName || code || 'Company',
+        trn: '',
+      }
+    );
   };
 
   // ── Generate PDF for an order ──────────────────────────────────────────────
@@ -227,7 +254,10 @@ const PreviousOrde = () => {
         ? parseFloat(firstItem.so_amount).toFixed(2)
         : (subTotal * 1.05).toFixed(2);
 
-      const companyLabel = getCompanyLabel(cmpcode);
+      const companyDetails = getCompanyDetails(cmpcode?.toUpperCase());
+
+      const companyLabel = companyDetails.name;
+      const companyTRN = companyDetails.trn;
       const accdesc = orderItem.accdesc || firstItem.cust_acc || '-';
       const address = [
         firstItem.address1,
@@ -267,6 +297,8 @@ const PreviousOrde = () => {
         }
         .header-left{max-width:60%;}
         .cmp-name{font-size:18px;font-weight:700;letter-spacing:0.5px;margin-bottom:4px;}
+       .cmp-trn{font-size:14px;font-weight:700;letter-spacing:0.5px;margin-bottom:4px;}
+
         .doc-label{font-size:22px;font-weight:300;letter-spacing:2px;color:#e0e0e0;margin-top:8px;}
         .header-right{text-align:right;}
         .order-no{font-size:15px;font-weight:700;background:rgba(255,255,255,0.15);padding:4px 10px;border-radius:4px;display:inline-block;}
@@ -330,6 +362,7 @@ const PreviousOrde = () => {
       <div class="header">
         <div class="header-left">
           <div class="cmp-name">${companyLabel}</div>
+          <div class="cmp-trn">TRN:${companyTRN}</div>
           <div class="doc-label">SALES ORDER</div>
         </div>
         <div class="header-right">
