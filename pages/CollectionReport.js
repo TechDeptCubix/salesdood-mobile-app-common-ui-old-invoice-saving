@@ -70,7 +70,7 @@ const buildPdfItemRows = (items, typeFilter) =>
     }</td>
     <td style="padding:6px 8px; text-align:right;">${parseFloat(
       item.Amount || 0,
-    ).toFixed(3)}</td>
+    ).toFixed(2)}</td>
     <td style="padding:6px 8px;">${item.Salesman || ''}</td>
     <td style="padding:6px 8px;">${item.Remarks || ''}</td>
   </tr>`,
@@ -101,7 +101,7 @@ const buildPdfAdminRows = (groupedData, typeFilter) =>
     }</td>
     <td style="padding:6px 8px; text-align:right;">${parseFloat(
       item.Amount || 0,
-    ).toFixed(3)}</td>
+    ).toFixed(2)}</td>
     <td style="padding:6px 8px;">${item.Salesman || ''}</td>
     <td style="padding:6px 8px;">${item.Remarks || ''}</td>
   </tr>`,
@@ -352,7 +352,7 @@ const CollectionReport = () => {
         <span class="label">Collection Type: ${collType}</span>
         <span>Amount: <span class="amount-box">${parseFloat(
           item?.Amount || 0,
-        ).toFixed(3)}</span></span>
+        ).toFixed(2)}</span></span>
       </div>
       <div class="row"><span class="label">Remarks:</span><span>${
         item?.Remarks || '-'
@@ -419,7 +419,7 @@ const CollectionReport = () => {
               <td colspan="3" style="padding:6px 8px;">Total</td>
               <td style="padding:6px 8px; text-align:right;">${parseFloat(
                 total || 0,
-              ).toFixed(3)}</td>
+              ).toFixed(2)}</td>
               <td colspan="2"></td>
             </tr>
           </tfoot>
@@ -450,7 +450,7 @@ const CollectionReport = () => {
     ${cashSalesSection}
     ${cashCollSection}
     <div style="background:#fff3cd; border:1px solid #ccc; border-radius:4px; padding:8px; margin:10px 0; font-weight:bold;">
-      Cash Balance: ${parseFloat(cashSalesSum + cashSum).toFixed(3)}
+      Cash Balance: ${parseFloat(cashSalesSum + cashSum).toFixed(2)}
     </div>
     ${chequeSection}
     </body></html>`;
@@ -522,7 +522,7 @@ const CollectionReport = () => {
       .join('')}
     <div class="total-row">
       <span>Cash In Hand</span>
-      <span>${cashInHand.toFixed(3)} AED</span>
+      <span>${cashInHand.toFixed(2)} AED</span>
     </div>
     </body></html>`;
 
@@ -587,7 +587,7 @@ const CollectionReport = () => {
         {label: 'Credit Sales Return', value: creditSalesReturnSum},
       ].forEach(item =>
         SunmiPrinter.printColumnsString(
-          [item.label + ':', parseFloat(item.value || 0).toFixed(3)],
+          [item.label + ':', parseFloat(item.value || 0).toFixed(2)],
           dataWeights,
           [AlignValue.LEFT, AlignValue.RIGHT],
         ),
@@ -599,7 +599,7 @@ const CollectionReport = () => {
       SunmiPrinter.setFontWeight(true);
       SunmiPrinter.setFontSize(26);
       SunmiPrinter.printColumnsString(
-        ['CASH IN HAND:', cashInHand.toFixed(3) + ' AED'],
+        ['CASH IN HAND:', cashInHand.toFixed(2) + ' AED'],
         dataWeights,
         [AlignValue.LEFT, AlignValue.RIGHT],
       );
@@ -662,7 +662,7 @@ const CollectionReport = () => {
         {label}
       </Text>
       <Text style={[styles.TotalValue, highlight && styles.TotalValueHL]}>
-        {parseFloat(value || 0).toFixed(3)}
+        {parseFloat(value || 0).toFixed(2)}
       </Text>
     </View>
   );
@@ -692,7 +692,7 @@ const CollectionReport = () => {
       </View>
       <View style={styles.ItemRight}>
         <Text style={styles.ItemAmount}>
-          {parseFloat(item.Amount || 0).toFixed(3)}
+          {parseFloat(item.Amount || 0).toFixed(2)}
         </Text>
         <View style={styles.ItemActions}>
           <TouchableOpacity
@@ -730,7 +730,7 @@ const CollectionReport = () => {
         <View key={name} style={styles.GroupBlock}>
           <View style={styles.GroupNameRow}>
             <Text style={styles.GroupName}>{name}</Text>
-            <Text style={styles.GroupTotal}>{groupTotal.toFixed(3)}</Text>
+            <Text style={styles.GroupTotal}>{groupTotal.toFixed(2)}</Text>
           </View>
           {filtered.map((item, idx) => renderCollectionItem(item, idx))}
         </View>
@@ -917,7 +917,7 @@ const CollectionReport = () => {
             <View style={styles.CashInHandRow}>
               <Text style={styles.CashInHandLabel}>Cash In Hand</Text>
               <Text style={styles.CashInHandValue}>
-                {cashInHand.toFixed(3)} AED
+                {cashInHand.toFixed(2)} AED
               </Text>
             </View>
           </View>
@@ -928,7 +928,7 @@ const CollectionReport = () => {
               <View style={styles.SummaryRow}>
                 <Text style={styles.SummaryLabel}>Cheque Collection</Text>
                 <Text style={[styles.SummaryValue, {color: '#7D3C98'}]}>
-                  {parseFloat(chequeSum).toFixed(3)}
+                  {parseFloat(chequeSum).toFixed(2)}
                 </Text>
               </View>
             </View>

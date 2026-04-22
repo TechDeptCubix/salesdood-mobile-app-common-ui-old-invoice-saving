@@ -809,7 +809,7 @@ const SalesOrder = ({route}) => {
     ) {
       const newItem = {
         ...selectedStock,
-        quantity: parseFloat(quantity).toFixed(3),
+        quantity: parseFloat(quantity).toFixed(2),
         unitPrice: this_item_is_foc.current
           ? 0
           : parseFloat(unitPrice).toFixed(2),
@@ -879,7 +879,7 @@ const SalesOrder = ({route}) => {
     ) {
       const newItem = {
         ...selectedStock,
-        quantity: parseFloat(quantity).toFixed(3),
+        quantity: parseFloat(quantity).toFixed(2),
         unitPrice: this_item_is_foc.current
           ? 0
           : parseFloat(unitPrice).toFixed(2),
@@ -958,7 +958,7 @@ const SalesOrder = ({route}) => {
     if (selectedStock && quantity && unitPrice && cashCustomerName) {
       const newItem = {
         ...selectedStock,
-        quantity: parseFloat(quantity).toFixed(3),
+        quantity: parseFloat(quantity).toFixed(2),
         unitPrice: this_item_is_foc.current
           ? 0
           : parseFloat(unitPrice).toFixed(2),
@@ -3236,7 +3236,7 @@ const SalesOrder = ({route}) => {
                                 style={[
                                   {marginLeft: 4, color: '#aaa', width: '100%'},
                                 ]}>
-                                {(quantity * unitPrice).toFixed(3)}
+                                {(quantity * unitPrice).toFixed(2)}
                               </Text>
                             </View>
                           </View>

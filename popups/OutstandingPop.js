@@ -357,15 +357,15 @@ const OutstandingPop = ({
       /* <div class="total-values-wrap">
 <div class="total-cont">
     <div class="total-label">Total Debit</div>
-    <div class="total-value-text">${totalDebit && (totalDebit).toFixed(3)}</div>
+    <div class="total-value-text">${totalDebit && (totalDebit).toFixed(2)}</div>
 </div>
 <div class="total-cont">
     <div class="total-label">Total Credit</div>
-    <div class="total-value-text">${totalCredit && (totalCredit).toFixed(3)}</div>
+    <div class="total-value-text">${totalCredit && (totalCredit).toFixed(2)}</div>
 </div>
 <div class="total-cont">
     <div class="total-label">Total Balance</div>
-    <div class="total-value-text">${totalBalance && (totalBalance).toFixed(3)}</div>
+    <div class="total-value-text">${totalBalance && (totalBalance).toFixed(2)}</div>
 </div>
 </div> */
     }

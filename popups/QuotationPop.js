@@ -2029,7 +2029,7 @@ const QuotationPop = ({
           0,
         );
       if (totalCostAvgValue) {
-        setTotalCostAvg(totalCostAvgValue.toFixed(3));
+        setTotalCostAvg(totalCostAvgValue.toFixed(2));
       }
     }
   }, [savedItemData]);
@@ -2270,7 +2270,7 @@ const QuotationPop = ({
                             {item.Description}
                           </Text>
                           <Text style={styles.TotalText}>
-                            {(item.unitPrice * item.quantity).toFixed(3)}
+                            {(item.unitPrice * item.quantity).toFixed(2)}
                           </Text>
                         </View>
                         <View style={styles.DescCont}>
@@ -2289,7 +2289,7 @@ const QuotationPop = ({
                           <Text style={styles.DescSubText}>Unit Price :</Text>
                           {cmpcode === 'AUTOMAX' ? (
                             <Text style={styles.DescSubTextValue}>
-                              {parseFloat(item.unitPrice).toFixed(3)}
+                              {parseFloat(item.unitPrice).toFixed(2)}
                             </Text>
                           ) : (
                             <Text style={styles.DescSubTextValue}>
@@ -2450,7 +2450,7 @@ const QuotationPop = ({
                     <>
                       {' '}
                       {discountedTotal
-                        ? (discountedTotal * (VAT_RATE / 100)).toFixed(3)
+                        ? (discountedTotal * (VAT_RATE / 100)).toFixed(2)
                         : ''}
                     </>
                   ) : (
@@ -2467,7 +2467,7 @@ const QuotationPop = ({
                   {cmpcode === 'AUTOMAX' ? (
                     <>
                       {totalUnitPrice
-                        ? (totalUnitPrice * (VAT_RATE / 100)).toFixed(3)
+                        ? (totalUnitPrice * (VAT_RATE / 100)).toFixed(2)
                         : ''}
                     </>
                   ) : (

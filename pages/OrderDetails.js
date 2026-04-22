@@ -247,7 +247,7 @@ const OrderDetails = ({ route }) => {
                         </View>
                         <View style={styles.TaxCont}>
                             <Text style={styles.CustomerValueText}>VAT :</Text>
-                            <Text style={styles.CustomerValueText}>{subTotal && (subTotal * 0.05).toFixed(3)}</Text>
+                            <Text style={styles.CustomerValueText}>{subTotal && (subTotal * 0.05).toFixed(2)}</Text>
                         </View>
                         <View style={styles.TaxCont}>
                             <Text style={styles.CustomerValueText}>Amount Incl.VAT</Text>

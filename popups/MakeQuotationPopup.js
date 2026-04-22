@@ -1584,7 +1584,7 @@ const MakeQuotationPop = ({
           0,
         );
       if (totalCostAvgValue) {
-        setTotalCostAvg(totalCostAvgValue.toFixed(3));
+        setTotalCostAvg(totalCostAvgValue.toFixed(2));
       }
     }
   }, [savedItemData]);

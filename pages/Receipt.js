@@ -1961,7 +1961,7 @@ const Receipt = ({navigation}) => {
 
                                                                         <View style={{ width: '100%', flexDirection: 'row', justifyContent: 'space-between' }}>
                                                                             <Text style={styles.StockListDescText}>INV : {item.INV}</Text>
-                                                                            <Text style={styles.StockListDescText}>Amount : {(item.BALANCE.toFixed(3))}</Text>
+                                                                            <Text style={styles.StockListDescText}>Amount : {(item.BALANCE.toFixed(2))}</Text>
                                                                         </View>
                                                                         <View>
                                                                             <Text style={styles.StockListDescText}>Date : {item.INVDATE.split('T')[0]}</Text>
@@ -2008,7 +2008,7 @@ const Receipt = ({navigation}) => {
                                                   fontFamily: 'Lexend-Regular',
                                                 },
                                               ]}>
-                                              {item.BALANCE.toFixed(3)}
+                                              {item.BALANCE.toFixed(2)}
                                             </Text>
                                           </View>
                                           <View
@@ -2167,7 +2167,7 @@ const Receipt = ({navigation}) => {
                                                                     onPress={() => handlePress(item.INV, item.BALANCE)}>
                                                                     <Text style={[styles.ColldataCell, selectedtInv.includes(item.INV) ? styles.selectedRow : {}]}>{item.INVDATE.split('T')[0]}</Text>
                                                                     <Text style={[styles.ColldataCell, selectedtInv.includes(item.INV) ? styles.selectedRow : {}]}>{item.INV}</Text>
-                                                                    <Text style={[styles.ColldataCell, selectedtInv.includes(item.INV) ? styles.selectedRow : {}]}>{(item.BALANCE.toFixed(3))}</Text>
+                                                                    <Text style={[styles.ColldataCell, selectedtInv.includes(item.INV) ? styles.selectedRow : {}]}>{(item.BALANCE.toFixed(2))}</Text>
                                                                 </TouchableOpacity>
                                                             </>
                                                         )}

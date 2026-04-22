@@ -45,7 +45,7 @@ const SelectedStockPopQuotation = ({
                                                     <Text style={styles.DescText}>{item.Description}</Text>
                                                     {
                                                         cmpcode === 'AUTOMAX' ?
-                                                            <Text style={styles.TotalText}>{(item.unitPrice * item.quantity).toFixed(3)}</Text>
+                                                            <Text style={styles.TotalText}>{(item.unitPrice * item.quantity).toFixed(2)}</Text>
                                                             :
                                                             <Text style={styles.TotalText}>{(item.unitPrice * item.quantity).toFixed(2)}</Text>
                                                     }

@@ -153,7 +153,7 @@ const HeaderUiNew = ({ name,
                             </View>
                             
                             <View style={styles.TotalAmntCont}>
-                                <Text style={styles.TotalText}>{totalUnitPrice && (totalUnitPrice).toFixed(3)}</Text>
+                                <Text style={styles.TotalText}>{totalUnitPrice && (totalUnitPrice).toFixed(2)}</Text>
                             </View>
                         </TouchableOpacity>
 

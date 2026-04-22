@@ -415,7 +415,7 @@ const SalesInvoice = ({ route }) => {
 
             const newItem = {
                 ...selectedStock,
-                quantity: parseFloat(quantity).toFixed(3),
+                quantity: parseFloat(quantity).toFixed(2),
                 unitPrice: parseFloat(unitPrice).toFixed(2),
                 total: quantity * unitPrice
             }
@@ -461,7 +461,7 @@ const SalesInvoice = ({ route }) => {
         if (selectedStock && quantity && unitPrice && selectedCustomer && selectedCustomer.CREDITMETHOD == 'OPEN') {
             const newItem = {
                 ...selectedStock,
-                quantity: parseFloat(quantity).toFixed(3),
+                quantity: parseFloat(quantity).toFixed(2),
                 unitPrice: parseFloat(unitPrice).toFixed(2),
                 total: quantity * unitPrice
             };
@@ -516,7 +516,7 @@ const SalesInvoice = ({ route }) => {
         if (selectedStock && quantity && unitPrice && cashCustomerName) {
             const newItem = {
                 ...selectedStock,
-                quantity: parseFloat(quantity).toFixed(3),
+                quantity: parseFloat(quantity).toFixed(2),
                 unitPrice: parseFloat(unitPrice).toFixed(2),
                 total: quantity * unitPrice
             };

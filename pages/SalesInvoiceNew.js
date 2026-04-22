@@ -530,7 +530,7 @@ const SalesInvoiceNew = ({route}) => {
   };
 
   const SaveItem = async () => {
-    let checkQuantity = parseFloat(quantity).toFixed(3);
+    let checkQuantity = parseFloat(quantity).toFixed(2);
     let checkUnitPrice = parseFloat(unitPrice).toFixed(2);
 
     if (cmpcode.toUpperCase().trim() != 'ICUP') {
@@ -630,7 +630,7 @@ const SalesInvoiceNew = ({route}) => {
       ) {
         const newItem = {
           ...selectedStock,
-          quantity: parseFloat(quantity).toFixed(3),
+          quantity: parseFloat(quantity).toFixed(2),
           unitPrice: parseFloat(unitPrice).toFixed(2),
           unitPriceToShowUser: parseFloat(unitPriceToShowUser).toFixed(2),
           total: quantity * unitPrice,
@@ -711,7 +711,7 @@ const SalesInvoiceNew = ({route}) => {
       ) {
         const newItem = {
           ...selectedStock,
-          quantity: parseFloat(quantity).toFixed(3),
+          quantity: parseFloat(quantity).toFixed(2),
           unitPrice: parseFloat(unitPrice).toFixed(2),
           unitPriceToShowUser: parseFloat(unitPriceToShowUser).toFixed(2),
           total: quantity * unitPrice,
@@ -800,7 +800,7 @@ const SalesInvoiceNew = ({route}) => {
       ) {
         const newItem = {
           ...selectedStock,
-          quantity: parseFloat(quantity).toFixed(3),
+          quantity: parseFloat(quantity).toFixed(2),
           unitPrice: parseFloat(unitPrice).toFixed(2),
           unitPriceToShowUser: parseFloat(unitPriceToShowUser).toFixed(2),
           total: quantity * unitPrice,
@@ -2657,7 +2657,7 @@ const SalesInvoiceNew = ({route}) => {
                                 style={[
                                   {marginLeft: 4, color: '#aaa', width: '100%'},
                                 ]}>
-                                {(quantity * unitPrice).toFixed(3)}
+                                {(quantity * unitPrice).toFixed(2)}
                               </Text>
                             </View>
                           </View>

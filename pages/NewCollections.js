@@ -1424,7 +1424,7 @@ const NewCollections = () => {
                                 styles.InvoiceBalance,
                                 isSelected && {color: '#22A45D'},
                               ]}>
-                              {item.BALANCE.toFixed(3)}
+                              {item.BALANCE.toFixed(2)}
                             </Text>
                             {isSelected && (
                               <Text style={styles.SelectedTick}>✓</Text>
