@@ -24,6 +24,8 @@ import ThermalPrinterModule from 'react-native-thermal-printer';
 import {generatePDF} from './InvoicePdf';
 import SunmiPrinter, {AlignValue} from '@heasy/react-native-sunmi-printer';
 import {ICUP_LOGO_BASE64} from '../images/icup_logo';
+import RNHTMLtoPDF from 'react-native-html-to-pdf';
+import Share from 'react-native-share';
 
 const InvoiceList = () => {
   // the issue is fixed padding
@@ -618,6 +620,8 @@ const InvoiceList = () => {
         return '104112430400003';
       case 'MESHARI':
         return '100449215100003';
+      case 'POPULAR':
+        return '100327766000003';
       default:
         return '-';
     }
@@ -630,6 +634,8 @@ const InvoiceList = () => {
         return 'MESHARI FOODSTUFF TRADING LLC';
       case 'ICELAB':
         return 'THE ICE LAB MANUFACTURING LLC';
+      case 'POPULAR':
+        return 'POPULAR AUTO SPARE PARTS TRADING LLC';
       default:
         return '-';
     }
@@ -667,39 +673,197 @@ const InvoiceList = () => {
   // getPrintItemDetails
 
   const fetchItemList = async item => {
-    console.log('item after print button clicked >>', item);
-
     setShowPrintButtonLoader(true);
-    try {
-      setSelectedCustomer(item.CUSTOMER);
-      setSelectedCustomerAddress(item.ADDRESS);
-      setSlelecetdInvNo(item.INVNO);
-      setLoginUser(item.USER);
 
-      // Convert and format the date
-      const formattedDate = format(new Date(item.INV_DATE), 'dd/MM/yyyy');
-      setSelectedInvDate(formattedDate);
-      console.log(
-        'fetchItemList',
-        `${appUrl}SalesInvoiceDetail/${cmpcode}/${item.INVNO}/${deptNo}`,
-      );
+    try {
+      let base64Header = '';
+      try {
+        const asset = Image.resolveAssetSource(SULAIMANHEADER);
+
+        if (asset.uri.startsWith('http')) {
+          const response = await fetch(asset.uri);
+          const blob = await response.blob();
+          base64Header = await new Promise(resolve => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result.split(',')[1]);
+            reader.readAsDataURL(blob);
+          });
+        } else {
+          const path =
+            Platform.OS === 'android' && !asset.uri.includes('file://')
+              ? asset.uri
+              : asset.uri.replace('file://', '');
+          base64Header = await RNFS.readFile(path, 'base64');
+        }
+      } catch (error) {
+        console.log('Image conversion failed, using fallback text logo', error);
+      }
+
       const response = await axios.get(
         `${appUrl}SalesInvoiceDetail/${cmpcode}/${item.INVNO}/${deptNo}`,
       );
 
-      if (response.status === 200) {
-        setItemList(response.data);
-        setTerms(response.data[0].terms.trim().toUpperCase());
-        // setSubTotal(response.data[0].inv_total)
-        setDiscount(response.data[0].disc_amt);
-        setTrn(response.data[0].TRN);
-        console.log('trn from invoice list ', response.data[0].TRN);
+      if (response.status === 200 && response.data.length > 0) {
+        const firstItem = response.data[0];
+        const overallDiscount = firstItem.disc_amt || 0;
 
-        // setShowPrintButtonLoader(false)
+        // 1. Calculate Gross Total first to determine proportional weights
+        const totalGrossAmount = response.data.reduce(
+          (sum, p) => sum + (p.LINE_TOTAL || 0),
+          0,
+        );
+
+        const tableRows = response.data
+          .map(p => {
+            const lineTotal = p.LINE_TOTAL || 0;
+            const lineWeight =
+              totalGrossAmount > 0 ? lineTotal / totalGrossAmount : 0;
+            const proportionalDiscount = lineWeight * overallDiscount;
+            const netLineAmount = lineTotal - proportionalDiscount;
+            const lineVatAmount = netLineAmount * 0.05;
+
+            return `
+          <tr>
+            <td style="font-size: 10px;">${p.DESCRIPTION}</td>
+            <td style="text-align: center;">${p.QTY} ${p.UNIT || ''}</td>
+            <td style="text-align: right;">${p.PRICE.toFixed(2)}</td>
+            <td style="text-align: right;">${lineTotal.toFixed(2)}</td>
+            <td style="text-align: center;">5%</td>
+            <td style="text-align: right;">${lineVatAmount.toFixed(2)}</td>
+          </tr>`;
+          })
+          .join('');
+
+        const amountAfterDiscount = totalGrossAmount - overallDiscount;
+        const totalVatAmount = amountAfterDiscount * 0.05;
+        const grandTotal = amountAfterDiscount + totalVatAmount;
+
+        const htmlContent = `
+        <html>
+          <head>
+            <style>
+              body { font-family: 'Helvetica', sans-serif; padding: 10px; color: #222; }
+              .company-header { width: 100%; text-align: center; margin-bottom: 10px; }
+              .header-img { width: 100%; height: auto; max-height: 200px; }
+              .title { text-align: center; font-size: 18px; font-weight: bold; margin-bottom: 10px; text-decoration: underline; }
+              .info-section { display: flex; justify-content: space-between; margin-bottom: 15px; font-size: 11px; }
+              .box { width: 48%; }
+              
+              /* Adjusted table to accommodate more columns */
+              table.items-table { width: 100%; border-collapse: collapse; font-size: 9px; }
+              .items-table th { background-color: #f2f2f2; border: 1px solid #000; padding: 4px; }
+              .items-table td { border: 1px solid #000; padding: 4px; }
+              
+              .summary-wrapper { display: flex; justify-content: flex-end; margin-top: 10px; }
+              .summary-table { width: 55%; border-collapse: collapse; font-size: 11px; }
+              .summary-table td { border: 1px solid #000; padding: 4px 8px; }
+              .total-row { font-weight: bold; background-color: #eee; font-size: 13px; }
+              .footer { margin-top: 25px; font-size: 9px; text-align: center; border-top: 1px solid #ccc; padding-top: 5px; }
+            </style>
+          </head>
+          <body>
+            <div class="company-header">
+              ${
+                base64Header
+                  ? `<img src="data:image/jpeg;base64,${base64Header}" class="header-img" />`
+                  : `<div style="padding:16px 0 8px 0; border-bottom:2px solid #333; margin-bottom:8px;">
+                      <div style="font-size:20px; font-weight:bold; text-align:center; letter-spacing:1px;">${getCompanyname(cmpcode) !== '-' ? getCompanyname(cmpcode) : cmpcode}</div>
+                      <div style="font-size:12px; text-align:center; margin-top:4px; color:#444;">TRN: ${getTRNnumber(cmpcode)}</div>
+                    </div>`
+              }
+            </div>
+
+            <div class="title">TAX INVOICE</div>
+
+            <div class="info-section">
+              <div class="box">
+                <strong>BILL TO:</strong><br>
+                ${firstItem.custref}<br>
+                <strong>Customer TRN:</strong> ${firstItem.TRN || 'N/A'}<br>
+                ${firstItem.ADDRESS || ''}
+              </div>
+              <div class="box" style="text-align: right;">
+                <strong>Invoice No:</strong> ${firstItem.inv_no}<br>
+                <strong>Date:</strong> ${new Date(
+                  firstItem.inv_date,
+                ).toLocaleDateString()}<br>
+                <strong>Salesman:</strong> ${firstItem.sale_man}
+              </div>
+            </div>
+
+            <table class="items-table">
+              <thead>
+                <tr>
+                  <th style="width: 35%;">Description</th>
+                  <th>Qty/Unit</th>
+                  <th>Price</th>
+                  <th>Gross Amt</th>
+                  <th>VAT %</th>
+                  <th>VAT Amt</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${tableRows}
+              </tbody>
+            </table>
+
+            <div class="summary-wrapper">
+              <table class="summary-table">
+                <tr>
+                  <td>Total Gross Amount</td>
+                  <td style="text-align: right;">${totalGrossAmount.toFixed(
+                    3,
+                  )}</td>
+                </tr>
+                <tr>
+                  <td>Discount</td>
+                  <td style="text-align: right;">(-) ${overallDiscount.toFixed(
+                    3,
+                  )}</td>
+                </tr>
+                <tr style="background-color: #fafafa;">
+                  <td>Net Taxable Value</td>
+                  <td style="text-align: right;">${amountAfterDiscount.toFixed(
+                    3,
+                  )}</td>
+                </tr>
+                <tr>
+                  <td>Total VAT (5%)</td>
+                  <td style="text-align: right;">${totalVatAmount.toFixed(
+                    3,
+                  )}</td>
+                </tr>
+                <tr class="total-row">
+                  <td>Grand Total (OMR)</td>
+                  <td style="text-align: right;">${grandTotal.toFixed(2)}</td>
+                </tr>
+              </table>
+            </div>
+
+            <div class="footer">
+              <p>User ID: ${firstItem.user_id} | Time: ${firstItem.time}</p>
+            </div>
+          </body>
+        </html>`;
+
+        const options = {
+          html: htmlContent,
+          fileName: `TaxInvoice_${item.INVNO}`,
+          directory: 'Documents',
+        };
+
+        const file = await RNHTMLtoPDF.convert(options);
+        await Share.open({
+          url:
+            Platform.OS === 'android'
+              ? `file://${file.filePath}`
+              : file.filePath,
+          type: 'application/pdf',
+        });
       }
     } catch (error) {
-      console.log('fetchItemListError', error);
-      setError(error);
+      console.error('Print Error:', error);
+    } finally {
       setShowPrintButtonLoader(false);
     }
   };
