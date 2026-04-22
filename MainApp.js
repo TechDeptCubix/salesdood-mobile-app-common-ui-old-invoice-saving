@@ -62,6 +62,9 @@ import SalesReturn from './pages/sales_return/SalesReturn';
 import SalesReturnEntry from './pages/sales_return/SalesReturnEntry';
 import SplitItemScreen from './pages/SplitItemScreen';
 import SalesReturnList from './pages/SalesReturnList';
+import BusinessPartners from './pages/BusinessPartners';
+import PriceUpdater from './pages/PriceUpdater'
+
 
 const Stack = createNativeStackNavigator();
 
@@ -479,6 +482,17 @@ const MainApp = () => {
         <Stack.Screen
           name="SplitItemScreen"
           component={SplitItemScreen}
+          options={{headerShown: false}}
+        />
+        <Stack.Screen
+          name="BusinessPartners"
+          component={BusinessPartners}
+          options={{headerShown: false}}
+        />
+
+<Stack.Screen
+          name="PriceUpdater"
+          component={PriceUpdater}
           options={{headerShown: false}}
         />
 

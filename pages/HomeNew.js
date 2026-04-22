@@ -2334,6 +2334,126 @@ const HomeNew = () => {
                         </TouchableOpacity>
                       )}
 
+{/* {menuNotAllowedToThisCompany ? (
+                        menuNotAllowedToThisCompany.some(
+                          itemSommy =>
+                            itemSommy.MENUID.trim().toUpperCase() ==
+                            'Business Partners'.trim().toUpperCase(),
+                        ) ? null : menuAllowedToThisRole?.length == 0 ||
+                          menuAllowedToThisRole?.some(
+                            itemSommy =>
+                              itemSommy.MENUID.trim().toUpperCase() ==
+                              'Business Partners'.trim().toUpperCase(),
+                          ) ? (
+                          <TouchableOpacity
+                            style={[
+                              styles.ItemCont,
+                              {backgroundColor: '#D4CFC5'},
+                            ]}
+                            onPress={() => navigation.navigate('BusinessPartners')}>
+                            <View style={styles.innerItem}>
+                              <View style={styles.TouchablwWhiteBackg}>
+                                <Image
+                                  source={require('../images/todoDark.png')}
+                                  style={[
+                                    styles.optionIcon,
+                                    {resizeMode: 'contain'},
+                                  ]}></Image>
+                              </View>
+                              <View style={styles.innerText}>
+                                <Text style={styles.optionText}>
+                                Business Partners
+                                </Text>
+                              </View>
+                            </View>
+                          </TouchableOpacity>
+                        ) : null
+                      ) : (
+                        <TouchableOpacity
+                          style={[
+                            styles.ItemCont,
+                            {backgroundColor: '#D4CFC5'},
+                          ]}
+                          onPress={() => navigation.navigate('BusinessPartners')}>
+                          <View style={styles.innerItem}>
+                            <View style={styles.TouchablwWhiteBackg}>
+                              <Image
+                                source={require('../images/todoDark.png')}
+                                style={[
+                                  styles.optionIcon,
+                                  {resizeMode: 'contain'},
+                                ]}></Image>
+                            </View>
+                            <View style={styles.innerText}>
+                              <Text style={styles.optionText}>
+                              Business Partners
+                              </Text>
+                            </View>
+                          </View>
+                        </TouchableOpacity>
+                      )} */}
+
+
+
+{/* {menuNotAllowedToThisCompany ? (
+                        menuNotAllowedToThisCompany.some(
+                          itemSommy =>
+                            itemSommy.MENUID.trim().toUpperCase() ==
+                            'Price Updater'.trim().toUpperCase(),
+                        ) ? null : menuAllowedToThisRole?.length == 0 ||
+                          menuAllowedToThisRole?.some(
+                            itemSommy =>
+                              itemSommy.MENUID.trim().toUpperCase() ==
+                              'Price Updater'.trim().toUpperCase(),
+                          ) ? (
+                          <TouchableOpacity
+                            style={[
+                              styles.ItemCont,
+                              {backgroundColor: '#D4CFC5'},
+                            ]}
+                            onPress={() => navigation.navigate('PriceUpdater')}>
+                            <View style={styles.innerItem}>
+                              <View style={styles.TouchablwWhiteBackg}>
+                                <Image
+                                  source={require('../images/todoDark.png')}
+                                  style={[
+                                    styles.optionIcon,
+                                    {resizeMode: 'contain'},
+                                  ]}></Image>
+                              </View>
+                              <View style={styles.innerText}>
+                                <Text style={styles.optionText}>
+                                Price Updater
+                                </Text>
+                              </View>
+                            </View>
+                          </TouchableOpacity>
+                        ) : null
+                      ) : (
+                        <TouchableOpacity
+                          style={[
+                            styles.ItemCont,
+                            {backgroundColor: '#D4CFC5'},
+                          ]}
+                          onPress={() => navigation.navigate('PriceUpdater')}>
+                          <View style={styles.innerItem}>
+                            <View style={styles.TouchablwWhiteBackg}>
+                              <Image
+                                source={require('../images/todoDark.png')}
+                                style={[
+                                  styles.optionIcon,
+                                  {resizeMode: 'contain'},
+                                ]}></Image>
+                            </View>
+                            <View style={styles.innerText}>
+                              <Text style={styles.optionText}>
+                              Price Updater
+                              </Text>
+                            </View>
+                          </View>
+                        </TouchableOpacity>
+                      )} */}
+
 
                     </View>
                   </ScrollView>
