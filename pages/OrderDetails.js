@@ -142,17 +142,44 @@ const OrderDetails = ({route}) => {
     }
   };
 
-  // ── Company label helper ───────────────────────────────────────────────
-  const getCompanyLabel = code => {
+  // ── Company helper ───────────────────────────────────────────────
+  const getCompanyDetails = code => {
     const c = (code || '').trim().toUpperCase();
-    if (c === 'SOCA') return 'SOCA TOOLS INTERNATIONAL TRADING LLC'; 
-       if (c === 'POPULAR') return 'POPULAR AUTO SPARE PARTS TRADING LLC';
-    if (c === 'ICELAB' || c === 'ICELAB_TEST')
-      return 'THE ICE LAB MANUFACTURING LLC';
-    if (c === 'ICUP') return 'ICECUP FOOD INDUSTRIES L.L.C';
-    return cmpName || code || 'Company';
-  };
 
+    const companyMap = {
+      SOCA: {
+        name: 'SOCA TOOLS INTERNATIONAL TRADING LLC',
+        trn: '100123456700003',
+      },
+
+      POPULAR: {
+        name: 'POPULAR AUTO SPARE PARTS TRADING LLC',
+        trn: '100327766000003',
+      },
+
+      ICELAB: {
+        name: 'THE ICE LAB MANUFACTURING LLC',
+        trn: '100345678900003',
+      },
+
+      ICELAB_TEST: {
+        name: 'THE ICE LAB MANUFACTURING LLC',
+        trn: '100345678900003',
+      },
+
+      ICUP: {
+        name: 'ICECUP FOOD INDUSTRIES L.L.C',
+        trn: '100456789000003',
+      },
+    };
+
+    return (
+      companyMap[c] || {
+        name: cmpName || code || 'Company',
+        trn: '',
+      }
+    );
+  };
   // ── Generate Order PDF ───────────────────────────────────────────────────
   const generateOrderPDF = async () => {
     if (!itemList || itemList.length === 0) return;
@@ -169,13 +196,12 @@ const OrderDetails = ({route}) => {
       : subTotal
       ? (subTotal * 1.05).toFixed(2)
       : '0.00';
+    const companyDetails = getCompanyDetails(cmpcode?.toUpperCase());
 
-    const companyLabel = getCompanyLabel(cmpcode);
-    const address = [
-      firstItem.address1,
-      firstItem.address2,
-      firstItem.address3,
-    ]
+    const companyLabel = companyDetails.name;
+    const companyTRN = companyDetails.trn;
+
+    const address = [firstItem.address1, firstItem.address2, firstItem.address3]
       .filter(Boolean)
       .join(', ');
 
@@ -243,13 +269,18 @@ const OrderDetails = ({route}) => {
     <div class="header">
       <div class="header-left">
         <div class="cmp-name">${companyLabel}</div>
+        <div class="cmp-name">TRN:${companyTRN}</div>
         <div class="doc-label">SALES ORDER</div>
       </div>
       <div class="header-right">
         <div class="order-no">${orderId}</div>
         <div class="header-meta">Date: ${soDate}</div>
         <div class="header-meta">Currency: ${firstItem.fc || 'AED'}</div>
-        ${firstItem.Lpo_no ? `<div class="header-meta">LPO: ${firstItem.Lpo_no}</div>` : ''}
+        ${
+          firstItem.Lpo_no
+            ? `<div class="header-meta">LPO: ${firstItem.Lpo_no}</div>`
+            : ''
+        }
       </div>
     </div>
     <div class="info-strip">
@@ -265,10 +296,14 @@ const OrderDetails = ({route}) => {
         <div class="info-label">Order No</div>
         <div class="info-value">${orderId}</div>
       </div>
-      ${address ? `<div class="info-cell" style="min-width:100%;border-right:none;border-top:1px solid #e8eaf0;">
+      ${
+        address
+          ? `<div class="info-cell" style="min-width:100%;border-right:none;border-top:1px solid #e8eaf0;">
         <div class="info-label">Address</div>
         <div class="info-value">${address}</div>
-      </div>` : ''}
+      </div>`
+          : ''
+      }
     </div>
     <div class="section-title">Order Items</div>
     <table>
@@ -288,12 +323,18 @@ const OrderDetails = ({route}) => {
     </table>
     <div class="totals-wrap">
       <div class="totals-box">
-        <div class="tot-row"><span class="lbl">Subtotal</span><span class="val">${subTotal ? subTotal.toFixed(2) : '0.00'}</span></div>
+        <div class="tot-row"><span class="lbl">Subtotal</span><span class="val">${
+          subTotal ? subTotal.toFixed(2) : '0.00'
+        }</span></div>
         <div class="tot-row"><span class="lbl">VAT (5%)</span><span class="val">${vatAmt}</span></div>
         <div class="tot-grand"><span>Total Incl. VAT</span><span>${totalIncVat}</span></div>
       </div>
     </div>
-    ${firstItem.comments ? `<div class="comments-strip"><b>Comments:</b> ${firstItem.comments}</div>` : ''}
+    ${
+      firstItem.comments
+        ? `<div class="comments-strip"><b>Comments:</b> ${firstItem.comments}</div>`
+        : ''
+    }
     <div class="footer">
       <div>${companyLabel}</div>
       <div class="sig-line">Authorized Signature</div>
@@ -376,8 +417,6 @@ const OrderDetails = ({route}) => {
 
       {itemList && itemList.length > 0 && (
         <ScrollView style={styles.OrderDetailsWrap}>
-         
-
           <View style={styles.SectionHeaderRow}>
             <Text style={styles.CustomerTagText}>Item List</Text>
             <TouchableOpacity
