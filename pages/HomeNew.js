@@ -794,18 +794,17 @@ const HomeNew = () => {
                         {borderLeftColor: '#AEADB2'},
                       ]}>
                       {/* {cmpCode?.toUpperCase() !== 'STARLINK' && ( */}
-                        <View style={styles.metricRow}>
-                          <Text style={styles.metricLabel}>Sales Order</Text>
-                          {showSalesCollLoader ? (
-                            <ActivityIndicator size="small" color="#AEADB2" />
-                          ) : (
-                            <Text style={styles.metricValue}>
-                              {(salesCollection &&
-                                salesCollection[0]?.amount) ||
-                                '0.00'}
-                            </Text>
-                          )}
-                        </View>
+                      <View style={styles.metricRow}>
+                        <Text style={styles.metricLabel}>Sales Order</Text>
+                        {showSalesCollLoader ? (
+                          <ActivityIndicator size="small" color="#AEADB2" />
+                        ) : (
+                          <Text style={styles.metricValue}>
+                            {(salesCollection && salesCollection[0]?.amount) ||
+                              '0.00'}
+                          </Text>
+                        )}
+                      </View>
                       {/* )}  */}
 
                       <View style={styles.metricRow}>
@@ -2215,7 +2214,7 @@ const HomeNew = () => {
                           </View>
                         </TouchableOpacity>
                       )}
-                        {menuNotAllowedToThisCompany ? (
+                      {menuNotAllowedToThisCompany ? (
                         menuNotAllowedToThisCompany.some(
                           itemSommy =>
                             itemSommy.MENUID.trim().toUpperCase() ==
@@ -2231,7 +2230,9 @@ const HomeNew = () => {
                               styles.ItemCont,
                               {backgroundColor: '#D4CFC5'},
                             ]}
-                            onPress={() => navigation.navigate('SalesReturnList')}>
+                            onPress={() =>
+                              navigation.navigate('SalesReturnList')
+                            }>
                             <View style={styles.innerItem}>
                               <View style={styles.TouchablwWhiteBackg}>
                                 <Image
@@ -2255,7 +2256,9 @@ const HomeNew = () => {
                             styles.ItemCont,
                             {backgroundColor: '#D4CFC5'},
                           ]}
-                          onPress={() => navigation.navigate('SalesReturnList')}>
+                          onPress={() =>
+                            navigation.navigate('SalesReturnList')
+                          }>
                           <View style={styles.innerItem}>
                             <View style={styles.TouchablwWhiteBackg}>
                               <Image
@@ -2274,8 +2277,7 @@ const HomeNew = () => {
                         </TouchableOpacity>
                       )}
 
-
-{menuNotAllowedToThisCompany ? (
+                      {menuNotAllowedToThisCompany ? (
                         menuNotAllowedToThisCompany.some(
                           itemSommy =>
                             itemSommy.MENUID.trim().toUpperCase() ==
@@ -2291,7 +2293,9 @@ const HomeNew = () => {
                               styles.ItemCont,
                               {backgroundColor: '#D4CFC5'},
                             ]}
-                            onPress={() => navigation.navigate('SplitItemScreen')}>
+                            onPress={() =>
+                              navigation.navigate('SplitItemScreen')
+                            }>
                             <View style={styles.innerItem}>
                               <View style={styles.TouchablwWhiteBackg}>
                                 <Image
@@ -2303,7 +2307,7 @@ const HomeNew = () => {
                               </View>
                               <View style={styles.innerText}>
                                 <Text style={styles.optionText}>
-                                Split Item Screen
+                                  Split Item Screen
                                 </Text>
                               </View>
                             </View>
@@ -2315,7 +2319,9 @@ const HomeNew = () => {
                             styles.ItemCont,
                             {backgroundColor: '#D4CFC5'},
                           ]}
-                          onPress={() => navigation.navigate('SplitItemScreen')}>
+                          onPress={() =>
+                            navigation.navigate('SplitItemScreen')
+                          }>
                           <View style={styles.innerItem}>
                             <View style={styles.TouchablwWhiteBackg}>
                               <Image
@@ -2327,14 +2333,14 @@ const HomeNew = () => {
                             </View>
                             <View style={styles.innerText}>
                               <Text style={styles.optionText}>
-                              Split Item Screen
+                                Split Item Screen
                               </Text>
                             </View>
                           </View>
                         </TouchableOpacity>
                       )}
 
-{/* {menuNotAllowedToThisCompany ? (
+                      {/* {menuNotAllowedToThisCompany ? (
                         menuNotAllowedToThisCompany.some(
                           itemSommy =>
                             itemSommy.MENUID.trim().toUpperCase() ==
@@ -2393,9 +2399,7 @@ const HomeNew = () => {
                         </TouchableOpacity>
                       )} */}
 
-
-
-{/* {menuNotAllowedToThisCompany ? (
+                      {/* {menuNotAllowedToThisCompany ? (
                         menuNotAllowedToThisCompany.some(
                           itemSommy =>
                             itemSommy.MENUID.trim().toUpperCase() ==
@@ -2453,8 +2457,6 @@ const HomeNew = () => {
                           </View>
                         </TouchableOpacity>
                       )} */}
-
-
                     </View>
                   </ScrollView>
                 ) : (

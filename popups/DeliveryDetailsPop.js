@@ -1,482 +1,429 @@
-import { View, Text, StyleSheet, Dimensions, TouchableOpacity, Image, ScrollView, FlatList, Alert, ActivityIndicator } from 'react-native'
-import React, { useEffect, useState, useCallback } from 'react'
-import axios from 'axios'
-import { ImagePickerModal } from '../pages/ImagePickerModal'
-
-import { Camera, useCameraDevice } from 'react-native-vision-camera';
-
+import {
+  View,
+  Text,
+  StyleSheet,
+  Dimensions,
+  TouchableOpacity,
+  Image,
+  FlatList,
+  Alert,
+  ActivityIndicator,
+  Modal,
+} from 'react-native';
+import React, {useEffect, useState, useCallback} from 'react';
+import axios from 'axios';
+import {ImagePickerModal} from '../pages/ImagePickerModal';
+import {Camera, useCameraDevice} from 'react-native-vision-camera';
 import * as ImagePicker from 'react-native-image-picker';
-import ToastManager, { Toast } from 'toastify-react-native'
-import mime from "mime";
+import ToastManager, {Toast} from 'toastify-react-native';
+import mime from 'mime';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+const {height: SCREEN_HEIGHT} = Dimensions.get('window');
+
 const DeliveryDetailsPop = ({
-    setDetailsPop, detailsPopItem, portNo,
-    cmpCode, selectedValue, loginUser, deptno, appUrl, driverCompletedTab
+  setDetailsPop,
+  detailsPopItem,
+  portNo,
+  cmpCode,
+  selectedValue,
+  loginUser,
+  deptno,
+  appUrl,
+  driverCompletedTab,
 }) => {
+  const [imageUploadloading, setImageUploadloading] = useState(false);
+  const [URI, setURI] = useState(null);
+  const [details, setDetails] = useState('');
+  const [cubotDetails, setCubotDetails] = useState(null);
+  const [pickerResponse, setPickerResponse] = useState(null);
+  const [visible, setVisible] = useState(false);
 
+  const device = useCameraDevice('back');
+  const dono = detailsPopItem?.do_no;
+  const itemDeptno = detailsPopItem?.deptno?.trim();
 
-    const [imageUploadloading, setImageUploadloading] = useState(false)
-    const device = useCameraDevice('back');
+  // --- Logic Functions (Unchanged) ---
+  const getCubotDetails = async () => {
+    let cubot_details = await AsyncStorage.getItem('portNoData');
+    let cubotArray = JSON.parse(cubot_details);
+    setCubotDetails(cubotArray);
+  };
 
+  const fetchDetails = async () => {
+    try {
+      const response = await axios.get(
+        `https://cubixweberp.com:${portNo}/${cmpCode}/DO_DETAILS/${selectedValue}/${loginUser}/${itemDeptno}/${dono}/`,
+      );
 
-    console.log("driverCompletedTab>> ", driverCompletedTab,)
-
-    const [URI, setURI] = useState(null)
-    const [details, setDetails] = useState('')
-    const [cubotDetails, setCubotDetails] = useState(null)
-
-    const dono = detailsPopItem.do_no
-
-    const itemDeptno = detailsPopItem.deptno.trim()
-
-
-
-
-    const uploadImage = async () => {
-
-        setImageUploadloading(true)
-
-        console.log("Response:---> image apiUrl-->", cubotDetails, cubotDetails[0].IMG_POST_PATH)
-
-
-        if (cubotDetails) {
-
-            if (cubotDetails.length > 0) {
-
-                const apiUrl = cubotDetails[0].IMG_POST_PATH + "/api/Image/upload"
-
-                console.log("Response:---> image apiUrl +++", apiUrl)
-
-                let pathToStoreImage = cubotDetails[0].IMG_SERVERPATH
-
-                try {
-                    // Create a FormData instance
-                    const formData = new FormData();
-                    formData.append('DOC_CODE', detailsPopItem.do_no);
-                    formData.append('DOC_TYPE', 'DOCIMAGE');
-                    formData.append('IMAGEPATH', pathToStoreImage); // here we have added one more slash else this is result and 405 status error when sending to api "C:ileupload_commonBONDTIME_DOC_IMG"
-                    formData.append('IMGBASE64', 'test')
-                    formData.append('cmpcode', cmpCode)
-
-                    formData.append('file', {
-                        uri: URI,
-                        name: pickerResponse.assets[0].fileName,
-                        type: mime.getType(URI),
-                    })
-
-                    // Axios configuration
-                    const config = {
-                        headers: {
-                            'content-type': 'multipart/form-data'
-                        },
-
-                    };
-
-                    console.log('formData +++>>>>.', formData, config)
-
-                    // Send the POST request
-                    const response = await axios.post(apiUrl, formData, config);
-
-                    // Handle response
-                    console.log('Response:---> image', response.data);
-
-                    if (response.status === 200) {
-                        Toast.success(response.data.message)
-                        setURI(null)
-                        setPickerResponse(null)
-                    }
-
-                    setImageUploadloading(false)
-
-                } catch (error) {
-
-                    setImageUploadloading(false)
-                    // Handle error
-                    console.error('Error uploading data:>>>>+++', error);
-                    Toast.error('Some error occured')
-                    // throw error;
-
-                    if (error.response) {
-
-                        console.log("err is text 1 ++ ", error.response);
-                        //do something
-
-                    } else if (error.request) {
-
-                        //do something else
-                        console.log("err is text 2 ++ >>>>>>>>>++++", error.request);
-
-                    } else if (error.message) {
-
-                        console.log("err is text 3 ++ ", error.message);
-                        //do something other than the other two
-
-                    }
-                }
-
-            } else {
-                setImageUploadloading(false)
-                console.log("Response:---> image No Server Details Found");
-                Alert.alert("No Server Details Found")
-                return
-            }
-
-
-        } else {
-            setImageUploadloading(false)
-            return
-
-        }
-
-
-    };
-
-    const fetchDetails = async () => {
-        try {
-            console.log('fetchDetailsUrl', `https://cubixweberp.com:${portNo}/${cmpCode}/DO_DETAILS/${selectedValue}/${loginUser}/${itemDeptno}/${dono}/`)
-            const response = await axios.get(`https://cubixweberp.com:${portNo}/${cmpCode}/DO_DETAILS/${selectedValue}/${loginUser}/${itemDeptno}/${dono}/`)
-
-            if (response.status === 200) {
-                setDetails(response.data)
-            }
-        } catch (error) {
-            console.log('fetchDetailsError', error)
-        }
+      if (response.status === 200)
+        console.log('Fetch Items of Response', response.data);
+      setDetails(response.data);
+    } catch (error) {
+      console.log('fetchDetailsError', error);
     }
+  };
 
-    useEffect(() => {
-        if (portNo && cmpCode && selectedValue && loginUser && deptno && detailsPopItem) {
-            fetchDetails()
-        }
-    }, [portNo, cmpCode, selectedValue, loginUser, deptno, detailsPopItem])
-
-    console.log('details', details)
-    console.log('detailsPopItem', detailsPopItem)
-
-    const [pickerResponse, setPickerResponse] = useState(null);
-    const [visible, setVisible] = useState(false);
-
-
-    const handleTakePhoto = async () => {
-        try {
-            const cameraPermission = await Camera.requestCameraPermission();
-            console.log('Camera Permission:', cameraPermission); // Check permission status
-            if (cameraPermission !== 'granted') {
-                alert('Camera access denied');
-                return;
-            }
-
-            if (device) {
-                // setShowCamera(true);
-                onCameraPress()
-            }
-        } catch (error) {
-            console.error('Error accessing camera:', error);
-        }
-    };
-
-    const onImageLibraryPress = useCallback(() => {
-        const options = {
-            selectionLimit: 1,
-            mediaType: 'photo',
-            includeBase64: false,
-        };
-        ImagePicker.launchImageLibrary(options, setPickerResponse);
-    }, []);
-
-    const onCameraPress = useCallback(() => {
-        const options = {
-            saveToPhotos: true,
-            mediaType: 'photo',
-            includeBase64: false,
-        };
-        ImagePicker.launchCamera(options, setPickerResponse);
-    }, []);
-
-
-
-    useEffect(() => {
-
-        console.log("pickerResponse>>++", pickerResponse)
-        if (pickerResponse?.assets) {
-            if (pickerResponse.assets[0].uri) {
-                setURI(pickerResponse.assets[0].uri)
-            }
-
-            setVisible(false)
-        }
-
-    }, [pickerResponse])
-
-    useEffect(() => {
-
-        console.log("pickerResponse>>++ URI", URI)
-
-    }, [URI])
-
-    const getCubotDetails = async () => {
-        let cubot_details = await AsyncStorage.getItem("portNoData")
-        let cubotArray = JSON.parse(cubot_details)
-        console.log("cubot_details--->+ ", cubotArray)
-        setCubotDetails(cubotArray)
+  useEffect(() => {
+    getCubotDetails();
+    if (portNo && cmpCode && selectedValue && loginUser && itemDeptno && dono) {
+      fetchDetails();
     }
-    useEffect(() => {
-        getCubotDetails()
+  }, [portNo, cmpCode, selectedValue, loginUser, itemDeptno, dono]);
 
-    }, [])
+  const onImageLibraryPress = useCallback(() => {
+    const options = {
+      selectionLimit: 1,
+      mediaType: 'photo',
+      includeBase64: false,
+    };
+    ImagePicker.launchImageLibrary(options, setPickerResponse);
+  }, []);
 
-    return (
-        <View style={styles.modalContainer}>
-            <View style={styles.modalContent}>
+  const handleTakePhoto = async () => {
+    const cameraPermission = await Camera.requestCameraPermission();
+    if (cameraPermission === 'granted') {
+      const options = {
+        saveToPhotos: true,
+        mediaType: 'photo',
+        includeBase64: false,
+      };
+      ImagePicker.launchCamera(options, setPickerResponse);
+    } else {
+      Alert.alert('Camera access denied');
+    }
+  };
 
-                <View style={styles.HomeTextCont}>
-                    <TouchableOpacity style={styles.SettingsWrap} onPress={() => setDetailsPop(false)}>
-                        <Image style={styles.HeadIcon} source={require('../images/lftArr.png')} />
+  useEffect(() => {
+    if (pickerResponse?.assets) {
+      setURI(pickerResponse.assets[0].uri);
+      setVisible(false);
+    }
+  }, [pickerResponse]);
+
+  const uploadImage = async () => {
+    if (!cubotDetails || !URI) return;
+    setImageUploadloading(true);
+    const apiUrl = cubotDetails[0].IMG_POST_PATH + '/api/Image/upload';
+    const formData = new FormData();
+    formData.append('DOC_CODE', dono);
+    formData.append('DOC_TYPE', 'DOCIMAGE');
+    formData.append('IMAGEPATH', cubotDetails[0].IMG_SERVERPATH);
+    formData.append('IMGBASE64', 'test');
+    formData.append('cmpcode', cmpCode);
+    formData.append('file', {
+      uri: URI,
+      name: pickerResponse.assets[0].fileName,
+      type: mime.getType(URI),
+    });
+
+    try {
+      const response = await axios.post(apiUrl, formData, {
+        headers: {'content-type': 'multipart/form-data'},
+      });
+      if (response.status === 200) {
+        Toast.success('Upload Successful');
+        setURI(null);
+      }
+    } catch (error) {
+      Toast.error('Upload failed');
+    } finally {
+      setImageUploadloading(false);
+    }
+  };
+
+  // --- Render Functions ---
+  const renderItem = ({item}) => (
+    <View style={styles.itemRow}>
+      <View style={styles.itemInfo}>
+        <Text style={styles.itemCode}>{item.Code}</Text>
+        <Text style={styles.itemDesc}>{item.Description}</Text>
+      </View>
+      <View style={styles.qtyBadge}>
+        <Text style={styles.qtyText}>{item.Quanity}</Text>
+      </View>
+    </View>
+  );
+
+  return (
+    <Modal
+      animationType="slide"
+      transparent={true}
+      visible={true}
+      onRequestClose={() => setDetailsPop(false)}>
+      <View style={styles.overlay}>
+        <TouchableOpacity
+          style={styles.flexClose}
+          onPress={() => setDetailsPop(false)}
+        />
+
+        <View style={styles.drawerContainer}>
+          {/* Top Handle / Grabber */}
+          <View style={styles.handleContainer}>
+            <View style={styles.handle} />
+          </View>
+
+          {/* Header */}
+          <View style={styles.header}>
+            <Text style={styles.headerTitle}>Delivery Details</Text>
+            <TouchableOpacity onPress={() => setDetailsPop(false)}>
+              <Text style={styles.closeAction}>Done</Text>
+            </TouchableOpacity>
+          </View>
+
+          <FlatList
+            data={details}
+            keyExtractor={(item, index) => index.toString()}
+            renderItem={renderItem}
+            ListHeaderComponent={
+              <View style={styles.contentPadding}>
+                {/* Image Section */}
+                <View style={styles.imageUploadSection}>
+                  {URI ? (
+                    <View style={styles.previewContainer}>
+                      <Image source={{uri: URI}} style={styles.previewImage} />
+                      <TouchableOpacity
+                        style={styles.uploadBtn}
+                        onPress={uploadImage}
+                        disabled={imageUploadloading}>
+                        {imageUploadloading ? (
+                          <ActivityIndicator color="white" size="small" />
+                        ) : (
+                          <Text style={styles.uploadBtnText}>
+                            Confirm Upload
+                          </Text>
+                        )}
+                      </TouchableOpacity>
+                    </View>
+                  ) : (
+                    <TouchableOpacity
+                      style={styles.selectImageBtn}
+                      onPress={() => setVisible(true)}>
+                      <Text style={styles.selectImageText}>
+                        + Add Delivery Photo
+                      </Text>
                     </TouchableOpacity>
-                    <Text style={styles.HomeText}>Details</Text>
+                  )}
                 </View>
 
-
-
-                <View style={styles.StockDescWrap}>
-
-                    {
-
-                        <View style={{ flexDirection: "row", justifyContent: "center", padding: 4 }}><TouchableOpacity onPress={() => setVisible(true)} style={styles.AcceptButton}><Text style={{ color: "#000000" }}>Select Image</Text></TouchableOpacity></View>
-                    }
-
-
-                    {
-                        URI != null && URI != '' &&
-                        <View style={{ flexDirection: "row", alignItems: "center" }}>
-                            <Image
-                                style={{
-                                    width: 100, height: 100,
-                                    borderColor: '#ffffff',
-                                    borderWidth: 4,
-                                }}
-                                source={{ uri: URI }}
-                            />
-                            <View style={{ flexDirection: "row", justifyContent: "center", padding: 4 }}><TouchableOpacity onPress={() => uploadImage()} style={styles.AcceptButton}><Text style={styles.AcceptText}>Upload</Text></TouchableOpacity></View>
-
-                            {
-                                imageUploadloading &&
-
-                                <ActivityIndicator size="large" color="#007AFF" />
-                            }
-                        </View>
-                    }
-
-                    <View style={styles.StockItem}>
-                        <Text style={styles.StockLabel}>Customer</Text>
-                        <Text style={styles.StockTextValue}>{detailsPopItem && detailsPopItem.Customer}</Text>
-                    </View>
-                    <View style={styles.StockItem}>
-                        <Text style={styles.StockLabel}>Area Code</Text>
-                        <Text style={styles.StockTextValue}>{detailsPopItem && detailsPopItem.area_code}</Text>
-                    </View>
-                    <View style={styles.StockItem}>
-                        <Text style={styles.StockLabel}>Delivery Site</Text>
-                        <Text style={styles.StockTextValue}>{detailsPopItem && detailsPopItem.deliv_site}</Text>
-                    </View>
-                    <View style={styles.StockItem}>
-                        <Text style={styles.StockLabel}>Driver name</Text>
-                        <Text style={styles.StockTextValue}>{detailsPopItem && detailsPopItem.drivername}</Text>
-                    </View>
-                    <View style={styles.StockItem}>
-                        <Text style={styles.StockLabel}>Carton Nos</Text>
-                        <Text style={styles.StockTextValue}>{detailsPopItem && detailsPopItem['Carton Nos']}</Text>
-                    </View>
+                {/* Info Grid */}
+                <View style={styles.infoGrid}>
+                  <InfoItem label="Customer" value={detailsPopItem?.Customer} />
+                  <InfoItem label="DO Number" value={dono} />
+                  <View style={styles.row}>
+                    <InfoItem
+                      label="Area"
+                      value={detailsPopItem?.area_code}
+                      half
+                    />
+                    <InfoItem
+                      label="Site"
+                      value={detailsPopItem?.deliv_site}
+                      half
+                    />
+                  </View>
+                  <View style={styles.row}>
+                    <InfoItem
+                      label="Driver"
+                      value={detailsPopItem?.drivername}
+                      half
+                    />
+                    <InfoItem
+                      label="Cartons"
+                      value={detailsPopItem?.['Carton Nos']}
+                      half
+                    />
+                  </View>
                 </View>
 
-                <View style={styles.BottomListCont}>
-
-                    <View style={styles.BottomListBanner}>
-                        <View style={styles.ItemBannerCont}>
-                            <Text style={styles.BannerText}>Item</Text>
-                        </View>
-                        <View style={styles.QtyBannerCont}>
-                            <Text style={[styles.BannerText, { textAlign: 'right' }]}>Qty</Text>
-                        </View>
-                    </View>
-
-                </View>
-
-                <FlatList
-                    // contentContainerStyle={styles.ScrollView}
-                    nestedScrollEnabled={true}
-                    contentContainerStyle={{ paddingBottom: 50, paddingHorizontal: 8 }}
-
-                    data={details}
-                    keyExtractor={(item, index) => index.toString()}
-                    renderItem={({ item }) => (
-
-                        <>
-                            <View style={styles.BottomListWrap}>
-                                <View style={styles.ItemBannerCont}>
-                                    <Text style={[styles.BannerText, { fontFamily: 'Lexend-Bold', fontSize: 16 }]}>{item.Code}</Text>
-                                    <Text style={[styles.BannerText, { fontFamily: 'Lexend-Bold', fontSize: 16 }]}>{item.Description}</Text>
-                                </View>
-                                <View style={styles.QtyBannerCont}>
-                                    <Text style={[styles.BannerText, { fontFamily: 'Lexend-Bold', fontSize: 16, textAlign: 'right' }]}>{item.Quanity}</Text>
-                                </View>
-                            </View>
-                        </>
-
-                    )}
-                    ListEmptyComponent={
-                        <View>
-                            <Text style={{ color: 'red' }}>No data available</Text>
-                        </View>
-                    }
-
-                />
-
-            </View>
-
-            <ImagePickerModal
-                isVisible={visible}
-                onClose={() => setVisible(false)}
-                onImageLibraryPress={onImageLibraryPress}
-                // onCameraPress={onCameraPress}
-                handleTakePhoto={handleTakePhoto}
-            />
-
-            <ToastManager width={350} height={100} textStyle={{ fontSize: 17 }} />
+                <Text style={styles.sectionLabel}>Items List</Text>
+              </View>
+            }
+            ListEmptyComponent={
+              <Text style={styles.emptyText}>No items found</Text>
+            }
+            contentContainerStyle={{paddingBottom: 40}}
+          />
         </View>
-    )
-}
+
+        <ImagePickerModal
+          isVisible={visible}
+          onClose={() => setVisible(false)}
+          onImageLibraryPress={onImageLibraryPress}
+          handleTakePhoto={handleTakePhoto}
+        />
+        <ToastManager />
+      </View>
+    </Modal>
+  );
+};
+
+// Sub-component for clean organization
+const InfoItem = ({label, value, half}) => (
+  <View style={[styles.infoItem, half && {flex: 1}]}>
+    <Text style={styles.label}>{label}</Text>
+    <Text style={styles.value} numberOfLines={1}>
+      {value || '--'}
+    </Text>
+  </View>
+);
 
 const styles = StyleSheet.create({
-    modalContainer: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        zIndex: 2,
-        backgroundColor: '#00000080',
-        position: 'absolute',
-        width: '100%',
-        height: '100%',
-    },
-    modalContent: {
-        backgroundColor: 'white',
-        borderRadius: 5,
-        width: '95%',
-        maxHeight: Dimensions.get('window').height - 100
-    },
-    HomeTextCont: {
-        width: '100%',
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'flex-start',
-        backgroundColor: '#DCDBDB',
-        paddingVertical: 10,
-        paddingHorizontal: 6
-    },
-    HomeText: {
-        fontSize: 18,
-        color: '#1A6CF6',
-        // borderBottomColor: 'gold',
-        // borderBottomWidth: 2,
-        marginTop: 6,
-        marginLeft: 6,
-        paddingBottom: 8,
-        fontFamily: 'Lexend-Regular'
-    },
-    SettingsWrap: {
-        // backgroundColor: '#189A2E',
-        // backgroundColor: 'red',
-        // borderRadius: 50,
-        padding: 6
-    },
-    HeadIcon: {
-        width: 20,
-        height: 20
-    },
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'flex-end',
+  },
+  flexClose: {
+    flex: 1,
+  },
+  drawerContainer: {
+    backgroundColor: 'white',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    height: SCREEN_HEIGHT * 0.85,
+    paddingTop: 8,
+  },
+  handleContainer: {
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  handle: {
+    width: 40,
+    height: 5,
+    backgroundColor: '#E2E8F0',
+    borderRadius: 3,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#0F172A',
+    fontFamily: 'Lexend-Bold',
+  },
+  closeAction: {
+    color: '#2563EB',
+    fontWeight: '700',
+    fontSize: 16,
+  },
+  contentPadding: {
+    padding: 20,
+  },
+  imageUploadSection: {
+    marginBottom: 20,
+  },
+  selectImageBtn: {
+    height: 100,
+    borderWidth: 2,
+    borderColor: '#DBEAFE',
+    borderStyle: 'dashed',
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#F8FAFC',
+  },
+  selectImageText: {
+    color: '#2563EB',
+    fontWeight: '600',
+  },
+  previewContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F1F5F9',
+    padding: 10,
+    borderRadius: 12,
+  },
+  previewImage: {
+    width: 70,
+    height: 70,
+    borderRadius: 8,
+  },
+  uploadBtn: {
+    backgroundColor: '#2563EB',
+    flex: 1,
+    marginLeft: 15,
+    height: 45,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  uploadBtnText: {
+    color: 'white',
+    fontWeight: '700',
+  },
+  infoGrid: {
+    backgroundColor: '#F8FAFC',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 20,
+  },
+  row: {
+    flexDirection: 'row',
+  },
+  infoItem: {
+    marginBottom: 12,
+  },
+  label: {
+    fontSize: 11,
+    color: '#64748B',
+    textTransform: 'uppercase',
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  value: {
+    fontSize: 14,
+    color: '#1E293B',
+    fontWeight: '700',
+  },
+  sectionLabel: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#0F172A',
+    marginBottom: 12,
+  },
+  itemRow: {
+    flexDirection: 'row',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+    alignItems: 'center',
+  },
+  itemInfo: {
+    flex: 1,
+  },
+  itemCode: {
+    fontSize: 12,
+    color: '#2563EB',
+    fontWeight: '700',
+  },
+  itemDesc: {
+    fontSize: 14,
+    color: '#334155',
+  },
+  qtyBadge: {
+    backgroundColor: '#F1F5F9',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  qtyText: {
+    fontWeight: '800',
+    color: '#1E293B',
+  },
+  emptyText: {
+    textAlign: 'center',
+    marginTop: 20,
+    color: '#94A3B8',
+  },
+});
 
-    StockDescWrap: {
-        flexDirection: 'column',
-        width: '100%',
-        marginTop: 8,
-        backgroundColor: 'white',
-        padding: 18
-    },
-    StockItem: {
-        padding: 4,
-        marginBottom: 2
-    },
-    StockLabel: {
-        fontFamily: 'Lexend-Regular',
-        color: "#2B2B2B",
-        fontSize: 16
-    },
-    StockTextValue: {
-        fontFamily: 'Lexend-Bold',
-        color: "black",
-        fontSize: 16
-    },
-
-    TableContainer: {
-        width: "100%",
-        // padding: 10,
-        marginTop: 8,
-        alignItems: 'center',
-    },
-
-    BottomListCont: {
-        flexDirection: 'column',
-        justifyContent: 'center',
-        // alignItems: 'center',
-        width: '100%',
-        paddingHorizontal: 8
-    },
-    BottomListBanner: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        width: '100%',
-        paddingVertical: 8,
-        paddingHorizontal: 4,
-        borderBottomColor: 'grey',
-        borderBottomWidth: 1
-    },
-    ItemBannerCont: {
-        width: '80%'
-    },
-    QtyBannerCont: {
-        width: '20%',
-        textAlign: 'right'
-    },
-    BannerText: {
-        fontFamily: 'Lexend-Regular',
-        color: "#2B2B2B",
-        fontSize: 16
-    },
-    ScrollView: {
-        maxHeight: 200
-    },
-
-    BottomListWrap: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        width: '100%',
-        paddingVertical: 8,
-        paddingHorizontal: 4,
-    },
-    AcceptButton: {
-        backgroundColor: '#30B3A4',
-        padding: 8,
-        borderRadius: 4,
-        borderWidth: 0.5,
-        borderColor: 'grey',
-    },
-    AcceptText: {
-        fontSize: 14,
-        color: 'white',
-        fontFamily: 'Lexend-Regular',
-    },
-})
-
-export default DeliveryDetailsPop
+export default DeliveryDetailsPop;

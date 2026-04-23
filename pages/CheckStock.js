@@ -3,7 +3,6 @@ import {
   Text,
   StyleSheet,
   Dimensions,
-  Image,
   TouchableOpacity,
   TextInput,
   ScrollView,
@@ -11,1989 +10,742 @@ import {
   FlatList,
   KeyboardAvoidingView,
   Keyboard,
+  Platform,
 } from 'react-native';
-import React, {useEffect, useState} from 'react';
-import Header from './Header';
-import axios from 'axios';
-import {useNavigation} from '@react-navigation/native';
+import React, {useEffect, useState, useCallback, useRef} from 'react';
 import HeaderUiNew from './HeaderUiNew';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios from 'axios';
 import formatPrice3Decimal from '../utils';
+
+const StockItem = ({
+  item,
+  isExpanded,
+  onToggleExpand,
+  onAddToCart,
+  selectedButton,
+  onSelectButton,
+  substituteData,
+  modalNumberData,
+  subLoader,
+  modalLoader,
+  cmpcode,
+}) => {
+  const code = item.Code || item.code;
+
+  return (
+    <View style={styles.card}>
+      {/* ── Header Row ── */}
+      <View style={styles.cardHeader}>
+        <View style={styles.cardHeaderLeft}>
+          <Text style={styles.cardCode}>{code}</Text>
+          <Text style={styles.cardUnit}>Unit: {item.unit || '—'}</Text>
+        </View>
+        <View style={styles.cardHeaderRight}>
+          <View style={styles.qtyBadge}>
+            <Text style={styles.qtyBadgeLabel}>Qty</Text>
+            <Text style={styles.qtyBadgeValue}>{item.Qty ?? '—'}</Text>
+          </View>
+          <TouchableOpacity
+            style={styles.expandBtn}
+            onPress={() => onToggleExpand(code, item.OEM)}
+            activeOpacity={0.7}>
+            <Text style={styles.expandBtnText}>{isExpanded ? '▲' : '▼'}</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* ── Description ── */}
+      <Text style={styles.cardDesc}>{item.Description}</Text>
+
+      {/* ── Expanded Details ── */}
+      {isExpanded && (
+        <View style={styles.expandedSection}>
+          {/* Price Cards */}
+          <View style={styles.priceGrid}>
+            <PriceCard
+              label="Cash Price"
+              value={formatPrice3Decimal(item.price)}
+            />
+            <PriceCard
+              label="Credit Price"
+              value={formatPrice3Decimal(item['Credit Price'])}
+            />
+            {cmpcode === 'STARLINK' && (
+              <PriceCard label="Cost" value={formatPrice3Decimal(item.Cost)} />
+            )}
+            {cmpcode === 'SOCA' ? (
+              <PriceCard
+                label="Special Price"
+                value={formatPrice3Decimal(item['Spcial Price'])}
+              />
+            ) : (
+              <PriceCard
+                label="Block Price"
+                value={formatPrice3Decimal(item['Block Price'])}
+              />
+            )}
+            {cmpcode?.toUpperCase() !== 'SOCA' &&
+              cmpcode?.toUpperCase() !== 'STARLINK' && (
+                <PriceCard
+                  label="Discount Price"
+                  value={formatPrice3Decimal(item.Discount_Price)}
+                />
+              )}
+            <PriceCard label="Order Pend." value={item.Ord_pend ?? '—'} />
+            <PriceCard label="BIN" value={item.BIN ?? '—'} />
+          </View>
+
+          {/* Add to Cart */}
+          {/* <TouchableOpacity
+            style={styles.cartBtn}
+            onPress={() => onAddToCart(item)}
+            activeOpacity={0.8}>
+            <Text style={styles.cartBtnText}>Add to Cart</Text>
+          </TouchableOpacity> */}
+
+          {/* Sub / Model Tabs */}
+          <View style={styles.tabRow}>
+            {['Substitute', 'Model'].map(tab => (
+              <TouchableOpacity
+                key={tab}
+                style={[
+                  styles.tabBtn,
+                  selectedButton === tab && styles.tabBtnActive,
+                ]}
+                onPress={() => onSelectButton(tab)}>
+                <Text
+                  style={[
+                    styles.tabBtnText,
+                    selectedButton === tab && styles.tabBtnTextActive,
+                  ]}>
+                  {tab === 'Model' ? 'Model Number' : tab}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          {/* Tab Content */}
+          {selectedButton === 'Substitute' && (
+            <SubstituteTable data={substituteData} loading={subLoader} />
+          )}
+          {selectedButton === 'Model' && (
+            <ModelTable data={modalNumberData} loading={modalLoader} />
+          )}
+        </View>
+      )}
+    </View>
+  );
+};
+
+const PriceCard = ({label, value}) => (
+  <View style={styles.priceCard}>
+    <Text style={styles.priceCardLabel}>{label}</Text>
+    <Text style={styles.priceCardValue}>{value}</Text>
+  </View>
+);
+
+const SubstituteTable = ({data, loading}) => {
+  if (loading) return <ActivityIndicator style={{marginVertical: 8}} />;
+  if (!data) return null;
+  if (data.length === 0)
+    return <Text style={styles.noData}>No substitutes available</Text>;
+
+  return (
+    <View style={styles.tableWrap}>
+      <View style={styles.tableHeaderRow}>
+        {['Part No', 'Qty', 'Price'].map(h => (
+          <Text
+            key={h}
+            style={[styles.tableHeaderCell, {flex: h === 'Part No' ? 2 : 1}]}>
+            {h}
+          </Text>
+        ))}
+      </View>
+      <ScrollView style={{maxHeight: 180}} nestedScrollEnabled>
+        {data.map((row, i) => (
+          <View
+            key={i}
+            style={[styles.tableDataRow, i % 2 === 0 && styles.tableRowEven]}>
+            <Text style={[styles.tableDataCell, {flex: 2}]}>{row.Part_No}</Text>
+            <Text style={[styles.tableDataCell, {flex: 1}]}>{row.Balance}</Text>
+            <Text style={[styles.tableDataCell, {flex: 1}]}>
+              {formatPrice3Decimal(row['Sales price'])}
+            </Text>
+          </View>
+        ))}
+      </ScrollView>
+    </View>
+  );
+};
+
+// ─── Model Number Table ───────────────────────────────────────────────────────
+
+const ModelTable = ({data, loading}) => {
+  if (loading) return <ActivityIndicator style={{marginVertical: 8}} />;
+  if (!data) return null;
+  if (data.length === 0)
+    return <Text style={styles.noData}>No model numbers available</Text>;
+
+  return (
+    <View style={styles.tableWrap}>
+      <View style={styles.tableHeaderRow}>
+        <Text style={[styles.tableHeaderCell, {flex: 1}]}>Model Number</Text>
+      </View>
+      <ScrollView style={{maxHeight: 180}} nestedScrollEnabled>
+        {data.map((row, i) => (
+          <View
+            key={i}
+            style={[styles.tableDataRow, i % 2 === 0 && styles.tableRowEven]}>
+            <Text style={[styles.tableDataCell, {flex: 1}]}>
+              {row.Model_Number}
+            </Text>
+          </View>
+        ))}
+      </ScrollView>
+    </View>
+  );
+};
+
+// ─── Main Component ───────────────────────────────────────────────────────────
 
 const CheckStock = () => {
   const [vanFromLocalStorage, setVanFromLocalStorage] = useState(null);
-  // const searchUrl = 'https://cubixweberp.com:203/api/Search_Items/Sitem/'
-
-  const searchUrl =
-    'https://cubixweberp.com:208/api/Search_Items/automax/Sitem/';
-
-  const navigation = useNavigation();
+  const [appUrl, setAppUrl] = useState('');
+  const [cmpcode, setCmpCode] = useState('');
 
   const [searchItem, setSearchItem] = useState('');
-
   const [stockData, setStockData] = useState(null);
+  const [top50Items, setTop50Items] = useState(null);
+  const [loading, setLoading] = useState(false);
 
-  const [selectedStock, setSelectedStock] = useState(null);
-
-  const [showActivity, setShowActivity] = useState(false);
-
-  const [selectedTab, setSelectedTab] = useState('MODAL');
+  const [expandedCode, setExpandedCode] = useState(null);
+  const [selectedButton, setSelectedButton] = useState('Substitute');
 
   const [modalNumberData, setModalNumberData] = useState(null);
   const [substituteData, setSubstituteData] = useState(null);
-
   const [modalLoader, setModalLoader] = useState(false);
   const [subLoader, setSubLoader] = useState(false);
-  // const [modLoader, setModLoader] = useState(false)
 
-  const [top50Items, setTop50Items] = useState(null);
+  // Debounce ref
+  const debounceTimer = useRef(null);
 
-  const [appUrl, setAppUrl] = useState('');
+  // ── Bootstrap ──────────────────────────────────────────────────────────────
 
-  const [cmpcode, setCmpCode] = useState('');
+  useEffect(() => {
+    const init = async () => {
+      const van = await AsyncStorage.getItem('VAN');
+      setVanFromLocalStorage(van);
 
-  const [expandedItems, setExpandedItems] = useState([]);
+      const url = await AsyncStorage.getItem('appUrl');
+      if (url) setAppUrl(url);
 
-  const [selectedButton, setSelectedButton] = useState('Substitute');
-
-  const fetchAppUrl = async () => {
-    const van_from_local = await AsyncStorage.getItem('VAN');
-    console.log('van_from_local in check stock', van_from_local);
-    setVanFromLocalStorage(van_from_local);
-
-    const appUrl = await AsyncStorage.getItem('appUrl');
-
-    const storedUserDataArray = await AsyncStorage.getItem('userDataArray');
-    const parsedUserDataArray =
-      (storedUserDataArray && JSON.parse(storedUserDataArray)) || [];
-
-    if (parsedUserDataArray) {
-      setCmpCode(parsedUserDataArray[0].cmpcode.trim().toUpperCase());
-    }
-
-    if (appUrl) {
-      setAppUrl(appUrl);
-      console.log('appUrl in check stock', appUrl);
-    }
-  };
-
-  const searchStock = async value => {
-    setShowActivity(true);
-    try {
-      let encodedvalue = encodeURIComponent(value);
-
-      // CHANGED SERACH STOCK TO THIS API BECAUSE IT WILL NOT CONFLICT WITH SOCA WEB APP SERCH STOCK
-      // AND THIS IS ALREADY PRESENT IN ALL SALESDOOD API AS ABHILASH SIR SAID
-      // loc = master means will search in all locations
-      // let apiUrl = `${appUrl}Search_Items/InventoryList?cmpcode=${cmpcode}&guid=F4369B5E-8E23-4BCF-AC82-76C977991728&mod=MOBILE&Loc=MASTER&searchKey=${encodedvalue}`
-
-      let locationToPassToApiBasedOnVan =
-        vanFromLocalStorage == '----' ? 'MASTER' : vanFromLocalStorage;
-      let modeToPassToApiBasedOnVan =
-        vanFromLocalStorage == '----' ? 'MOBILE' : 'all_top1000';
-
-      // passing all_top1000 because it is present in all customer sp so location based qty will come inside Stock i think
-      // so if normal user MOBILE mode if van user then pass all_top1000
-
-      // not changed to MODE CODE because on result CODE comes so i have to change everywhere
-      let apiUrl = `${appUrl}Search_Items/InventoryList?cmpcode=${cmpcode}&guid=F4369B5E-8E23-4BCF-AC82-76C977991728&mod=${modeToPassToApiBasedOnVan}&Loc=${locationToPassToApiBasedOnVan}&searchKey=${encodedvalue}`;
-
-      //let apiUrl = `${appUrl}Search_Items/${cmpcode}/Sitem/${encodedvalue}`
-
-      console.log('search url ==>', apiUrl);
-
-      await axios.get(apiUrl).then(res => {
-        setStockData(res.data);
-      });
-      setShowActivity(false);
-    } catch (error) {
-      console.log('searchStockerror', error);
-      setShowActivity(false);
-    }
-  };
-
-  const toggleExpand = (code, oem) => {
-    Keyboard.dismiss();
-    setModalNumberData(null);
-    setSubstituteData(null);
-    fetchSubstituteData(code);
-    fetchModalNumberData(oem);
-    setExpandedItems(prevState => {
-      if (prevState.includes(code)) {
-        return prevState.filter(itemCode => itemCode !== code);
-      } else {
-        // return [...prevState, code];
-        return [code];
+      const raw = await AsyncStorage.getItem('userDataArray');
+      const parsed = raw ? JSON.parse(raw) : [];
+      if (parsed[0]?.cmpcode) {
+        setCmpCode(parsed[0].cmpcode.trim().toUpperCase());
       }
-    });
-  };
+    };
+    init();
+  }, []);
+
+  // ── Top 50 on ready ───────────────────────────────────────────────────────
 
   useEffect(() => {
-    if (searchItem !== '') {
-      searchStock(searchItem);
-      setSelectedStock(null);
-    }
-    if (searchItem == '') {
-      setStockData(null);
-      setSelectedStock(null);
-      setShowActivity(false);
-    }
-  }, [searchItem]);
-
-  const fetchModalNumberData = async OEM => {
-    setModalLoader(true);
-    try {
-      const encodedOem = encodeURIComponent(OEM);
-      console.log(
-        `fetchModalNumberData--${appUrl}MasterList/${cmpcode}/MODELNUMBER/${encodedOem}`,
-      );
-      const response = await axios.get(
-        `${appUrl}MasterList/${cmpcode}/MODELNUMBER/${encodedOem}`,
-      );
-      // console.log('fetchModalNumberData', response.data)
-      setModalNumberData(response.data);
-      setModalLoader(false);
-    } catch (error) {
-      console.log('fetchModalNumberDataError', error);
-      setModalLoader(false);
-    }
-  };
-
-  const fetchSubstituteData = async Code => {
-    setSubLoader(true);
-    try {
-      const encodedCode = encodeURIComponent(Code);
-      console.log(
-        `fetchSubstituteData--${appUrl}MasterList/${cmpcode}/SUBSTITUTE/${encodedCode}`,
-      );
-      const response = await axios.get(
-        `${appUrl}MasterList/${cmpcode}/SUBSTITUTE/${encodedCode}`,
-      );
-      // console.log('fetchSubstituteData', response.data);
-      setSubstituteData(response.data);
-      setSubLoader(false);
-    } catch (error) {
-      console.log('fetchSubstituteDataError', error);
-      setSubLoader(false);
-    }
-  };
-
-  const fetchTop50StockItems = async () => {
-    setShowActivity(true);
-    try {
-      let locationToPassToApiBasedOnVan =
-        vanFromLocalStorage === '----' ? 'MASTER' : vanFromLocalStorage;
-      let modeToPassToApiBasedOnVan =
-        vanFromLocalStorage === '----' ? 'MOBILE50' : 'all_top1000';
-
-      // if location ie van is present use this mode all_top1000 insted of MOBILE50 because arya said if location is passed then call goes to another sp there MOBILE50 is not present but  all_top1000 is present in all customers sp
-      let apiUrl = `${appUrl}Search_Items/InventoryList?cmpcode=${cmpcode}&guid=F4369B5E-8E23-4BCF-AC82-76C977991728&mod=${modeToPassToApiBasedOnVan}&Loc=${locationToPassToApiBasedOnVan}&searchKey=-`;
-
-      console.log(`fetchTop50StockItems--${apiUrl}`);
-
-      const response = await axios.get(apiUrl);
-      // console.log('fetchTop50StockItems', response.data[0]);
-      setTop50Items(response.data);
-      setShowActivity(false);
-    } catch (error) {
-      console.log('fetchTop50StockItemsError', error);
-      setShowActivity(false);
-    }
-  };
-
-  useEffect(() => {
-    if (selectedStock) {
-      fetchModalNumberData(selectedStock.OEM);
-      fetchSubstituteData(selectedStock.Code);
-    }
-  }, [selectedStock]);
-
-  useEffect(() => {
-    if (appUrl && cmpcode) {
+    if (appUrl && cmpcode && vanFromLocalStorage !== null) {
       fetchTop50StockItems();
     }
   }, [appUrl, cmpcode, vanFromLocalStorage]);
 
-  useEffect(() => {
-    fetchAppUrl();
-  }, []);
+  // ── Debounced search ──────────────────────────────────────────────────────
 
-  const handlePress = buttonName => {
-    setSelectedButton(buttonName);
+  useEffect(() => {
+    if (debounceTimer.current) clearTimeout(debounceTimer.current);
+
+    if (!searchItem.trim()) {
+      setStockData(null);
+      setLoading(false);
+      return;
+    }
+
+    debounceTimer.current = setTimeout(() => {
+      searchStock(searchItem.trim());
+    }, 500);
+
+    return () => clearTimeout(debounceTimer.current);
+  }, [searchItem]);
+
+  // ── API Calls ─────────────────────────────────────────────────────────────
+
+  const locationParam =
+    vanFromLocalStorage === '----' ? 'MASTER' : vanFromLocalStorage;
+  const modeParam = vanFromLocalStorage === '----' ? 'MOBILE' : 'all_top1000';
+  const modeTop50 = vanFromLocalStorage === '----' ? 'MOBILE50' : 'all_top1000';
+
+  const searchStock = async value => {
+    setLoading(true);
+    try {
+      const encoded = encodeURIComponent(value);
+      const url = `${appUrl}Search_Items/InventoryList?cmpcode=${cmpcode}&guid=F4369B5E-8E23-4BCF-AC82-76C977991728&mod=${modeParam}&Loc=${locationParam}&searchKey=${encoded}`;
+      const res = await axios.get(url);
+      setStockData(res.data);
+    } catch (e) {
+      console.log('searchStock error', e);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // console.log('formatPrice3Decimal', formatPrice3Decimal(500))
+  const fetchTop50StockItems = async () => {
+    setLoading(true);
+    try {
+      const url = `${appUrl}Search_Items/InventoryList?cmpcode=${cmpcode}&guid=F4369B5E-8E23-4BCF-AC82-76C977991728&mod=${modeTop50}&Loc=${locationParam}&searchKey=-`;
+      const res = await axios.get(url);
+      setTop50Items(res.data);
+    } catch (e) {
+      console.log('fetchTop50 error', e);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  // console.log('searchItem', searchItem)
+  const fetchModalNumberData = async oem => {
+    setModalLoader(true);
+    setModalNumberData(null);
+    try {
+      const encoded = encodeURIComponent(oem);
+      const res = await axios.get(
+        `${appUrl}MasterList/${cmpcode}/MODELNUMBER/${encoded}`,
+      );
+      setModalNumberData(res.data);
+    } catch (e) {
+      console.log('fetchModalNumber error', e);
+      setModalNumberData([]);
+    } finally {
+      setModalLoader(false);
+    }
+  };
 
-  // console.log('stockData', stockData)
+  const fetchSubstituteData = async code => {
+    setSubLoader(true);
+    setSubstituteData(null);
+    try {
+      const encoded = encodeURIComponent(code);
+      const res = await axios.get(
+        `${appUrl}MasterList/${cmpcode}/SUBSTITUTE/${encoded}`,
+      );
+      setSubstituteData(res.data);
+    } catch (e) {
+      console.log('fetchSubstitute error', e);
+      setSubstituteData([]);
+    } finally {
+      setSubLoader(false);
+    }
+  };
 
-  // console.log('top50Items', top50Items && top50Items[0])
+  // ── Interactions ──────────────────────────────────────────────────────────
 
-  // console.log('selectedStock', selectedStock && selectedStock)
+  const toggleExpand = useCallback(
+    (code, oem) => {
+      Keyboard.dismiss();
+      if (expandedCode === code) {
+        setExpandedCode(null);
+        return;
+      }
+      setExpandedCode(code);
+      setSelectedButton('Substitute');
+      fetchSubstituteData(code);
+      fetchModalNumberData(oem);
+    },
+    [expandedCode],
+  );
 
-  // console.log('modalNumberData', modalNumberData)
+  const handleAddToCart = item => {
+    // Wire up your cart logic here
+    console.log('Add to cart:', item);
+  };
 
-  // console.log('substituteData', substituteData)
+  // ── Render List ───────────────────────────────────────────────────────────
+
+  const displayData = searchItem.trim() ? stockData : top50Items;
+
+  const renderItem = item => {
+    const code = item.Code || item.code;
+    const isExpanded = expandedCode === code;
+    return (
+      <StockItem
+        key={code}
+        item={item}
+        isExpanded={isExpanded}
+        onToggleExpand={toggleExpand}
+        onAddToCart={handleAddToCart}
+        selectedButton={selectedButton}
+        onSelectButton={setSelectedButton}
+        substituteData={isExpanded ? substituteData : null}
+        modalNumberData={isExpanded ? modalNumberData : null}
+        subLoader={subLoader}
+        modalLoader={modalLoader}
+        cmpcode={cmpcode}
+      />
+    );
+  };
+
+  // ── JSX ───────────────────────────────────────────────────────────────────
 
   return (
-    <View style={styles.HomeWrap}>
-      {/* <Header /> */}
-
+    <View style={styles.root}>
       <HeaderUiNew name={'Check Stock'} />
 
       <KeyboardAvoidingView
-        behavior="padding"
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 120 : 0}
-        style={styles.HomeCont}>
-        <View style={[styles.TANDCInpCont, {width: '90%', marginTop: 16}]}>
-          {/* <View style={styles.InputImageCont}>
-                        <Image style={styles.SearchIcon} source={require('../images/orangeLens.png')} />
-                    </View> */}
+        style={styles.body}>
+        {/* Search Bar */}
+        <View style={styles.searchBar}>
           <TextInput
-            style={styles.PlaceHolderInput}
-            placeholder="Search item"
+            style={styles.searchInput}
+            placeholder="Search item by name or code…"
+            placeholderTextColor="#9AA3B0"
             value={searchItem}
-            onChangeText={text => setSearchItem(text)}
-            placeholderTextColor="#2b2b2b"
+            onChangeText={setSearchItem}
+            returnKeyType="search"
+            clearButtonMode="while-editing"
           />
+          {loading && (
+            <ActivityIndicator
+              size="small"
+              color="#3A80EA"
+              style={{marginRight: 8}}
+            />
+          )}
         </View>
 
-        {showActivity && <ActivityIndicator />}
-
-        {stockData && !selectedStock && (
-          <>
-            {/* <View style={styles.TableContainer}>
-                            <View style={styles.tableRow}>
-                                <Text style={[styles.headerCell, {
-                                    borderTopLeftRadius: 4
-                                }]}>
-                                    Code
-                                </Text>
-                                <Text style={[styles.headerCell, {
-                                    borderTopRightRadius: 4
-                                }]}>Description</Text>
-                            </View>
-
-                            <ScrollView style={styles.ScrollView}>
-                                {
-                                    stockData && stockData.length > 0 && stockData.map((item, index) => (
-                                        <TouchableOpacity style={styles.tableRow} key={index} onPress={() => setSelectedStock(item)}>
-                                            <Text style={styles.dataCell}>{item.Code}</Text>
-                                            <Text style={styles.dataCell}>{item.Description}</Text>
-                                        </TouchableOpacity>
-
-                                    ))
-                                }
-                            </ScrollView>
-
-                            {
-                                stockData === null &&
-
-                                <ActivityIndicator />
-                            }
-
-                            {
-                                stockData && stockData.length === 0 &&
-                                <View>
-                                    <Text style={{
-                                        color: 'red',
-                                        fontFamily: 'Lexend-Bold',
-                                    }}>No data available</Text>
-                                </View>
-                            }
-
-                        </View> */}
-
-            <ScrollView
-              contentContainerStyle={[styles.CheckStockListView]}
-              keyboardShouldPersistTaps="always">
-              {stockData &&
-                stockData.length > 0 &&
-                stockData.map((item, index) => (
-                  <View style={styles.StockListItem} key={index}>
-                    {/* <View style={styles.StockItemListHead}>
-                                            <Text style={styles.StockListCodeText}>{item.Code}</Text>
-                                            <TouchableOpacity style={styles.PlusMinusCont} onPress={() => toggleExpand(item.Code)}>
-                                                {
-                                                    expandedItems.includes(item.Code) ?
-                                                        <Image style={styles.PlusMinusImg} source={require('../images/chkMinus.png')} />
-                                                        :
-                                                        <Image style={styles.PlusMinusImg} source={require('../images/chkPlus.png')} />
-                                                }
-                                            </TouchableOpacity>
-                                        </View>
-
-                                        <TouchableOpacity style={styles.StockItemDescCont} onPress={() => setSelectedStock(item)}>
-                                            <Text style={styles.StockListDescText}>{item.Description}</Text>
-                                        </TouchableOpacity>
-
-                                        <View style={styles.QtyAvlQtyCont}>
-                                            <View style={[styles.QtyCont, { backgroundColor: '#ECF0F9', marginRight: 16 }]}>
-                                                <Text style={styles.QtyText}>Qty.</Text>
-                                                <Text style={styles.QtyText}>{item.Qty}</Text>
-                                            </View>
-                                            <View style={[styles.QtyCont, { backgroundColor: '#FDEDD6' }]}>
-                                                <Text style={styles.AvlText}>Avl. Qty.</Text>
-                                                <Text style={styles.AvlText}>{item.AvlQty}</Text>
-                                            </View>
-                                        </View>
-
-                                        {
-                                            expandedItems.includes(item.Code) && (
-                                                <View style={styles.DynamicPriceView}>
-                                                    <View style={styles.PriceTag}>
-                                                        <Text style={styles.StockListCodeText}>Price</Text>
-                                                        <Text style={styles.PriceValueText}>{item.price}</Text>
-                                                    </View>
-                                                    <View style={styles.PriceTag}>
-                                                        <Text style={styles.StockListCodeText}>Credit Price</Text>
-                                                        <Text style={styles.PriceValueText}>{item['Credit Price']}</Text>
-                                                    </View>
-                                                    <View style={styles.PriceTag}>
-                                                        <Text style={styles.StockListCodeText}>Order Pend.</Text>
-                                                        <Text style={styles.PriceValueText}>{item.Ord_pend}</Text>
-                                                    </View>
-                                                </View>
-                                            )
-                                        } */}
-
-                    <View style={styles.CustomerListCont}>
-                      <View style={styles.CustomerImgWrap}>
-                        <Image
-                          style={styles.CustomerImage}
-                          source={require('../images/stockList.png')}
-                        />
-                      </View>
-
-                      <View style={styles.CustomerListMid}>
-                        <Text
-                          style={[styles.StockListDescText, {width: '75%'}]}>
-                          Unit -{item.unit}
-                        </Text>
-                        <View
-                          style={{
-                            flexDirection: 'row',
-                            justifyContent: 'space-between',
-                            width: '100%',
-                          }}>
-                          <Text
-                            style={[styles.StockListDescText, {width: '75%'}]}>
-                            {item.Description}
-                          </Text>
-                          <Text
-                            style={[
-                              styles.StockListDescTextSmall,
-                              {color: '#30B3A4', fontFamily: 'Lexend-Regular'},
-                            ]}>
-                            {item.Qty}
-                          </Text>
-                        </View>
-                        <View
-                          style={{
-                            flexDirection: 'row',
-                            width: '100%',
-                            paddingVertical: 6,
-                          }}>
-                          <Text style={styles.StockListDescTextSmall}>
-                            {item.Code ? item.Code : item.code}
-                          </Text>
-                          <TouchableOpacity
-                            style={[styles.PlusMinusCont, {marginLeft: 'auto'}]}
-                            onPress={() =>
-                              toggleExpand(
-                                item.Code ? item.Code : item.code,
-                                item.OEM,
-                              )
-                            }>
-                            {expandedItems.includes(
-                              item.Code ? item.Code : item.code,
-                            ) ? (
-                              <Image
-                                style={styles.PlusMinusImg}
-                                source={require('../images/chkMinus.png')}
-                              />
-                            ) : (
-                              <Image
-                                style={styles.PlusMinusImg}
-                                source={require('../images/chkPlus.png')}
-                              />
-                            )}
-                          </TouchableOpacity>
-                        </View>
-                      </View>
-                    </View>
-
-                    {/* {console.log("item.Code ? item.Code : item.code-->>", item.Code ? item.Code : item.code)}
-                                        {
-                                            console.log("image_url", `http://popbr2.dyndns.org:86/` + item.Code + `.png`)
-                                        } */}
-
-                    {expandedItems.includes(
-                      item.Code ? item.Code : item.code,
-                    ) && (
-                      <View style={styles.DynamicPriceView}>
-                        <View
-                          style={{
-                            flexDirection: 'column',
-                            width: 'auto',
-                          }}>
-                          {cmpcode?.trim().toUpperCase() == 'POPULAR' && (
-                            <Image
-                              style={{width: 100, height: 100, margin: 10}}
-                              source={{
-                                uri:
-                                  `http://popbr2.dyndns.org:86/` +
-                                  item.Code +
-                                  `.png`,
-                              }}
-                            />
-                          )}
-
-                          <View style={styles.PriceTag}>
-                            <Text style={styles.StockListCodeText}>
-                              Cash Price
-                            </Text>
-                            <Text style={styles.PriceValueText}>
-                              {formatPrice3Decimal(item.price)}
-                            </Text>
-                          </View>
-                          <View style={styles.PriceTag}>
-                            <Text style={styles.StockListCodeText}>
-                              Credit Price
-                            </Text>
-                            <Text style={styles.PriceValueText}>
-                              {formatPrice3Decimal(item['Credit Price'])}
-                            </Text>
-                          </View>
-                          {cmpcode?.trim().toUpperCase() === 'STARLINK' && (
-                            <View style={styles.PriceTag}>
-                              <Text style={styles.StockListCodeText}>Cost</Text>
-                              <Text style={styles.PriceValueText}>
-                                {formatPrice3Decimal(item.Cost)}
-                              </Text>
-                            </View>
-                          )}
-                          <View style={styles.PriceTag}>
-                            <Text style={styles.StockListCodeText}>
-                              Block Price
-                            </Text>
-                            <Text style={styles.PriceValueText}>
-                              {formatPrice3Decimal(item['Block Price'])}
-                            </Text>
-                          </View>
-                          <View style={styles.PriceTag}>
-                            <Text style={styles.StockListCodeText}>
-                              Order Pend .
-                            </Text>
-                            <Text style={styles.PriceValueText}>
-                              {item.Ord_pend}
-                            </Text>
-                          </View>
-                          <View style={styles.PriceTag}>
-                            <Text style={styles.StockListCodeText}>BIN.</Text>
-                            <Text style={styles.PriceValueText}>
-                              {item.BIN}
-                            </Text>
-                          </View>
-                          {cmpcode?.trim().toUpperCase() !== 'STARLINK' && (
-                            <View style={styles.PriceTag}>
-                              <Text style={styles.StockListCodeText}>
-                                Discount Price
-                              </Text>
-                              <Text style={styles.PriceValueText}>
-                                {formatPrice3Decimal(item.Discount_Price)}
-                              </Text>
-                            </View>
-                          )}
-                        </View>
-
-                        <View style={styles.TabCont}>
-                          <TouchableOpacity
-                            style={[
-                              styles.ActionButtons,
-                              selectedButton === 'Substitute' &&
-                                styles.SelectedButton,
-                            ]}
-                            onPress={() => handlePress('Substitute')}>
-                            <Text
-                              style={[
-                                styles.StockListCodeText,
-                                {color: 'black'},
-                              ]}>
-                              Substitute
-                            </Text>
-                          </TouchableOpacity>
-                          <TouchableOpacity
-                            style={[
-                              styles.ActionButtons,
-                              selectedButton === 'Model' &&
-                                styles.SelectedButton,
-                            ]}
-                            onPress={() => handlePress('Model')}>
-                            <Text
-                              style={[
-                                styles.StockListCodeText,
-                                {color: 'black'},
-                              ]}>
-                              Model Number
-                            </Text>
-                          </TouchableOpacity>
-                        </View>
-
-                        {selectedButton === 'Substitute' && (
-                          <View style={styles.TableContainer}>
-                            <View style={styles.tableRow}>
-                              <Text
-                                style={[
-                                  styles.headerCell,
-                                  {
-                                    borderTopLeftRadius: 4,
-                                    fontFamily: 'Lexend-Light',
-                                    width: '50%',
-                                  },
-                                ]}>
-                                Substitute List
-                              </Text>
-                              <Text
-                                style={[
-                                  styles.headerCell,
-                                  {
-                                    width: '20%',
-                                    fontFamily: 'Lexend-Light',
-                                  },
-                                ]}>
-                                Qty
-                              </Text>
-                              <Text
-                                style={[
-                                  styles.headerCell,
-                                  {
-                                    borderTopRightRadius: 4,
-                                    fontFamily: 'Lexend-Light',
-                                    width: '30%',
-                                  },
-                                ]}>
-                                Price
-                              </Text>
-                            </View>
-
-                            {subLoader && <ActivityIndicator />}
-
-                            <ScrollView
-                              style={[
-                                styles.ScrollView,
-                                {minHeight: 'auto', maxHeight: 200},
-                              ]}
-                              nestedScrollEnabled={true}>
-                              {substituteData &&
-                                substituteData.length > 0 &&
-                                substituteData.map((item, index) => (
-                                  <>
-                                    <View style={styles.tableRow} key={index}>
-                                      <Text
-                                        style={[
-                                          styles.dataCell,
-                                          {
-                                            fontFamily: 'Lexend-Light',
-                                            width: '50%',
-                                          },
-                                        ]}>
-                                        {item.Part_No}
-                                      </Text>
-                                      <Text
-                                        style={[
-                                          styles.dataCell,
-                                          {
-                                            fontFamily: 'Lexend-Light',
-                                            width: '20%',
-                                          },
-                                        ]}>
-                                        {item.Balance}
-                                      </Text>
-                                      <Text
-                                        style={[
-                                          styles.dataCell,
-                                          {
-                                            fontFamily: 'Lexend-Light',
-                                            width: '30%',
-                                          },
-                                        ]}>
-                                        {formatPrice3Decimal(
-                                          item['Sales price'],
-                                        )}
-                                      </Text>
-                                    </View>
-                                  </>
-                                ))}
-
-                              {substituteData &&
-                                substituteData.length === 0 && (
-                                  <View style={styles.tableRow} key={index}>
-                                    <Text
-                                      style={[
-                                        styles.dataCell,
-                                        {
-                                          fontFamily: 'Lexend-Light',
-                                          width: '100%',
-                                          color: 'red',
-                                        },
-                                      ]}>
-                                      No Data Available
-                                    </Text>
-                                  </View>
-                                )}
-                            </ScrollView>
-                          </View>
-                        )}
-
-                        {selectedButton === 'Model' && (
-                          <View style={styles.TableContainer}>
-                            <View style={styles.tableRow}>
-                              <Text
-                                style={[
-                                  styles.headerCell,
-                                  {
-                                    borderTopLeftRadius: 4,
-                                    fontFamily: 'Lexend-Light',
-                                    width: '100%',
-                                  },
-                                ]}>
-                                Model Number
-                              </Text>
-                            </View>
-
-                            {modalLoader && <ActivityIndicator />}
-
-                            <ScrollView
-                              style={[
-                                styles.ScrollView,
-                                {minHeight: 'auto', maxHeight: 200},
-                              ]}
-                              nestedScrollEnabled={true}>
-                              {modalNumberData &&
-                                modalNumberData.length > 0 &&
-                                modalNumberData.map((item, index) => (
-                                  <>
-                                    <View
-                                      style={[
-                                        styles.tableRow,
-                                        {justifyContent: 'center'},
-                                      ]}
-                                      key={index}>
-                                      <Text
-                                        style={[
-                                          styles.dataCell,
-                                          {
-                                            fontFamily: 'Lexend-Light',
-                                            width: '100%',
-                                            textAlign: 'middle',
-                                          },
-                                        ]}>
-                                        {item.Model_Number}
-                                      </Text>
-                                    </View>
-                                  </>
-                                ))}
-
-                              {modalNumberData &&
-                                modalNumberData.length === 0 && (
-                                  <View style={styles.tableRow} key={index}>
-                                    <Text
-                                      style={[
-                                        styles.dataCell,
-                                        {
-                                          fontFamily: 'Lexend-Light',
-                                          width: '100%',
-                                          color: 'red',
-                                        },
-                                      ]}>
-                                      No Data Available
-                                    </Text>
-                                  </View>
-                                )}
-                            </ScrollView>
-                          </View>
-                        )}
-                      </View>
-                    )}
-                  </View>
-                ))}
-            </ScrollView>
-          </>
+        {/* Section Header */}
+        {!loading && displayData && (
+          <Text style={styles.sectionLabel}>
+            {searchItem.trim()
+              ? `${displayData.length} result${
+                  displayData.length !== 1 ? 's' : ''
+                }`
+              : 'Top Items'}
+          </Text>
         )}
 
-        {!stockData && !selectedStock && !searchItem && top50Items && (
-          <>
-            {/* <View style={{ marginHorizontal: 12, marginVertical: 12, justifyContent: 'flex-start' }}>
-                            <Text style={styles.StockLabel}>Top 50 Items</Text>
-                        </View> */}
-
-            {/* <View View style={styles.TableContainer}>
-                            <View style={styles.tableRow}>
-                                <Text style={[styles.headerCell, {
-                                    borderTopLeftRadius: 4
-                                }]}>
-                                    Code
-                                </Text>
-                                <Text style={[styles.headerCell, {
-                                    borderTopRightRadius: 4
-                                }]}>Description</Text>
-                            </View>
-
-                            <ScrollView style={styles.ScrollView}>
-                                {
-                                    top50Items && top50Items.length > 0 && top50Items.map((item, index) => (
-                                        <TouchableOpacity style={styles.tableRow} key={index} onPress={() => setSelectedStock(item)}>
-                                            <Text style={styles.dataCell}>{item.Code}</Text>
-                                            <Text style={styles.dataCell}>{item.Description}</Text>
-                                        </TouchableOpacity>
-
-                                    ))
-                                }
-                            </ScrollView>
-
-                            {
-                                top50Items === null &&
-
-                                <ActivityIndicator />
-                            }
-
-                            {
-                                top50Items && top50Items.length === 0 &&
-                                <View>
-                                    <Text style={{
-                                        color: 'red',
-                                        fontFamily: 'Lexend-Bold',
-                                    }}>No data available</Text>
-                                </View>
-                            }
-
-                        </View> */}
-
-            <ScrollView
-              contentContainerStyle={[styles.CheckStockListView]}
-              keyboardShouldPersistTaps="always">
-              {top50Items &&
-                top50Items.length > 0 &&
-                top50Items.map((item, index) => (
-                  <View style={styles.StockListItem} key={index}>
-                    {/* <View style={styles.StockItemListHead}>
-                                            <Text style={styles.StockListCodeText}>{item.Code}</Text>
-                                            <TouchableOpacity style={styles.PlusMinusCont} onPress={() => toggleExpand(item.Code)}>
-                                                {
-                                                    expandedItems.includes(item.Code) ?
-                                                        <Image style={styles.PlusMinusImg} source={require('../images/chkMinus.png')} />
-                                                        :
-                                                        <Image style={styles.PlusMinusImg} source={require('../images/chkPlus.png')} />
-                                                }
-                                            </TouchableOpacity>
-                                        </View>
-
-                                        <TouchableOpacity style={styles.StockItemDescCont} onPress={() => setSelectedStock(item)}>
-                                            <Text style={styles.StockListDescText}>{item.Description}</Text>
-                                        </TouchableOpacity>
-
-                                        <View style={styles.QtyAvlQtyCont}>
-                                            <View style={[styles.QtyCont, { backgroundColor: '#ECF0F9', marginRight: 16 }]}>
-                                                <Text style={styles.QtyText}>Qty.</Text>
-                                                <Text style={styles.QtyText}>{item.Qty}</Text>
-                                            </View>
-                                            <View style={[styles.QtyCont, { backgroundColor: '#FDEDD6' }]}>
-                                                <Text style={styles.AvlText}>Avl. Qty.</Text>
-                                                <Text style={styles.AvlText}>{item.AvlQty}</Text>
-                                            </View>
-                                        </View> */}
-
-                    <View style={styles.CustomerListCont}>
-                      <View style={styles.CustomerImgWrap}>
-                        <Image
-                          style={styles.CustomerImage}
-                          source={require('../images/stockList.png')}
-                        />
-                      </View>
-
-                      <View style={styles.CustomerListMid}>
-                        <View
-                          style={{
-                            flexDirection: 'row',
-                            justifyContent: 'space-between',
-                            width: '100%',
-                          }}>
-                          <Text
-                            style={[styles.StockListDescText, {width: '75%'}]}>
-                            {item.Description}
-                          </Text>
-                          <Text
-                            style={[
-                              styles.StockListDescTextSmall,
-                              {color: '#30B3A4', fontFamily: 'Lexend-Regular'},
-                            ]}>
-                            {item.Qty}
-                          </Text>
-                        </View>
-                        <View
-                          style={{
-                            flexDirection: 'row',
-                            width: '100%',
-                            paddingVertical: 6,
-                          }}>
-                          <Text style={styles.StockListDescTextSmall}>
-                            {item.Code ? item.Code : item.code}
-                          </Text>
-                          <TouchableOpacity
-                            style={[styles.PlusMinusCont, {marginLeft: 'auto'}]}
-                            onPress={() =>
-                              toggleExpand(
-                                item.Code ? item.Code : item.code,
-                                item.OEM,
-                              )
-                            }>
-                            {expandedItems.includes(item.Code) ? (
-                              <Image
-                                style={styles.PlusMinusImg}
-                                source={require('../images/chkMinus.png')}
-                              />
-                            ) : (
-                              <Image
-                                style={styles.PlusMinusImg}
-                                source={require('../images/chkPlus.png')}
-                              />
-                            )}
-                          </TouchableOpacity>
-                        </View>
-                      </View>
-                    </View>
-
-                    {expandedItems.includes(
-                      item.Code ? item.Code : item.code,
-                    ) && (
-                      <View style={styles.DynamicPriceView}>
-                        <View
-                          style={{
-                            flexDirection: 'column',
-                            width: 'auto',
-                          }}>
-                          <View style={styles.PriceTag}>
-                            <Text style={styles.StockListCodeText}>
-                              Cash Price
-                            </Text>
-                            <Text style={styles.PriceValueText}>
-                              {formatPrice3Decimal(item.price)}
-                            </Text>
-                          </View>
-                          <View style={styles.PriceTag}>
-                            <Text style={styles.StockListCodeText}>
-                              Credit Price
-                            </Text>
-                            <Text style={styles.PriceValueText}>
-                              {formatPrice3Decimal(item['Credit Price'])}
-                            </Text>
-                          </View>
-                          {cmpcode?.trim().toUpperCase() === 'STARLINK' && (
-                            <View style={styles.PriceTag}>
-                              <Text style={styles.StockListCodeText}>Cost</Text>
-                              <Text style={styles.PriceValueText}>
-                                {formatPrice3Decimal(item.Cost)}
-                              </Text>
-                            </View>
-                          )}
-
-                          {cmpcode?.trim().toUpperCase() != 'SOCA' ? (
-                            <View style={styles.PriceTag}>
-                              <Text style={styles.StockListCodeText}>
-                                Block Price
-                              </Text>
-                              <Text style={styles.PriceValueText}>
-                                {formatPrice3Decimal(item['Block Price'])}
-                              </Text>
-                            </View>
-                          ) : (
-                            <View style={styles.PriceTag}>
-                              <Text style={styles.StockListCodeText}>
-                                Special Price
-                              </Text>
-                              <Text style={styles.PriceValueText}>
-                                {formatPrice3Decimal(item['Spcial Price'])}
-                              </Text>
-                            </View>
-                          )}
-
-                          <View style={styles.PriceTag}>
-                            <Text style={styles.StockListCodeText}>
-                              Order Pend.
-                            </Text>
-                            <Text style={styles.PriceValueText}>
-                              {item.Ord_pend}
-                            </Text>
-                          </View>
-                          <View style={styles.PriceTag}>
-                            <Text style={styles.StockListCodeText}>BIN.</Text>
-                            <Text style={styles.PriceValueText}>
-                              {item.BIN}
-                            </Text>
-                          </View>
-                          {cmpcode?.trim().toUpperCase() !== 'SOCA' &&
-                            cmpcode?.trim().toUpperCase() !== 'STARLINK' && (
-                              <View style={styles.PriceTag}>
-                                <Text style={styles.StockListCodeText}>
-                                  Discount Price
-                                </Text>
-                                <Text style={styles.PriceValueText}>
-                                  {formatPrice3Decimal(item.Discount_Price)}
-                                </Text>
-                              </View>
-                            )}
-                        </View>
-
-                        <View style={styles.TabCont}>
-                          <TouchableOpacity
-                            style={[
-                              styles.ActionButtons,
-                              selectedButton === 'Substitute' &&
-                                styles.SelectedButton,
-                            ]}
-                            onPress={() => handlePress('Substitute')}>
-                            <Text
-                              style={[
-                                styles.StockListCodeText,
-                                {color: 'black'},
-                              ]}>
-                              Substitute
-                            </Text>
-                          </TouchableOpacity>
-                          <TouchableOpacity
-                            style={[
-                              styles.ActionButtons,
-                              selectedButton === 'Model' &&
-                                styles.SelectedButton,
-                            ]}
-                            onPress={() => handlePress('Model')}>
-                            <Text
-                              style={[
-                                styles.StockListCodeText,
-                                {color: 'black'},
-                              ]}>
-                              Model Number
-                            </Text>
-                          </TouchableOpacity>
-                        </View>
-
-                        {selectedButton === 'Substitute' && (
-                          <View style={styles.TableContainer}>
-                            <View style={styles.tableRow}>
-                              <Text
-                                style={[
-                                  styles.headerCell,
-                                  {
-                                    borderTopLeftRadius: 4,
-                                    fontFamily: 'Lexend-Light',
-                                    width: '50%',
-                                  },
-                                ]}>
-                                Substitute List
-                              </Text>
-                              <Text
-                                style={[
-                                  styles.headerCell,
-                                  {
-                                    width: '20%',
-                                    fontFamily: 'Lexend-Light',
-                                  },
-                                ]}>
-                                Qty
-                              </Text>
-                              <Text
-                                style={[
-                                  styles.headerCell,
-                                  {
-                                    borderTopRightRadius: 4,
-                                    fontFamily: 'Lexend-Light',
-                                    width: '30%',
-                                  },
-                                ]}>
-                                Price
-                              </Text>
-                            </View>
-
-                            {subLoader && <ActivityIndicator />}
-
-                            <ScrollView
-                              style={[
-                                styles.ScrollView,
-                                {minHeight: 'auto', maxHeight: 200},
-                              ]}
-                              nestedScrollEnabled={true}>
-                              {substituteData &&
-                                substituteData.length > 0 &&
-                                substituteData.map((item, index) => (
-                                  <>
-                                    <View style={styles.tableRow} key={index}>
-                                      <Text
-                                        style={[
-                                          styles.dataCell,
-                                          {
-                                            fontFamily: 'Lexend-Light',
-                                            width: '50%',
-                                          },
-                                        ]}>
-                                        {item.Part_No}
-                                      </Text>
-                                      <Text
-                                        style={[
-                                          styles.dataCell,
-                                          {
-                                            fontFamily: 'Lexend-Light',
-                                            width: '20%',
-                                          },
-                                        ]}>
-                                        {item.Balance}
-                                      </Text>
-                                      <Text
-                                        style={[
-                                          styles.dataCell,
-                                          {
-                                            fontFamily: 'Lexend-Light',
-                                            width: '30%',
-                                          },
-                                        ]}>
-                                        {formatPrice3Decimal(
-                                          item['Sales price'],
-                                        )}
-                                      </Text>
-                                    </View>
-                                  </>
-                                ))}
-
-                              {substituteData &&
-                                substituteData.length === 0 && (
-                                  <View style={styles.tableRow} key={index}>
-                                    <Text
-                                      style={[
-                                        styles.dataCell,
-                                        {
-                                          fontFamily: 'Lexend-Light',
-                                          width: '100%',
-                                          color: 'red',
-                                        },
-                                      ]}>
-                                      No Data Available
-                                    </Text>
-                                  </View>
-                                )}
-                            </ScrollView>
-                          </View>
-                        )}
-
-                        {selectedButton === 'Model' && (
-                          <View style={styles.TableContainer}>
-                            <View style={styles.tableRow}>
-                              <Text
-                                style={[
-                                  styles.headerCell,
-                                  {
-                                    borderTopLeftRadius: 4,
-                                    fontFamily: 'Lexend-Light',
-                                    width: '100%',
-                                  },
-                                ]}>
-                                Model Number
-                              </Text>
-                            </View>
-
-                            {modalLoader && <ActivityIndicator />}
-
-                            <ScrollView
-                              style={[
-                                styles.ScrollView,
-                                {minHeight: 'auto', maxHeight: 200},
-                              ]}
-                              nestedScrollEnabled={true}>
-                              {modalNumberData &&
-                                modalNumberData.length > 0 &&
-                                modalNumberData.map((item, index) => (
-                                  <>
-                                    <View
-                                      style={[
-                                        styles.tableRow,
-                                        {justifyContent: 'center'},
-                                      ]}
-                                      key={index}>
-                                      <Text
-                                        style={[
-                                          styles.dataCell,
-                                          {
-                                            fontFamily: 'Lexend-Light',
-                                            width: '100%',
-                                            textAlign: 'middle',
-                                          },
-                                        ]}>
-                                        {item.Model_Number}
-                                      </Text>
-                                    </View>
-                                  </>
-                                ))}
-
-                              {modalNumberData &&
-                                modalNumberData.length === 0 && (
-                                  <View style={styles.tableRow} key={index}>
-                                    <Text
-                                      style={[
-                                        styles.dataCell,
-                                        {
-                                          fontFamily: 'Lexend-Light',
-                                          width: '100%',
-                                          color: 'red',
-                                        },
-                                      ]}>
-                                      No Data Available
-                                    </Text>
-                                  </View>
-                                )}
-                            </ScrollView>
-                          </View>
-                        )}
-                      </View>
-                    )}
-                  </View>
-                ))}
-            </ScrollView>
-          </>
+        {/* Empty State */}
+        {!loading && displayData && displayData.length === 0 && (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyIcon}>📦</Text>
+            <Text style={styles.emptyText}>No items found</Text>
+          </View>
         )}
 
-        {selectedStock && (
-          <>
-            <ScrollView contentContainerStyle={styles.MainScroll}>
-              <View style={styles.StockDescWrap}>
-                <View style={styles.StockItem}>
-                  <Text style={styles.StockLabel}>Code</Text>
-                  <Text style={styles.StockTextValue}>
-                    {selectedStock.Code}
-                  </Text>
-                </View>
-                <View style={styles.StockItem}>
-                  <Text style={styles.StockLabel}>Description</Text>
-                  <Text style={styles.StockTextValue}>
-                    {selectedStock.Description}
-                  </Text>
-                </View>
-                <View style={styles.StockItem}>
-                  <Text style={styles.StockLabel}>Price</Text>
-                  <Text style={styles.StockTextValue}>
-                    {selectedStock.price}
-                  </Text>
-                </View>
-                {/* <View style={styles.StockItem}>
-                                    <Text style={styles.StockLabel}>Credit Price</Text>
-                                    <Text style={styles.StockTextValue}>{selectedStock['Credit Price']}</Text>
-                                </View> */}
-                <View style={styles.StockItem}>
-                  <Text style={styles.StockLabel}>Quantity</Text>
-                  <Text style={styles.StockTextValue}>{selectedStock.Qty}</Text>
-                </View>
-                {/* <View style={styles.StockItem}>
-                                    <Text style={styles.StockLabel}>Order Pending</Text>
-                                    <Text style={styles.StockTextValue}>{selectedStock.Ord_pend}</Text>
-                                </View> */}
-                <View style={styles.StockItem}>
-                  <Text style={styles.StockLabel}>Avl. Qty.</Text>
-                  <Text style={styles.StockTextValue}>
-                    {selectedStock.AvlQty}
-                  </Text>
-                </View>
-                <View style={styles.StockItem}>
-                  <Text style={styles.StockLabel}>Vehicle</Text>
-                  <Text style={styles.StockTextValue}>
-                    {selectedStock.Vehicle}
-                  </Text>
-                </View>
-                <View style={styles.StockItem}>
-                  <Text style={styles.StockLabel}>Brand</Text>
-                  <Text style={styles.StockTextValue}>
-                    {selectedStock.Brand}
-                  </Text>
-                </View>
-                <View style={styles.StockItem}>
-                  <Text style={styles.StockLabel}>Category</Text>
-                  <Text style={styles.StockTextValue}>
-                    {selectedStock.Category}
-                  </Text>
-                </View>
-                <View style={styles.StockItem}>
-                  <Text style={styles.StockLabel}>Sub Category</Text>
-                  <Text style={styles.StockTextValue}>
-                    {selectedStock['Sub Category']}
-                  </Text>
-                </View>
-              </View>
+        {/* List */}
+        {displayData && displayData.length > 0 && (
+          <FlatList
+            data={displayData}
+            keyExtractor={(item, i) => (item.Code || item.code || i).toString()}
+            renderItem={({item}) => renderItem(item)}
+            contentContainerStyle={styles.list}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          />
+        )}
 
-              <View style={styles.TabWrap}>
-                <TouchableOpacity
-                  style={[
-                    styles.tab,
-                    selectedTab === 'MODAL' && styles.selectedTab,
-                  ]}
-                  onPress={() => setSelectedTab('MODAL')}>
-                  <Text style={styles.tabText}>Model Number</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[
-                    styles.tab,
-                    selectedTab === 'SUBSTITUTE' && styles.selectedTab,
-                  ]}
-                  onPress={() => setSelectedTab('SUBSTITUTE')}>
-                  <Text style={styles.tabText}>Substitute</Text>
-                </TouchableOpacity>
-              </View>
-
-              <View style={styles.content}>
-                {selectedTab === 'MODAL' ? (
-                  <>
-                    {modalLoader && (
-                      <View>
-                        <ActivityIndicator />
-                      </View>
-                    )}
-
-                    {modalNumberData &&
-                      modalNumberData.length === 0 &&
-                      !modalLoader && (
-                        <View>
-                          <Text
-                            style={{
-                              color: 'red',
-                              fontFamily: 'Lexend-Regular',
-                              fontSize: 16,
-                            }}>
-                            No data available
-                          </Text>
-                        </View>
-                      )}
-
-                    <View style={styles.ModalCont}>
-                      <ScrollView
-                        nestedScrollEnabled={true}
-                        style={{
-                          width: '100%',
-                          maxHeight: 300,
-                          marginBottom: 24,
-                        }}>
-                        {modalNumberData &&
-                          modalNumberData.length > 0 &&
-                          modalNumberData.map((item, index) => (
-                            <View style={styles.ModaltableRow} key={index}>
-                              <Text style={styles.ModalDatacell}>
-                                {item.Model_Number}
-                              </Text>
-                              {/* <Text style={styles.dataCell}>{item.Description}</Text> */}
-                            </View>
-                          ))}
-                      </ScrollView>
-                    </View>
-                  </>
-                ) : (
-                  <View
-                    style={{
-                      marginTop: 8,
-                      maxHeight: 400,
-                      marginBottom: 16,
-                      shadowColor: '#000',
-                      shadowOffset: {width: 0, height: 2},
-                      shadowOpacity: 0.25,
-                      shadowRadius: 3,
-                      elevation: 5,
-                      flex: 1,
-                    }}>
-                    <>
-                      {substituteData && substituteData.length > 0 && (
-                        <ScrollView horizontal={true}>
-                          <View style={styles.SubTableContainer}>
-                            <View style={styles.SubtableRow}>
-                              <Text
-                                style={[
-                                  styles.SubheaderCell,
-                                  {borderTopLeftRadius: 4},
-                                ]}>
-                                PartNo
-                              </Text>
-                              <Text style={styles.SubheaderCell}>Brand</Text>
-                              <Text style={styles.SubheaderCell}>Vehicle</Text>
-                              <Text style={styles.SubheaderCell}>
-                                Description
-                              </Text>
-                              <Text style={styles.SubheaderCell}>Balance</Text>
-                              <Text
-                                style={[
-                                  styles.SubheaderCell,
-                                  {borderTopRightRadius: 4},
-                                ]}>
-                                Sales Price
-                              </Text>
-                            </View>
-
-                            <ScrollView nestedScrollEnabled={true}>
-                              {/* <View style={styles.SubtableRow}>
-                                                                <Text style={[styles.SubheaderCell, { borderTopLeftRadius: 4 }]}>PartNo</Text>
-                                                                <Text style={styles.SubheaderCell}>Brand</Text>
-                                                                <Text style={styles.SubheaderCell}>Vehicle</Text>
-                                                                <Text style={styles.SubheaderCell}>Description</Text>
-                                                                <Text style={styles.SubheaderCell}>Balance</Text>
-                                                                <Text style={[styles.SubheaderCell, { borderTopRightRadius: 4 }]}>Sales Price</Text>
-                                                            </View> */}
-                              <FlatList
-                                data={substituteData}
-                                keyExtractor={(item, index) => index.toString()}
-                                contentContainerStyle={{paddingBottom: 50}}
-                                renderItem={({item}) => (
-                                  <>
-                                    <View style={styles.SubtableRow}>
-                                      <Text style={styles.SubdataCell}>
-                                        {item.Part_No}
-                                      </Text>
-                                      <Text style={styles.SubdataCell}>
-                                        {item.Brand}
-                                      </Text>
-                                      <Text style={styles.SubdataCell}>
-                                        {item.Vehicle}
-                                      </Text>
-                                      <Text style={styles.SubdataCell}>
-                                        {item.Description}
-                                      </Text>
-                                      <Text style={styles.SubdataCell}>
-                                        {item.Balance}
-                                      </Text>
-                                      <Text style={styles.SubdataCell}>
-                                        {item['Sales price']}
-                                      </Text>
-                                    </View>
-                                    {/* <View style={styles.SubtableRow}>
-                                                                            <Text style={styles.SubdataCell}>{item.Part_No}</Text>
-                                                                            <Text style={styles.SubdataCell}>{item.Brand}</Text>
-                                                                            <Text style={styles.SubdataCell}>{item.Vehicle}</Text>
-                                                                            <Text style={styles.SubdataCell}>{item.Description}</Text>
-                                                                            <Text style={styles.SubdataCell}>{item.Balance}</Text>
-                                                                            <Text style={styles.SubdataCell}>{item['Sales price']}</Text>
-                                                                        </View>
-                                                                        <View style={styles.SubtableRow}>
-                                                                            <Text style={styles.SubdataCell}>{item.Part_No}</Text>
-                                                                            <Text style={styles.SubdataCell}>{item.Brand}</Text>
-                                                                            <Text style={styles.SubdataCell}>{item.Vehicle}</Text>
-                                                                            <Text style={styles.SubdataCell}>{item.Description}</Text>
-                                                                            <Text style={styles.SubdataCell}>{item.Balance}</Text>
-                                                                            <Text style={styles.SubdataCell}>{item['Sales price']}</Text>
-                                                                        </View>
-                                                                        <View style={styles.SubtableRow}>
-                                                                            <Text style={styles.SubdataCell}>{item.Part_No}</Text>
-                                                                            <Text style={styles.SubdataCell}>{item.Brand}</Text>
-                                                                            <Text style={styles.SubdataCell}>{item.Vehicle}</Text>
-                                                                            <Text style={styles.SubdataCell}>{item.Description}</Text>
-                                                                            <Text style={styles.SubdataCell}>{item.Balance}</Text>
-                                                                            <Text style={styles.SubdataCell}>{item['Sales price']}</Text>
-                                                                        </View> */}
-                                  </>
-                                )}
-                                ListEmptyComponent={
-                                  <View>
-                                    <Text style={{color: 'red'}}>
-                                      No data available
-                                    </Text>
-                                  </View>
-                                }
-                              />
-                            </ScrollView>
-                          </View>
-                        </ScrollView>
-                      )}
-
-                      {substituteData &&
-                        substituteData.length === 0 &&
-                        !subLoader && (
-                          <View>
-                            <Text
-                              style={{
-                                color: 'red',
-                                fontFamily: 'Lexend-Regular',
-                                fontSize: 16,
-                              }}>
-                              No data available
-                            </Text>
-                          </View>
-                        )}
-
-                      {subLoader && (
-                        <View>
-                          <ActivityIndicator />
-                        </View>
-                      )}
-                    </>
-                  </View>
-                )}
-              </View>
-            </ScrollView>
-          </>
+        {/* Initial loading (top50 not yet loaded) */}
+        {loading && !displayData && (
+          <View style={styles.fullLoader}>
+            <ActivityIndicator size="large" color="#3A80EA" />
+            <Text style={styles.loaderText}>Loading items…</Text>
+          </View>
         )}
       </KeyboardAvoidingView>
     </View>
   );
 };
 
+// ─── Styles ───────────────────────────────────────────────────────────────────
+
+const {height} = Dimensions.get('window');
+
 const styles = StyleSheet.create({
-  HomeWrap: {
-    flexDirection: 'column',
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#EFEFEF',
+  root: {
+    flex: 1,
+    backgroundColor: '#F2F4F8',
   },
-  HomeCont: {
-    width: '98%',
-    flexDirection: 'column',
-    alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 12,
-    // borderTopLeftRadius: 18,
-    // borderTopRightRadius: 18,
-    backgroundColor: '#EFEFEF',
-    height: Dimensions.get('window').height - 70,
-  },
-  HomeTextCont: {
-    width: '100%',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#1A6CF6',
-    paddingVertical: 16,
+  body: {
+    flex: 1,
     paddingHorizontal: 12,
-  },
-  HomeText: {
-    fontSize: 18,
-    color: 'white',
-    // borderBottomColor: 'gold',
-    // borderBottomWidth: 2,
-    marginTop: 6,
-    marginLeft: 12,
-    paddingBottom: 8,
-    fontFamily: 'Lexend-Bold',
-  },
-  InputCont: {
-    width: '95%',
-    backgroundColor: '#c7e2de',
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-    marginTop: 16,
-    borderWidth: 1,
-    borderColor: '#D9D9D9',
-    borderRadius: 6,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  InputImageCont: {
-    // backgroundColor: '#EAEDF5',
-    padding: 8,
-    borderRadius: 6,
-    // position: 'absolute',
-    // right: 10
-  },
-  SearchIcon: {
-    width: 25,
-    height: 25,
-  },
-  TextInput: {
-    width: '100%',
-    fontFamily: 'Lexend-Bold',
+    paddingTop: 12,
   },
 
-  TableContainer: {
-    width: '100%',
-    // padding: 10,
-    marginTop: 8,
-    alignItems: 'center',
-  },
-  tableRow: {
+  // Search
+  searchBar: {
     flexDirection: 'row',
-    width: '100%',
-    // justifyContent: 'space-between',
-    // marginBottom: 5,
-    // paddingVertical: 5,
-  },
-  headerCell: {
-    // flex: 1,
-    // backgroundColor: '#5A55CA',
-    backgroundColor: 'white',
-    padding: 10,
-    textAlign: 'center',
-    fontWeight: 'bold',
-    flexWrap: 'nowrap',
-    width: '50%',
-    color: '#3A80EA',
-    fontFamily: 'Lexend-Bold',
-  },
-  dataCell: {
-    // flex: 1,
-    // backgroundColor: '#F3F3F3',
-    backgroundColor: 'white',
-    padding: 10,
-    textAlign: 'center',
-    width: '50%',
-    borderTopWidth: 1,
-    borderLeftWidth: 1,
-    borderColor: '#dbdbdb',
-    color: '#3A80EA',
-    fontFamily: 'Lexend-Regular',
-  },
-  ScrollView: {
-    height: Dimensions.get('window').height - 300,
-    marginBottom: 8,
-  },
-  SelectedStockWrap: {
-    flexDirection: 'column',
     alignItems: 'center',
-    width: '100%',
-    marginTop: 8,
-  },
-  NameDescCont: {
-    flexDirection: 'row',
-    width: '95%',
-    paddingHorizontal: 8,
-    paddingVertical: 12,
-    alignItems: 'center',
-    flexWrap: 'wrap',
-  },
-  TextNameDesc: {
-    fontSize: 14,
-    fontFamily: 'Lexend-Regular',
-    color: 'black',
-  },
-  TextNameDescValue: {
-    fontSize: 15,
-    fontFamily: 'Lexend-Bold',
-    color: 'black',
-    marginLeft: 12,
-    backgroundColor: 'white',
-    paddingVertical: 8,
-    paddingHorizontal: 6,
-  },
-  StockValueWrap: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    width: '95%',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  PriceCard: {
-    backgroundColor: 'white',
-    paddingVertical: 12,
-    paddingHorizontal: 8,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    width: '48%',
-    borderWidth: 1,
-    borderColor: '#dbdbdb',
-    borderRadius: 4,
-    marginVertical: 8,
-  },
-  PriceText: {
-    color: '#189A2E',
-    fontSize: 14,
-    fontFamily: 'Lexend-Regular',
-  },
-  PriceValue: {
-    backgroundColor: '#189A2E',
-    color: 'white',
-    paddingVertical: 6,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
     paddingHorizontal: 12,
-    borderRadius: 4,
-    fontFamily: 'Lexend-Bold',
-    fontSize: 12,
-  },
-  HeadIcon: {
-    width: 25,
-    height: 25,
-  },
-
-  HeadSettIcon: {
-    width: 30,
-    height: 30,
-  },
-
-  PlaceHolderInput: {
-    width: '100%',
-    fontFamily: 'Lexend-Light',
-    color: '#2b2b2b',
-  },
-  TableHeadSpan: {
-    backgroundColor: '#D9D9D9',
-    padding: 12,
-  },
-
-  StockDescWrap: {
-    flexDirection: 'column',
-    width: '100%',
-    marginTop: 8,
-    backgroundColor: 'white',
-    padding: 18,
-  },
-  StockItem: {
-    padding: 4,
-    marginBottom: 2,
-  },
-  StockLabel: {
-    fontFamily: 'Lexend-Regular',
-    color: '#2B2B2B',
-    fontSize: 16,
-  },
-  StockTextValue: {
-    fontFamily: 'Lexend-Bold',
-    color: 'black',
-    fontSize: 16,
-  },
-
-  TabWrap: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    borderBottomWidth: 1,
-    borderBottomColor: '#ccc',
-    width: '94%',
-    backgroundColor: 'white',
-    marginTop: 12,
-  },
-  tab: {
     paddingVertical: 10,
-    paddingHorizontal: 20,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.07,
+    shadowRadius: 6,
+    elevation: 3,
+    marginBottom: 12,
   },
-  selectedTab: {
-    borderBottomWidth: 2,
-    borderBottomColor: 'blue', // Change this color as per your design
-  },
-  tabText: {
-    fontFamily: 'Lexend-Regular',
-    color: '#3A80EA',
+  searchIcon: {
     fontSize: 16,
+    marginRight: 8,
   },
-  content: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    width: '100%',
-  },
-
-  ModalCont: {
-    width: '94%',
-    flexDirection: 'column',
-  },
-  ModaltableRow: {
-    flexDirection: 'row',
-    width: '100%',
-    // justifyContent: 'space-between',
-    // marginBottom: 5,
-    // paddingVertical: 5,
-  },
-
-  ModalDatacell: {
-    backgroundColor: 'white',
-    padding: 10,
-    textAlign: 'center',
-    width: '100%',
-    borderTopWidth: 1,
-    borderLeftWidth: 1,
-    borderColor: '#dbdbdb',
-    color: '#3A80EA',
+  searchInput: {
+    flex: 1,
+    fontSize: 15,
     fontFamily: 'Lexend-Regular',
+    color: '#1A1A2E',
   },
 
-  MainScroll: {
-    width: '100%',
-    flexDirection: 'column',
-    justifyContent: 'center',
-    alignItems: 'center',
+  // Section
+  sectionLabel: {
+    fontFamily: 'Lexend-Light',
+    fontSize: 13,
+    color: '#7A8499',
+    marginBottom: 6,
+    marginLeft: 4,
   },
 
-  SubTableContainer: {
-    width: '100%',
-    // padding: 10,
-    marginTop: 8,
-    alignItems: 'center',
-    // paddingBottom: 50,
-    // height: 500,
+  // List
+  list: {
+    paddingBottom: 24,
+  },
+
+  // Card
+  card: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 10,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 1},
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 6,
+  },
+  cardHeaderLeft: {
     flex: 1,
   },
-  SubtableRow: {
+  cardHeaderRight: {
     flexDirection: 'row',
-    width: '100%',
-    // justifyContent: 'space-between',
-    // marginBottom: 5,
-    // paddingVertical: 5,
+    alignItems: 'center',
+    gap: 8,
   },
-  SubheaderCell: {
-    // flex: 1,
-    backgroundColor: '#5A55CA',
-    padding: 10,
-    textAlign: 'center',
-    fontWeight: 'bold',
-    flexWrap: 'nowrap',
-    width: '16.5%',
-    color: 'white',
+  cardCode: {
     fontFamily: 'Lexend-Bold',
-    borderTopWidth: 1,
-    borderLeftWidth: 1,
-    borderRightWidth: 1,
-    borderColor: '#dbdbdb',
-    width: 150,
-  },
-  SubdataCell: {
-    // flex: 1,
-    // backgroundColor: '#F3F3F3',
-    backgroundColor: 'white',
-    padding: 10,
-    textAlign: 'center',
-    width: '16.5%',
-    borderTopWidth: 1,
-    borderLeftWidth: 1,
-    borderRightWidth: 1,
-    borderColor: '#dbdbdb',
-    color: 'black',
-    fontFamily: 'Lexend-Regular',
-    width: 150,
-  },
-
-  CheckStockListView: {
-    // backgroundColor: '#FDFDFD',
-    width: '100%',
-    display: 'flex',
-    flexDirection: 'column',
-    padding: 8,
-  },
-
-  StockListItem: {
-    display: 'flex',
-    flexDirection: 'column',
-    marginBottom: 8,
-    backgroundColor: '#FDFDFD',
-    paddingVertical: 12,
-    paddingHorizontal: 8,
-    borderRadius: 14,
-    width: '100%',
-  },
-
-  StockItemListHead: {
-    width: '100%',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  StockListCodeText: {
-    fontFamily: 'Lexend-Light',
-    color: '#2B2B2B',
-  },
-  PlusMinusImg: {
-    width: 18,
-    height: 18,
-  },
-  PlusMinusCont: {
-    padding: 4,
-    backgroundColor: '#EFEFEF',
-  },
-
-  StockItemDescCont: {
-    paddingVertical: 8,
-  },
-  StockListDescText: {
-    fontSize: 16,
-    fontFamily: 'Lexend-Regular',
-    color: '#4B5290',
-  },
-  QtyAvlQtyCont: {
-    flexDirection: 'row',
-    justifyContent: 'flex-start',
-    paddingVertical: 8,
-  },
-  QtyCont: {
-    padding: 6,
-    flexDirection: 'row',
-  },
-  QtyText: {
-    fontFamily: 'Lexend-Light',
-    color: '#4B5290',
-  },
-  AvlText: {
-    fontFamily: 'Lexend-Light',
-    color: '#8f6924',
-  },
-  DynamicPriceView: {
-    flexDirection: 'column',
-    // justifyContent: 'space-between'
-  },
-  PriceTag: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  PriceValueText: {
-    fontFamily: 'Lexend-Regular',
-    color: '#2B2B2B',
-    marginLeft: 12,
-  },
-
-  CustomerListCont: {
-    flexDirection: 'row',
-    width: '100%',
-    // justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  CustomerImage: {
-    width: 30,
-    height: 30,
-  },
-  CustomerImgWrap: {
-    backgroundColor: 'grey',
-    borderRadius: 50,
-    padding: 8,
-    // width: 'auto'
-  },
-
-  CustomerListMid: {
-    flexDirection: 'column',
-    alignItems: 'flex-start',
-    width: '80%',
-    marginLeft: 12,
-  },
-  StockListDescText: {
-    fontSize: 14,
-    fontFamily: 'Lexend-Regular',
-    color: '#2b2b2b',
-  },
-  StockListDescTextSmall: {
-    fontSize: 14,
-    fontFamily: 'Lexend-Light',
-    color: '#2b2b2b',
-  },
-  CustomerListRight: {
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 12,
-  },
-
-  TableContainer: {
-    width: '100%',
-    // padding: 10,
-    // marginTop: 8,
-    alignItems: 'center',
-  },
-  tableRow: {
-    flexDirection: 'row',
-    width: '100%',
-    // justifyContent: 'space-between',
-    // marginBottom: 5,
-    // paddingVertical: 5,
-  },
-  headerCell: {
-    // flex: 1,
-    backgroundColor: '#D0D0D0',
-    padding: 10,
-    textAlign: 'center',
-    fontWeight: 'bold',
-    flexWrap: 'nowrap',
-    // width: '33%',
-    color: '#2b2b2b',
-    fontFamily: 'Lexend-Bold',
-    // borderTopWidth: 1,
-    // borderLeftWidth: 1,
-    // borderRightWidth: 1,
-    // borderColor: '#dbdbdb',
-  },
-  dataCell: {
-    // flex: 1,
-    // backgroundColor: '#F3F3F3',
-    backgroundColor: 'white',
-    padding: 10,
-    textAlign: 'center',
-    // width: '33%',
-    // borderTopWidth: 1,
-    // borderLeftWidth: 1,
-    // borderRightWidth: 1,
-    // borderColor: '#dbdbdb',
-    color: 'black',
-    fontFamily: 'Lexend-Regular',
-  },
-  ScrollView: {
-    // height: Dimensions.get('window').height - 300,
-    marginBottom: 8,
-  },
-
-  NewInputStyle: {
-    width: '100%',
-    fontFamily: 'Lexend-Light',
-    color: '#2B2B2B',
-    height: 35,
-  },
-
-  TermsCondtitonInpWrap: {
-    width: '100%',
-    flexDirection: 'column',
-    alignItems: 'flex-start',
-    marginTop: 4,
-  },
-
-  TANDCInpItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    width: '100%',
-    marginVertical: 6,
-  },
-
-  TANDCInpCont: {
-    width: '75%',
-    backgroundColor: '#F0F4FD',
-    borderWidth: 1,
-    borderColor: '#dbdbdb',
-    borderRadius: 6,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    // justifyContent: 'space-between',
-    alignItems: 'center',
-    marginLeft: 12,
-
-    shadowColor: '#000', // Shadow color for iOS
-    shadowOffset: {width: 0, height: 2}, // Shadow offset for iOS
-    shadowOpacity: 0.25, // Shadow opacity for iOS
-    shadowRadius: 3.84, // Shadow radius for iOS
-    elevation: 1.5, // Elevation for Android
-
-    borderColor: 'grey',
-    borderWidth: 0.5,
-  },
-
-  TabCont: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    width: '100%',
-    marginVertical: 6,
-  },
-  SubstitueTab: {},
-  ModelTab: {},
-
-  ActionButtons: {
-    width: '48%',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 10,
-    paddingHorizontal: 6,
-    backgroundColor: 'white',
-    marginHorizontal: 4,
-    borderRadius: 4,
-    backgroundColor: '#EFEFEF',
-  },
-  SelectedButton: {
-    borderBottomColor: 'green',
-    borderBottomWidth: 4,
-  },
-  ButtonText: {
     fontSize: 13,
-    color: '#2B2B2B',
-    color: 'black',
+    color: '#3A80EA',
+  },
+  cardUnit: {
+    fontFamily: 'Lexend-Light',
+    fontSize: 12,
+    color: '#9AA3B0',
+    marginTop: 2,
+  },
+  cardDesc: {
+    fontFamily: 'Lexend-Regular',
+    fontSize: 14,
+    color: '#1A1A2E',
+    lineHeight: 20,
+  },
+  qtyBadge: {
+    backgroundColor: '#EBF8F6',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    alignItems: 'center',
+  },
+  qtyBadgeLabel: {
+    fontFamily: 'Lexend-Light',
+    fontSize: 10,
+    color: '#30B3A4',
+  },
+  qtyBadgeValue: {
     fontFamily: 'Lexend-Bold',
+    fontSize: 13,
+    color: '#30B3A4',
+  },
+  expandBtn: {
+    backgroundColor: '#F2F4F8',
+    borderRadius: 8,
+    width: 32,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  expandBtnText: {
+    fontSize: 12,
+    color: '#7A8499',
+  },
+
+  // Expanded Section
+  expandedSection: {
+    marginTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#F0F0F0',
+    paddingTop: 12,
+  },
+
+  // Price Grid
+  priceGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 14,
+  },
+  priceCard: {
+    backgroundColor: '#F7F9FF',
+    borderRadius: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    width: '47%',
+    borderWidth: 1,
+    borderColor: '#E8EDFB',
+  },
+  priceCardLabel: {
+    fontFamily: 'Lexend-Light',
+    fontSize: 11,
+    color: '#7A8499',
+    marginBottom: 2,
+  },
+  priceCardValue: {
+    fontFamily: 'Lexend-Bold',
+    fontSize: 14,
+    color: '#1A1A2E',
+  },
+
+  // Cart Button
+  cartBtn: {
+    backgroundColor: '#3A80EA',
+    borderRadius: 10,
+    paddingVertical: 12,
+    alignItems: 'center',
+    marginBottom: 14,
+    shadowColor: '#3A80EA',
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  cartBtnText: {
+    fontFamily: 'Lexend-Bold',
+    fontSize: 15,
+    color: '#FFFFFF',
+    letterSpacing: 0.3,
+  },
+
+  // Tabs
+  tabRow: {
+    flexDirection: 'row',
+    backgroundColor: '#F2F4F8',
+    borderRadius: 10,
+    padding: 3,
+    marginBottom: 10,
+  },
+  tabBtn: {
+    flex: 1,
+    paddingVertical: 8,
+    alignItems: 'center',
+    borderRadius: 8,
+  },
+  tabBtnActive: {
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 1},
+    shadowOpacity: 0.08,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  tabBtnText: {
+    fontFamily: 'Lexend-Regular',
+    fontSize: 13,
+    color: '#7A8499',
+  },
+  tabBtnTextActive: {
+    fontFamily: 'Lexend-Bold',
+    color: '#3A80EA',
+  },
+
+  // Table
+  tableWrap: {
+    borderRadius: 10,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#E8EDFB',
+    marginBottom: 4,
+  },
+  tableHeaderRow: {
+    flexDirection: 'row',
+    backgroundColor: '#3A80EA',
+    paddingVertical: 8,
+    paddingHorizontal: 6,
+  },
+  tableHeaderCell: {
+    fontFamily: 'Lexend-Bold',
+    fontSize: 12,
+    color: '#FFFFFF',
+    textAlign: 'center',
+  },
+  tableDataRow: {
+    flexDirection: 'row',
+    paddingVertical: 8,
+    paddingHorizontal: 6,
+    backgroundColor: '#FFFFFF',
+  },
+  tableRowEven: {
+    backgroundColor: '#F7F9FF',
+  },
+  tableDataCell: {
+    fontFamily: 'Lexend-Regular',
+    fontSize: 12,
+    color: '#1A1A2E',
+    textAlign: 'center',
+  },
+
+  // States
+  noData: {
+    fontFamily: 'Lexend-Light',
+    fontSize: 13,
+    color: '#E05C5C',
+    textAlign: 'center',
+    paddingVertical: 12,
+  },
+  emptyState: {
+    alignItems: 'center',
+    paddingTop: 60,
+  },
+  emptyIcon: {
+    fontSize: 40,
+    marginBottom: 12,
+  },
+  emptyText: {
+    fontFamily: 'Lexend-Regular',
+    fontSize: 16,
+    color: '#9AA3B0',
+  },
+  fullLoader: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loaderText: {
+    fontFamily: 'Lexend-Light',
+    fontSize: 14,
+    color: '#9AA3B0',
+    marginTop: 10,
   },
 });
 

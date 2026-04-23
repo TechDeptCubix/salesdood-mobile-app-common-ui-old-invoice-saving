@@ -213,10 +213,6 @@ const Login = () => {
     );
   }
 
-  const showLoginSuccessToast = () => {
-    Toast.success(`welcome, ${userId}`);
-  };
-
   const showLoginFailedToast = () => {
     Toast.error('Some Error occured, Please try again later+++');
   };
@@ -224,8 +220,6 @@ const Login = () => {
   const showFormEmptyToast = () => {
     Toast.error('UserId and Password cant be empty');
   };
-
-  const [userDataExists, setUserDataExists] = useState(false);
 
   useFocusEffect(
     React.useCallback(() => {
