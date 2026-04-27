@@ -18,126 +18,192 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import formatPrice3Decimal from '../utils';
 
-const StockItem = ({
-  item,
-  isExpanded,
-  onToggleExpand,
-  onAddToCart,
-  selectedButton,
-  onSelectButton,
-  substituteData,
-  modalNumberData,
-  subLoader,
-  modalLoader,
-  cmpcode,
-}) => {
-  const code = item.Code || item.code;
+const StockItem = React.memo(
+  ({
+    item,
+    isExpanded,
+    onToggleExpand,
+    onAddToCart,
+    selectedButton,
+    onSelectButton,
+    substituteData,
+    modalNumberData,
+    subLoader,
+    modalLoader,
+    cmpcode,
+  }) => {
+    const code = item.Code || item.code;
 
-  return (
-    <View style={styles.card}>
-      {/* ── Header Row ── */}
-      <View style={styles.cardHeader}>
-        <View style={styles.cardHeaderLeft}>
-          <Text style={styles.cardCode}>{code}</Text>
-          <Text style={styles.cardUnit}>Unit: {item.unit || '—'}</Text>
-        </View>
-        <View style={styles.cardHeaderRight}>
-          <View style={styles.qtyBadge}>
-            <Text style={styles.qtyBadgeLabel}>Qty</Text>
-            <Text style={styles.qtyBadgeValue}>{item.Qty ?? '—'}</Text>
+    const stockVal = Number(item.Stock) || 0;
+    let stockColor = '#F59E0B'; // zero (orange)
+    let stockBg = '#FEF3C7';
+    if (stockVal > 0) {
+      stockColor = '#30B3A4'; // greater than zero (green)
+      stockBg = '#EBF8F6';
+    } else if (stockVal < 0) {
+      stockColor = '#EF4444'; // less than zero (red)
+      stockBg = '#FEE2E2';
+    }
+
+    return (
+      <View style={styles.card}>
+        {/* ── Header Row ── */}
+        <View style={styles.cardHeader}>
+          <View style={styles.cardHeaderLeft}>
+            <Text style={styles.cardCode}>{code}</Text>
+            <Text style={styles.cardUnit}>Unit: {item.unit || '—'}</Text>
           </View>
-          <TouchableOpacity
-            style={styles.expandBtn}
-            onPress={() => onToggleExpand(code, item.OEM)}
-            activeOpacity={0.7}>
-            <Text style={styles.expandBtnText}>{isExpanded ? '▲' : '▼'}</Text>
-          </TouchableOpacity>
+          <View style={styles.cardHeaderRight}>
+            <View style={[styles.qtyBadge, {backgroundColor: stockBg}]}>
+              <Text style={[styles.qtyBadgeLabel, {color: stockColor}]}>
+                Qty
+              </Text>
+              <Text style={[styles.qtyBadgeValue, {color: stockColor}]}>
+                {item.Stock ?? '—'}
+              </Text>
+            </View>
+            <TouchableOpacity
+              style={styles.expandBtn}
+              onPress={() => onToggleExpand(code, item.OEM)}
+              activeOpacity={0.7}>
+              <Text style={styles.expandBtnText}>{isExpanded ? '▲' : '▼'}</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
 
-      {/* ── Description ── */}
-      <Text style={styles.cardDesc}>{item.Description}</Text>
+        {/* ── Description ── */}
+        <Text style={styles.cardDesc}>{item.Description}</Text>
 
-      {/* ── Expanded Details ── */}
-      {isExpanded && (
-        <View style={styles.expandedSection}>
-          {/* Price Cards */}
-          <View style={styles.priceGrid}>
-            <PriceCard
-              label="Cash Price"
-              value={formatPrice3Decimal(item.price)}
-            />
-            <PriceCard
-              label="Credit Price"
-              value={formatPrice3Decimal(item['Credit Price'])}
-            />
-            {cmpcode === 'STARLINK' && (
-              <PriceCard label="Cost" value={formatPrice3Decimal(item.Cost)} />
-            )}
-            {cmpcode === 'SOCA' ? (
+        {/* ── Expanded Details ── */}
+        {isExpanded && (
+          <View style={styles.expandedSection}>
+            {/* <View style={styles.stockContainer}>
+              <View style={styles.stockGrid}>
+                {item.stores_name &&
+                  item.stores_name
+                    .split(',')
+                    .filter(Boolean)
+                    .map((store, index) => {
+                      const [key, ...labelParts] = store.split('-');
+                      const label = labelParts.join('-');
+                      return (
+                        <StockLocation
+                          key={index}
+                          label={label || key}
+                          value={item[key]}
+                        />
+                      );
+                    })}
+              </View>
+            </View> */}
+            {/* Price Cards */}
+            <View style={styles.priceGrid}>
               <PriceCard
-                label="Special Price"
-                value={formatPrice3Decimal(item['Spcial Price'])}
+                label="Cash Price"
+                value={formatPrice3Decimal(item.price)}
               />
-            ) : (
               <PriceCard
-                label="Block Price"
-                value={formatPrice3Decimal(item['Block Price'])}
+                label="Credit Price"
+                value={formatPrice3Decimal(item['Credit Price'])}
               />
-            )}
-            {cmpcode?.toUpperCase() !== 'SOCA' &&
-              cmpcode?.toUpperCase() !== 'STARLINK' && (
+              {cmpcode === 'STARLINK' && (
                 <PriceCard
-                  label="Discount Price"
-                  value={formatPrice3Decimal(item.Discount_Price)}
+                  label="Cost"
+                  value={formatPrice3Decimal(item.Cost)}
                 />
               )}
-            <PriceCard label="Order Pend." value={item.Ord_pend ?? '—'} />
-            <PriceCard label="BIN" value={item.BIN ?? '—'} />
-          </View>
+              {cmpcode === 'SOCA' ? (
+                <PriceCard
+                  label="Special Price"
+                  value={formatPrice3Decimal(item['Spcial Price'])}
+                />
+              ) : (
+                <PriceCard
+                  label="Block Price"
+                  value={formatPrice3Decimal(item['Block Price'])}
+                />
+              )}
+              {cmpcode?.toUpperCase() !== 'SOCA' &&
+                cmpcode?.toUpperCase() !== 'STARLINK' && (
+                  <PriceCard
+                    label="Discount Price"
+                    value={formatPrice3Decimal(item.Discount_Price)}
+                  />
+                )}
+              <PriceCard label="Order Pend." value={item.Ord_pend ?? '—'} />
+              <PriceCard label="BIN" value={item.BIN ?? '—'} />
+            </View>
 
-          {/* Add to Cart */}
-          {/* <TouchableOpacity
+            {/* Add to Cart */}
+            {/* <TouchableOpacity
             style={styles.cartBtn}
             onPress={() => onAddToCart(item)}
             activeOpacity={0.8}>
             <Text style={styles.cartBtnText}>Add to Cart</Text>
           </TouchableOpacity> */}
 
-          {/* Sub / Model Tabs */}
-          <View style={styles.tabRow}>
-            {['Substitute', 'Model'].map(tab => (
-              <TouchableOpacity
-                key={tab}
-                style={[
-                  styles.tabBtn,
-                  selectedButton === tab && styles.tabBtnActive,
-                ]}
-                onPress={() => onSelectButton(tab)}>
-                <Text
+            {/* Sub / Model Tabs */}
+            <View style={styles.tabRow}>
+              {['Substitute', 'Model'].map(tab => (
+                <TouchableOpacity
+                  key={tab}
                   style={[
-                    styles.tabBtnText,
-                    selectedButton === tab && styles.tabBtnTextActive,
-                  ]}>
-                  {tab === 'Model' ? 'Model Number' : tab}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+                    styles.tabBtn,
+                    selectedButton === tab && styles.tabBtnActive,
+                  ]}
+                  onPress={() => onSelectButton(tab)}>
+                  <Text
+                    style={[
+                      styles.tabBtnText,
+                      selectedButton === tab && styles.tabBtnTextActive,
+                    ]}>
+                    {tab === 'Model' ? 'Model Number' : tab}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
 
-          {/* Tab Content */}
-          {selectedButton === 'Substitute' && (
-            <SubstituteTable data={substituteData} loading={subLoader} />
-          )}
-          {selectedButton === 'Model' && (
-            <ModelTable data={modalNumberData} loading={modalLoader} />
-          )}
-        </View>
-      )}
+            {/* Tab Content */}
+            {selectedButton === 'Substitute' && (
+              <SubstituteTable data={substituteData} loading={subLoader} />
+            )}
+            {selectedButton === 'Model' && (
+              <ModelTable data={modalNumberData} loading={modalLoader} />
+            )}
+          </View>
+        )}
+      </View>
+    );
+  },
+  (prevProps, nextProps) => {
+    return (
+      prevProps.isExpanded === nextProps.isExpanded &&
+      prevProps.cmpcode === nextProps.cmpcode &&
+      prevProps.item === nextProps.item &&
+      (nextProps.isExpanded
+        ? prevProps.selectedButton === nextProps.selectedButton &&
+          prevProps.substituteData === nextProps.substituteData &&
+          prevProps.modalNumberData === nextProps.modalNumberData &&
+          prevProps.subLoader === nextProps.subLoader &&
+          prevProps.modalLoader === nextProps.modalLoader
+        : true)
+    );
+  },
+);
+
+const StockLocation = ({label, value}) => {
+  const val = Number(value) || 0;
+  let color = '#F59E0B'; // zero (orange)
+  if (val > 0) color = '#10B981'; // greater than zero (green)
+  else if (val < 0) color = '#EF4444'; // less than zero (red)
+
+  return (
+    <View style={styles.stockItem}>
+      <Text style={styles.stockLabel}>{label}</Text>
+      <Text style={[styles.stockValue, {color: color}]}>{value ?? 0}</Text>
     </View>
   );
 };
-
 const PriceCard = ({label, value}) => (
   <View style={styles.priceCard}>
     <Text style={styles.priceCardLabel}>{label}</Text>
@@ -249,15 +315,11 @@ const CheckStock = () => {
     init();
   }, []);
 
-  // ── Top 50 on ready ───────────────────────────────────────────────────────
-
   useEffect(() => {
     if (appUrl && cmpcode && vanFromLocalStorage !== null) {
       fetchTop50StockItems();
     }
   }, [appUrl, cmpcode, vanFromLocalStorage]);
-
-  // ── Debounced search ──────────────────────────────────────────────────────
 
   useEffect(() => {
     if (debounceTimer.current) clearTimeout(debounceTimer.current);
@@ -300,8 +362,10 @@ const CheckStock = () => {
     setLoading(true);
     try {
       const url = `${appUrl}Search_Items/InventoryList?cmpcode=${cmpcode}&guid=F4369B5E-8E23-4BCF-AC82-76C977991728&mod=${modeTop50}&Loc=${locationParam}&searchKey=-`;
+      console.log('fetchTop50StockItems', url);
       const res = await axios.get(url);
       setTop50Items(res.data);
+      // console.log('fetchTop50StockItems', res.data);
     } catch (e) {
       console.log('fetchTop50 error', e);
     } finally {
@@ -626,7 +690,44 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#1A1A2E',
   },
-
+  stockContainer: {
+    backgroundColor: '#F8FAFC',
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  sectionTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#64748B',
+    marginBottom: 8,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  stockGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    flexWrap: 'wrap',
+  },
+  stockItem: {
+    width: '18.5%',
+    alignItems: 'center',
+    paddingVertical: 4,
+  },
+  stockLabel: {
+    fontSize: 10,
+    color: '#475569',
+    fontWeight: '600',
+    marginBottom: 2,
+    textAlign: 'center',
+  },
+  stockValue: {
+    fontSize: 14,
+    fontWeight: '800',
+    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace', // Monospace for numbers looks professional
+  },
   // Cart Button
   cartBtn: {
     backgroundColor: '#3A80EA',

@@ -86,7 +86,7 @@ const MakeQuotationPop = ({
 
   const [result, setResult] = useState(null);
 
-  const VAT_RATE = 5;
+  const VAT_RATE = cmpcode?.toUpperCase() === 'ALESSA' ? 15 : 5;
 
   const [pdfUri, setPdfUri] = useState(null);
 
@@ -626,7 +626,9 @@ const MakeQuotationPop = ({
                         <tr style="border:none; font-weight: bold;">
                             <td colspan="4" style="border:none; padding:4px;"></td>
                             <td style="border-top: 1px solid black; border-bottom: 1px solid black; padding:4px;">VAT
-                                (5%):</td>
+                                ${
+                                  cmpcode?.toUpperCase() === 'ALESSA' ? 15 : 5
+                                }%:</td>
                             <td
                                 style="border-top: 1px solid black; border-bottom: 1px solid black; padding:4px; text-align: right;">
                                 ${
@@ -1188,7 +1190,9 @@ const MakeQuotationPop = ({
                             <td colspan="4" style="border:none; padding:4px;">2. Expired goods will not be taken back
                                 under any circumstances.</td>
                             <td style="border-top: 1px solid black; border-bottom: 1px solid black; padding:4px;">VAT
-                                (5%):</td>
+                                (${
+                                  cmpcode?.toUpperCase() === 'ALESSA' ? 15 : 5
+                                }%):</td>
                             <td
                                 style="border-top: 1px solid black; border-bottom: 1px solid black; padding:4px; text-align: right;">
                                 ${
@@ -1766,20 +1770,23 @@ const MakeQuotationPop = ({
                     }).format(totalUnitPrice || 0)}
                   </Text>
                 </View>
-                <View style={styles.discountContainer}>
-                  <Text style={styles.summaryLabel}>Discount</Text>
-                  <TextInput
-                    style={styles.discountInput}
-                    placeholder="0.00"
-                    value={discount.toString()}
-                    keyboardType="numeric"
-                    onChangeText={text => {
-                      const numericText = text.replace(/[^0-9.]/g, '');
-                      setDiscount(numericText);
-                    }}
-                    placeholderTextColor="#94a3b8"
-                  />
-                </View>
+                {cmpcode?.toUpperCase() !== 'ALESSA' && (
+                  <View style={styles.discountContainer}>
+                    <Text style={styles.summaryLabel}>Discount</Text>
+
+                    <TextInput
+                      style={styles.discountInput}
+                      placeholder="0.00"
+                      value={discount.toString()}
+                      keyboardType="numeric"
+                      onChangeText={text => {
+                        const numericText = text.replace(/[^0-9.]/g, '');
+                        setDiscount(numericText);
+                      }}
+                      placeholderTextColor="#94a3b8"
+                    />
+                  </View>
+                )}
                 <View style={styles.divider} />
                 <View style={styles.summaryRow}>
                   <Text style={styles.summaryLabel}>Net Total</Text>
@@ -1796,7 +1803,9 @@ const MakeQuotationPop = ({
                   </Text>
                 </View>
                 <View style={styles.summaryRow}>
-                  <Text style={styles.summaryLabel}>VAT (5%)</Text>
+                  <Text style={styles.summaryLabel}>
+                    VAT ({cmpcode?.toUpperCase() === 'ALESSA' ? 15 : 5}%):
+                  </Text>
                   <Text style={styles.summaryValue}>
                     {currency}{' '}
                     {(

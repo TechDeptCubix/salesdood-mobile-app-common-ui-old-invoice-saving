@@ -919,51 +919,6 @@ const MakeQuotation = ({route}) => {
     } else if ((selectedCustomer || cashCustomerName) && !selectedStock) {
       showAddToCartErr();
     }
-
-    // if (selectedStock && quantity && unitPrice && (selectedCustomer || cashCustomerName)) {
-    //     const newItem = {
-    //         ...selectedStock,
-    //         quantity: parseFloat(quantity).toFixed(2),
-    //         unitPrice: parseFloat(unitPrice).toFixed(2),
-    //         total: quantity * unitPrice
-    //     };
-
-    //     // Retrieve existing savedItemData from AsyncStorage
-    //     const savedItemDataString = await AsyncStorage.getItem('savedItemData');
-    //     const savedItemDataArray = savedItemDataString ? JSON.parse(savedItemDataString) : [];
-
-    //     // Add the new item to the list
-    //     const updatedSavedItemData = [...savedItemDataArray, newItem];
-
-    //     // Save the updated list back to AsyncStorage
-    //     await AsyncStorage.setItem('savedItemData', JSON.stringify(updatedSavedItemData));
-
-    //     await AsyncStorage.setItem('selectedCustomer', JSON.stringify(selectedCustomer))
-    //     // await AsyncStorage.setItem('savedItemData', JSON.stringify(savedItemData))
-    //     await AsyncStorage.setItem('orderRemark', orderRemark)
-    //     await AsyncStorage.setItem('trn', trn)
-    //     await AsyncStorage.setItem('payment', payment)
-    //     await AsyncStorage.setItem('delivery', delivery)
-    //     await AsyncStorage.setItem('validity', validity)
-    //     // await AsyncStorage.setItem('totalUnitPrice', totalUnitPrice)
-    //     await AsyncStorage.setItem('cashCustomerName', cashCustomerName)
-    //     await AsyncStorage.setItem('cashCustomerAddress', cashCustomerAddress)
-    //     await AsyncStorage.setItem('cashCustomerPhone', cashCustomerPhone)
-
-    //     setSavedItemData([...savedItemData, newItem]);
-    //     setQuantity('');
-    //     setUnitPrice('');
-    //     setSelectedStock(null)
-    // showSaveItemSuccess()
-
-    //     logAsyncData()
-    // }
-    // else if (!selectedCustomer && !cashCustomerName) {
-    //     showAddToCartCustomerErr();
-    // }
-    // else {
-    //     showAddToCartEmptyErr()
-    // }
   };
 
   const logAsyncData = async () => {
@@ -3075,88 +3030,9 @@ const MakeQuotation = ({route}) => {
                           </View>
                         </View>
                       </View>
-
-                      {/* <View style={styles.StockItemQtyPriceWrap}>
-    
-                                                    <View style={[styles.StockInputCont, { width: '28%' }]}>
-    
-                                                        <View style={[styles.RemarkInputCont, { width: '100%', marginTop: 0 }]}>
-                                                            <TextInput
-                                                                style={styles.PlaceHolderInput}
-                                                                ref={qtyInpRef}
-                                                                placeholder="Qty"
-                                                                placeholderTextColor="#aaa"
-                                                                keyboardType="numeric" // This ensures the numeric keyboard appears
-                                                                onChangeText={text => {
-                                                                    const numericText = text.replace(/[^0-9.]/g, ''); // This removes any non-numeric characters
-                                                                    setQuantity(numericText);
-                                                                }}
-                                                                onBlur={() => {
-                                                                    if (unitPriceInpRef.current) {
-                                                                        unitPriceInpRef.current.focus();
-                                                                    }
-                                                                }}
-                                                                value={quantity}
-                                                            />
-                                                        </View>
-                                                    </View>
-    
-                                                    <View style={[styles.StockInputCont, { width: '48%' }]}>
-                                                        <View style={[styles.RemarkInputCont, { width: '100%', marginTop: 0 }]}>
-                                                            <TextInput
-                                                                style={styles.PlaceHolderInput}
-                                                                ref={unitPriceInpRef}
-                                                                placeholder='Unit price'
-                                                                placeholderTextColor="#aaa"
-                                                                keyboardType="numeric"
-                                                                onChangeText={text => {
-                                                                    const numericText = text.replace(/[^0-9.]/g, ''); // This removes any non-numeric characters
-                                                                    setUnitPrice(numericText);
-                                                                }}
-                                                                value={unitPrice}
-                                                            />
-                                                        </View>
-                                                    </View>
-    
-                                                    <View style={styles.AddtoCartCont}>
-                                                        <TouchableOpacity style={styles.SelectItemCont} onPress={() => SaveItem()}>
-                                                            <Image style={styles.stockBagIcon} source={require('../images/addCart.png')} />
-                                                        </TouchableOpacity>
-                                                    </View>
-                                                </View> */}
-
-                      {/* <View style={styles.StockValueWrap}>
-    
-                                                    <View style={styles.W100}>
-                                                        <Text style={styles.SelectText}>Details</Text>
-                                                    </View>
-                                                    <View style={styles.SelectedItemHeadStockCost}>
-                                                        <Text style={styles.SelectHeadText}>Ord pend: </Text>
-                                                        <Text style={styles.SelectedItemText}>{selectedStock && selectedStock.Ord_pend !== '' ? selectedStock.Ord_pend : ''}</Text>
-                                                    </View>
-                                                    <View style={styles.SelectedItemHeadStockCost}>
-                                                        <Text style={styles.SelectHeadText}>Avl Stock: </Text>
-                                                        <Text style={styles.SelectedItemText}>{selectedStock && selectedStock.AvlQty !== '' ? selectedStock.AvlQty : ''}</Text>
-                                                    </View>
-                                                    <View style={styles.SelectedItemHeadStockCost}>
-                                                        <Text style={styles.SelectHeadText}>Price: </Text>
-                                                        <Text style={styles.SelectedItemText}>{selectedStock && selectedStock.price !== '' ? selectedStock.price : ''}</Text>
-                                                    </View>
-                                                    <View style={styles.SelectedItemHeadStockCost}>
-                                                        <Text style={styles.SelectHeadText}>Credit Price: </Text>
-                                                        <Text style={styles.SelectedItemText}>{selectedStock && selectedStock['Credit Price'] !== '' ? selectedStock['Credit Price'] : ''}</Text>
-                                                    </View>
-    
-                                                </View> */}
-
-                      {/* <View style={styles.SelectedItemHeadStockCost}>
-                                                    <Text style={styles.SelectHeadText}>Cart Total: </Text>
-                                                    <Text style={styles.SelectedItemText}>{totalUnitPrice && (totalUnitPrice).toFixed(2)}</Text>
-                                                </View> */}
                     </View>
                   </View>
 
-                  {/* <TouchableWithoutFeedback onPress={Keyboard.dismiss}> */}
                   <View
                     style={{
                       width: '100%',
