@@ -17,6 +17,9 @@ const QuotationDetails = ({route}) => {
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
   const [salesMan, setSalesMan] = useState('');
+  const [appUrl, setAppUrl] = useState('');
+  const [cmpcode, setCmpCode] = useState('');
+  const [cmpName, setCmpName] = useState('');
 
   const [quoteDetailsArray, setQuoteDetailsArray] = useState(null);
 
@@ -26,19 +29,34 @@ const QuotationDetails = ({route}) => {
     const parsedUserDataArray =
       (storedUserDataArray && JSON.parse(storedUserDataArray)) || [];
 
-    // call quotation  details
+    const portNoData = await AsyncStorage.getItem('portNoData');
+
+    if (portNoData) {
+      try {
+        const dataArray = JSON.parse(portNoData);
+        if (dataArray[0]?.COMPNAME) setCmpName(dataArray[0].COMPNAME);
+      } catch (_) {}
+    }
+
+    if (storedAppUrl) {
+      setAppUrl(storedAppUrl);
+    }
+    if (parsedUserDataArray.length > 0) {
+      setCmpCode(parsedUserDataArray[0].cmpcode.trim());
+    }
 
     try {
       const deptno = await AsyncStorage.getItem('DEPTNO');
 
       setLoading(true);
       if (storedAppUrl && parsedUserDataArray.length > 0) {
+        const company = parsedUserDataArray[0]?.cmpcode.trim();
         console.log(
           'quotation details api-->>>',
-          `${storedAppUrl}Proposal/${parsedUserDataArray[0]?.cmpcode.trim()}/QUOTEDETAILS/${orderId}/${deptno}`,
+          `${storedAppUrl}Proposal/${company}/QUOTEDETAILS/${orderId}/${deptno}`,
         );
         const response = await axios.get(
-          `${storedAppUrl}Proposal/${parsedUserDataArray[0]?.cmpcode.trim()}/QUOTEDETAILS/${orderId}/${deptno}`,
+          `${storedAppUrl}Proposal/${company}/QUOTEDETAILS/${orderId}/${deptno}`,
         );
         console.log('quotation details response ', response.data);
         setQuoteDetailsArray(response.data);
@@ -55,70 +73,22 @@ const QuotationDetails = ({route}) => {
     }
   }, [orderId]);
 
-  // const fetchPreviousOrders = async () => {
-  //     try {
-  //         // const response = await axios.get('http://tanoof.dyndns.org:92/api/Sales_Order/Salesall/ALL');
-
-  //         console.log("fetch previous order api+++--", `${appUrl}Sales_Order/${cmpcode}/Salesall/ALL/${deptno}`)
-
-  //         const deptno = await AsyncStorage.getItem('DEPTNO')
-
-  //         const response = await axios.get(`${appUrl}Sales_Order/${cmpcode}/Salesall/ALL/${deptno}`);
-  //         const allOrders = response.data;
-  //         const filteredOrder = allOrders.filter(order => order.so_no === orderId);
-  //         const salesMan = await AsyncStorage.getItem('sales_man')
-  //         setSalesMan(salesMan)
-  //         setData(filteredOrder);
-  //     } catch (error) {
-  //         console.log('fetchPreviousOrdersError[[[', error);
-  //         setError(error);
-  //     }
-  // };
-
-  // const fetchItemList = async () => {
-  //     try {
-  //         // const response = await axios.get(`http://tanoof.dyndns.org:92/api/Sales_Order/salesall/details/${orderId}`);
-  //         // const response = await axios.get(`${REACT_APP_BASE_URL}Sales_Order/salesall/details/${orderId}`);
-
-  //         const deptno = await AsyncStorage.getItem('DEPTNO')
-
-  //         console.log("quotation details -->>>", `${appUrl}Proposal/${cmpcode}/QUOTEDETAILS/${orderId}/${deptno}`)
-  //         const response = await axios.get(`${appUrl}Proposal/${cmpcode}/QUOTEDETAILS/${orderId}/${deptno}`);
-  //         setItemList(response.data);
-  //     } catch (error) {
-  //         console.log('fetchItemListError', error)
-  //         setError(error);
-  //     }
-  // };
-
   const subTotal =
     quoteDetailsArray &&
     quoteDetailsArray.reduce(
       (sum, item) =>
-        sum + (parseFloat(item.qty || 0) * parseFloat(item.so_fccost || 0) || 0),
+        sum +
+        (parseFloat(item.qty || 0) * parseFloat(item.so_fccost || 0) || 0),
       0,
     );
 
+  const VAT_RATE =
+    cmpcode?.toUpperCase() === 'ALESSA' ||
+    cmpcode?.toUpperCase() === 'ALESSA_TEST'
+      ? 15
+      : 5;
+
   console.log('subTotal', subTotal);
-
-  // useEffect(() => {
-  //     const fetchData = async () => {
-  //         try {
-  //             await Promise.all([fetchPreviousOrders(), fetchItemList()]);
-  //         } catch (error) {
-  //             console.log('fetchDataError', error);
-  //             setError(error);
-  //         } finally {
-  //             setLoading(false);
-  //         }
-  //     };
-
-  //     if (appUrl && cmpcode) {
-  //         fetchData();
-  //     }
-
-  // }, [appUrl, cmpcode]);
-
 
   useEffect(() => {
     fetchAppUrl();
@@ -136,15 +106,6 @@ const QuotationDetails = ({route}) => {
       {/* <Header /> */}
 
       <HeaderUiNew name={'Quotation Details'} />
-
-      {/* <TouchableOpacity style={styles.HomeCont} onPress={() => navigation.navigate('PreviousOrders')}>
-                <View>
-                    <Image style={styles.HeadIcon} source={require('../images/backIcon.png')} />
-                </View>
-                <View style={styles.HomeTextCont}>
-                    <Text style={styles.HomeText}>Order Details</Text>
-                </View>
-            </TouchableOpacity> */}
 
       {loading && (
         <View style={styles.centered}>
@@ -232,9 +193,9 @@ const QuotationDetails = ({route}) => {
               </Text>
             </View>
             <View style={styles.SummaryRow}>
-              <Text style={styles.SummaryLabel}>VAT (5%)</Text>
+              <Text style={styles.SummaryLabel}>VAT ({VAT_RATE}%)</Text>
               <Text style={styles.SummaryValue}>
-                {(subTotal * 0.05).toLocaleString(undefined, {
+                {(subTotal * (VAT_RATE / 100)).toLocaleString(undefined, {
                   minimumFractionDigits: 2,
                 })}
               </Text>
@@ -243,7 +204,7 @@ const QuotationDetails = ({route}) => {
             <View style={styles.SummaryRow}>
               <Text style={styles.GrandTotalLabel}>Grand Total</Text>
               <Text style={styles.GrandTotalValue}>
-                {(subTotal * 1.05).toLocaleString(undefined, {
+                {(subTotal * (1 + VAT_RATE / 100)).toLocaleString(undefined, {
                   minimumFractionDigits: 2,
                 })}
               </Text>
@@ -420,6 +381,27 @@ const styles = StyleSheet.create({
     fontFamily: 'Lexend-Medium',
     fontSize: 14,
     color: '#0F172A',
+  },
+  PrintButton: {
+    backgroundColor: '#4F46E5',
+    margin: 16,
+    padding: 16,
+    borderRadius: 12,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 60,
+  },
+  PrintButtonText: {
+    color: 'white',
+    fontFamily: 'Lexend-Bold',
+    fontSize: 16,
+    marginLeft: 8,
+  },
+  PrintIcon: {
+    width: 20,
+    height: 20,
+    tintColor: 'white',
   },
 });
 

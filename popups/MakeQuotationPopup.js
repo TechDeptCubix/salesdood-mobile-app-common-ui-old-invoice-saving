@@ -86,7 +86,11 @@ const MakeQuotationPop = ({
 
   const [result, setResult] = useState(null);
 
-  const VAT_RATE = cmpcode?.toUpperCase() === 'ALESSA' ? 15 : 5;
+  const VAT_RATE =
+    cmpcode?.toUpperCase() === 'ALESSA' ||
+    cmpcode?.toUpperCase() === 'ALESSA_TEST'
+      ? 15
+      : 5;
 
   const [pdfUri, setPdfUri] = useState(null);
 
@@ -627,7 +631,10 @@ const MakeQuotationPop = ({
                             <td colspan="4" style="border:none; padding:4px;"></td>
                             <td style="border-top: 1px solid black; border-bottom: 1px solid black; padding:4px;">VAT
                                 ${
-                                  cmpcode?.toUpperCase() === 'ALESSA' ? 15 : 5
+                                  cmpcode?.toUpperCase() === 'ALESSA' ||
+                                  cmpcode?.toUppercase() === 'ALESSA_TEST'
+                                    ? 15
+                                    : 5
                                 }%:</td>
                             <td
                                 style="border-top: 1px solid black; border-bottom: 1px solid black; padding:4px; text-align: right;">
@@ -1191,7 +1198,10 @@ const MakeQuotationPop = ({
                                 under any circumstances.</td>
                             <td style="border-top: 1px solid black; border-bottom: 1px solid black; padding:4px;">VAT
                                 (${
-                                  cmpcode?.toUpperCase() === 'ALESSA' ? 15 : 5
+                                  cmpcode?.toUpperCase() === 'ALESSA' ||
+                                  cmpcode?.toUppercase() === 'ALESSA_TEST'
+                                    ? 15
+                                    : 5
                                 }%):</td>
                             <td
                                 style="border-top: 1px solid black; border-bottom: 1px solid black; padding:4px; text-align: right;">
@@ -1804,7 +1814,12 @@ const MakeQuotationPop = ({
                 </View>
                 <View style={styles.summaryRow}>
                   <Text style={styles.summaryLabel}>
-                    VAT ({cmpcode?.toUpperCase() === 'ALESSA' ? 15 : 5}%):
+                    VAT (
+                    {cmpcode?.toUpperCase() === 'ALESSA' ||
+                    cmpcode?.toUpperCase() === 'ALESSA_TEST'
+                      ? 15
+                      : 5}
+                    %):
                   </Text>
                   <Text style={styles.summaryValue}>
                     {currency}{' '}

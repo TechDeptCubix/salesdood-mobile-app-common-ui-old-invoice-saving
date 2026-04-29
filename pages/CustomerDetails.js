@@ -120,10 +120,10 @@ const CustomerDetails = () => {
       await axios
         .get(`${appUrl}Search_Customer/${cmpcode}/Cust/${value}/${deptNo}`)
         .then(res => {
-          if (cmpcode?.trim().toUpperCase() == 'SOCA') {
+          if (cmpcode?.trim().toUpperCase() === 'SOCA') {
             let filteredArrayBasedOnSalesman = res.data.filter(item => {
               return (
-                item.sale_man?.trim().toUpperCase() ==
+                item.sale_man?.trim().toUpperCase() ===
                 salesName.trim().toUpperCase()
               );
             });
@@ -132,28 +132,6 @@ const CustomerDetails = () => {
               'filteredArrayBasedOnSalesman>>',
               filteredArrayBasedOnSalesman,
               salesName.trim().toUpperCase(),
-            );
-
-            setStockData(filteredArrayBasedOnSalesman);
-          } else if (cmpcode?.trim().toUpperCase() == 'TAMMDOOD') {
-            let filteredArrayBasedOnSalesman = res.data.filter(item => {
-              console.log(
-                'filteredArrayBasedOnSalesman>> loop ',
-                salesName.trim().toUpperCase(),
-                salesManKey,
-              );
-
-              return (
-                item.sale_man?.trim().toUpperCase() ==
-                salesManKey?.trim().toUpperCase()
-              );
-            });
-
-            console.log(
-              'filteredArrayBasedOnSalesman>>',
-              filteredArrayBasedOnSalesman,
-              salesName.trim().toUpperCase(),
-              salesManKey,
             );
 
             setStockData(filteredArrayBasedOnSalesman);
@@ -171,20 +149,16 @@ const CustomerDetails = () => {
   const fetchTop50Customers = async () => {
     setShowActivity(true);
     try {
-      console.log(
-        `SEARCH_CUSTOMER_LINK ${appUrl}Search_Customer/${cmpcode}/Cust50/t/${deptNo}`,
-      );
-
       const response = await axios.get(
         `${appUrl}Search_Customer/${cmpcode}/Cust50/-/${deptNo}`,
       );
 
       console.log('fetchTop50Customers>>', response.data);
 
-      if (cmpcode?.trim().toUpperCase() == 'SOCA') {
+      if (cmpcode?.trim().toUpperCase() === 'SOCA') {
         let filteredArrayBasedOnSalesman = response.data.filter(item => {
           return (
-            item.sale_man?.trim().toUpperCase() ==
+            item.sale_man?.trim().toUpperCase() ===
             salesName.trim().toUpperCase()
           );
         });
@@ -192,20 +166,6 @@ const CustomerDetails = () => {
           'filteredArrayBasedOnSalesman',
           filteredArrayBasedOnSalesman,
         );
-        setTop50Customers(filteredArrayBasedOnSalesman);
-
-        console.log(
-          'filteredArrayBasedOnSalesman>>',
-          filteredArrayBasedOnSalesman,
-          salesName.trim().toUpperCase(),
-        );
-      } else if (cmpcode?.trim().toUpperCase() == 'TAMMDOOD') {
-        let filteredArrayBasedOnSalesman = response.data.filter(item => {
-          return (
-            item.sale_man?.trim().toUpperCase() ==
-            salesManKey?.trim().toUpperCase()
-          );
-        });
         setTop50Customers(filteredArrayBasedOnSalesman);
 
         console.log(
@@ -284,18 +244,9 @@ const CustomerDetails = () => {
   return (
     <>
       <View style={styles.HomeWrap}>
-        {/* <Header /> */}
-
         <HeaderUiNew name={'Customer Details'} />
 
         <View style={styles.HomeCont}>
-          {/* <View style={styles.HomeTextCont}>
-                        <TouchableOpacity onPress={() => navigation.navigate('Home')}>
-                            <Image style={styles.HeadIcon} source={require('../images/backIcon.png')} />
-                        </TouchableOpacity>
-                        <Text style={styles.HomeText}>Customer Details</Text>
-                    </View> */}
-
           <View
             style={{
               flexDirection: 'row',
@@ -327,53 +278,6 @@ const CustomerDetails = () => {
 
           {stockData && !selectedStock && searchItem !== '' && (
             <>
-              {/* <View style={styles.TableContainer}>
-                                <View style={styles.tableRow}>
-                                    <Text
-                                        style={[styles.headerCell, {
-                                            borderTopLeftRadius: 4
-                                        }]}
-                                    >
-                                        Name
-                                    </Text>
-                                    <Text style={styles.headerCell}>
-                                        Account Number
-                                    </Text>
-                                    <Text
-                                        style={[styles.headerCell, {
-                                            borderTopRightRadius: 4
-                                        }]}
-                                    >
-                                        OpenBalance
-                                    </Text>
-                                </View>
-
-                                <ScrollView style={styles.ScrollView}>
-                                    {
-                                        stockData && stockData.length > 0 && stockData.slice(0, 25).map((item, index) => (
-                                            <TouchableOpacity style={styles.tableRow} key={index} onPress={() => setSelectedStock(item)}>
-                                                <Text style={styles.dataCell}>{item.Custname}</Text>
-                                                <Text style={styles.dataCell}>{item.account}</Text>
-                                                <Text style={styles.dataCell}>{item.openbal}</Text>
-                                            </TouchableOpacity>
-
-                                        ))
-                                    }
-                                </ScrollView>
-
-
-
-                                {
-                                    stockData && stockData.length === 0 &&
-                                    <View>
-                                        <Text style={{
-                                            color: 'red'
-                                        }}>No data available</Text>
-                                    </View>
-                                }
-
-                            </View> */}
-
               {stockData?.length > 0 ? (
                 <ScrollView
                   contentContainerStyle={[styles.CheckStockListView]}
