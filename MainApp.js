@@ -63,8 +63,9 @@ import SalesReturnEntry from './pages/sales_return/SalesReturnEntry';
 import SplitItemScreen from './pages/SplitItemScreen';
 import SalesReturnList from './pages/SalesReturnList';
 import BusinessPartners from './pages/BusinessPartners';
-import PriceUpdater from './pages/PriceUpdater'
+import PriceUpdater from './pages/PriceUpdater';
 
+import EditSalesInvoice from './pages/EditSalesInvoice';
 
 const Stack = createNativeStackNavigator();
 
@@ -490,7 +491,7 @@ const MainApp = () => {
           options={{headerShown: false}}
         />
 
-<Stack.Screen
+        <Stack.Screen
           name="PriceUpdater"
           component={PriceUpdater}
           options={{headerShown: false}}
@@ -501,6 +502,11 @@ const MainApp = () => {
                 
                 <Stack.Screen name='PickingList' component={PickingList} options={{ headerShown: false }} />
                 <Stack.Screen name='BinToBin' component={BinToBin} options={{ headerShown: false }} /> */}
+        <Stack.Screen
+          name="EditSalesInvoice"
+          component={EditSalesInvoice}
+          options={{headerShown: false}}
+        />
       </Stack.Navigator>
     </NavigationContainer>
   );

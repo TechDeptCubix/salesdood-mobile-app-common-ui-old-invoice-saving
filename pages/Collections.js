@@ -39,6 +39,7 @@ const Collections = () => {
     try {
       await axios.get(`${searchUrl}${value}`).then(res => {
         setStockData(res.data.jsont);
+        console.log('Json of customer', res.data.jsont);
       });
       setShowActivity(false);
     } catch (error) {

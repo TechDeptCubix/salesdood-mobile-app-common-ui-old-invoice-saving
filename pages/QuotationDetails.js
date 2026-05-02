@@ -4,14 +4,17 @@ import {
   StyleSheet,
   ScrollView,
   ActivityIndicator,
+  TouchableOpacity,
 } from 'react-native';
 import React, {useEffect, useState} from 'react';
 import ChangeStatusPop from '../popups/ChangeStatusPop';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import HeaderUiNew from './HeaderUiNew';
+import {useNavigation} from '@react-navigation/native';
 
 const QuotationDetails = ({route}) => {
+  const navigation = useNavigation();
   const {orderId} = route.params;
   const [showChangeStatusPop, setShowChangeStatus] = useState(false);
   const [error, setError] = useState(null);
@@ -127,10 +130,27 @@ const QuotationDetails = ({route}) => {
                 #{quoteDetailsArray[0]['QUOT NO']}
               </Text>
             </View>
-            <View style={styles.StatusBadge}>
-              <Text style={styles.StatusBadgeText}>
-                {quoteDetailsArray[0].Status}
-              </Text>
+            <View style={{flexDirection: 'row', alignItems: 'center'}}>
+              <TouchableOpacity
+                onPress={() =>
+                  navigation.navigate('EditSalesInvoice', {
+                    id: quoteDetailsArray[0]['QUOT NO'],
+                    type: 'quotation',
+                  })
+                }
+                style={[
+                  styles.HeaderBadge,
+                  {backgroundColor: '#E0F2FE', marginRight: 10},
+                ]}>
+                <Text style={[styles.HeaderBadgeText, {color: '#0369A1'}]}>
+                  Edit
+                </Text>
+              </TouchableOpacity>
+              <View style={styles.StatusBadge}>
+                <Text style={styles.StatusBadgeText}>
+                  {quoteDetailsArray[0].Status}
+                </Text>
+              </View>
             </View>
           </View>
 

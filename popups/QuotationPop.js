@@ -1518,7 +1518,7 @@ const QuotationPop = ({
   const validateCustomerLimit = amount => {
     if (!selectedCustomer) return true;
 
-    console.log("selectedCustomer", selectedCustomer)
+    console.log('selectedCustomer', selectedCustomer);
 
     const availableLimit = Number(selectedCustomer.Avai_Bal || 0);
 
@@ -2560,6 +2560,11 @@ const QuotationPop = ({
                 <Text style={styles.DeleteText}>Cancel</Text>
               </TouchableOpacity>
 
+              <TouchableOpacity
+                style={[styles.EditButton, {backgroundColor: '#3498db'}]}
+                onPress={() => setShowQuotationPop(false)}>
+                <Text style={styles.EditText}>Edit</Text>
+              </TouchableOpacity>
               {page === 'SALESINV' ? (
                 <TouchableOpacity
                   style={styles.EditButton}

@@ -394,16 +394,21 @@ const SalesInvoiceNew = ({route}) => {
   // Removed searchEditCustomer. No customer details are loaded from storage or auto-selected.
 
   useEffect(() => {
-    if (customerSearchItem !== '') {
-      searchCustomer(customerSearchItem);
-      // setSelectedCustomer(null)
-    }
+    const delayDebounceFn = setTimeout(() => {
+      if (customerSearchItem !== '') {
+        searchCustomer(customerSearchItem);
+        // setSelectedCustomer(null)
+      }
+    }, 300);
+
     if (customerSearchItem === '') {
       setCustomerData(null);
       // setSelectedStock(null)
 
       console.log('nosrchuf');
     }
+
+    return () => clearTimeout(delayDebounceFn);
   }, [customerSearchItem]);
 
   // Removed effect that auto-fills customer details from selectedCustomer. All customer details must be entered manually.
@@ -430,7 +435,7 @@ const SalesInvoiceNew = ({route}) => {
       // earlier like  this api console.log(`${appUrl}Search_Items/${cmpcode}/Sitem/${value} `)
 
       await axios.get(apiUrl).then(res => {
-        setStockData(res.data);
+        setStockData(res.data.slice(0, 100));
       });
       setShowItemSrchAct(false);
     } catch (error) {
@@ -441,15 +446,20 @@ const SalesInvoiceNew = ({route}) => {
   };
 
   useEffect(() => {
-    if (searchItem !== '') {
-      searchStock(searchItem);
-      setSelectedStock(null);
-      setSelectedSearchItem(searchItem);
-    }
+    const delayDebounceFn = setTimeout(() => {
+      if (searchItem !== '') {
+        searchStock(searchItem);
+        setSelectedStock(null);
+        setSelectedSearchItem(searchItem);
+      }
+    }, 300);
+
     if (searchItem == '') {
       setStockData(null);
       // setSelectedStock(null)
     }
+
+    return () => clearTimeout(delayDebounceFn);
   }, [searchItem]);
 
   useEffect(() => {

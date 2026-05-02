@@ -163,8 +163,8 @@ const OrderDetails = ({route}) => {
       },
 
       ICELAB_TEST: {
-        name: 'THE ICE LAB MANUFACTURING LLC',
-        trn: '100345678900003',
+        name: 'CBUIX TEST COMPANY VAN SALES',
+        trn: '100300000000000',
       },
 
       ICUP: {

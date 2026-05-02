@@ -11,8 +11,8 @@ import {
   PermissionsAndroid,
   Platform,
 } from 'react-native';
-import React, {useEffect, useState} from 'react';
-import {useNavigation} from '@react-navigation/native';
+import React, {useEffect, useState, useCallback} from 'react';
+import {useNavigation, useFocusEffect} from '@react-navigation/native';
 import axios from 'axios';
 import StatusLogPop from '../popups/StatusLogPop';
 import HeaderUiNew from './HeaderUiNew';
@@ -28,53 +28,13 @@ import RNHTMLtoPDF from 'react-native-html-to-pdf';
 import Share from 'react-native-share';
 
 const InvoiceList = () => {
-  // the issue is fixed padding
-  // const generateItemLines = () => {
-
-  //     const DESC_MAX_LEN = 24;
-
-  //     return itemListBluetooth?.map((item, index) => {
-  //         const fullDesc = `${item.DESCRIPTION}`;
-  //         let itemLine = '';
-
-  //         // 1. Split the description into chunks
-  //         let remainingDesc = fullDesc;
-  //         let isFirstLine = true;
-
-  //         while (remainingDesc.length > 0) {
-  //             // Get the next chunk of the description
-  //             const currentChunk = remainingDesc.substring(0, DESC_MAX_LEN);
-  //             remainingDesc = remainingDesc.substring(DESC_MAX_LEN).trimStart();
-
-  //             if (isFirstLine) {
-  //                 // FIRST LINE: Contains Description, QTY, PRICE, and TOTAL
-  //                 const descriptionPadded = currentChunk.padEnd(DESC_MAX_LEN, ' ');
-  //                 const qty = item.QTY.toString().padStart(8, ' ');
-  //                 const price = item.PRICE.toFixed(2).padStart(8, ' ');
-  //                 const vat = (item.LINE_TOTAL * 0.05).toFixed(2).padStart(8, ' ');
-  //                 const total = (item.LINE_TOTAL + item.LINE_TOTAL * 0.05).toFixed(2).padStart(8, ' ');
-
-  //                 itemLine += `[L]${descriptionPadded}${qty} ${price} ${vat} ${total}\n`;
-  //                 isFirstLine = false;
-  //             } else {
-  //                 // WRAPPED LINES: Only contain the indented description text
-  //                 itemLine += `[L]${currentChunk}\n`;
-  //             }
-  //         }
-
-  //         return itemLine;
-  //     }).join('');
-  // };
-
   // new generated dynamic solution
   const generateItemLines = () => {
-    const DESC_MAX_LEN = 20; // Reduced to make room for larger numbers
-
-    // Column end positions (adjust based on your 58-60 char paper width)
-    const QTY_END = 32; // Where Qty column ends
-    const RATE_END = 42; // Where Rate column ends
-    const VAT_END = 52; // Where VAT column ends
-    const AMOUNT_END = 62; // Where Amount column ends (matches your totals)
+    const DESC_MAX_LEN = 20;
+    const QTY_END = 32;
+    const RATE_END = 42;
+    const VAT_END = 52;
+    const AMOUNT_END = 62;
 
     return itemListBluetooth
       ?.map((item, index) => {
@@ -128,41 +88,7 @@ const InvoiceList = () => {
       .join('');
   };
 
-  // const setFormatTextForBluetooth = () => {
-  //     return {
-  //         text: '[L]\n' +
-  //             '[C]<b><font size=\'tall\'>THE ICELAB</font></b>\n' +
-  //             '[C]AJMAN\n' +
-  //             '[C]INVOICE\n' +
-  //             // Invoice and Customer Info
-  //             '[L]\n' +
-  //             `[L]${itemListBluetooth[0]?.custref}[R] Trans ID: ${itemListBluetooth[0]?.inv_no}\n` +
-  //             `[L]Inv Date: ${itemListBluetooth[0]?.inv_date.split('T')[0]}[R]Time: ${itemListBluetooth[0]?.time}\n` +
-  //             '[L]\n' +
-  //             // Item Table Header (4-COLUMN MANUAL ALIGNMENT)
-  //             '[C]<b>============================================================</b>\n' +
-  //             '[L]<b>DESCRIPTION</b>              <b>         QTY</b><b>       PRICE</b><b>       TOTAL</b>\n' + // Manually spaced header
-  //             '[C]<b>============================================================</b>\n' +
-  //             // Item Lines (Dynamic)
-  //             generateItemLines() +
-  //             '[C]<b>============================================================</b>\n' +
-  //             // Totals Summary
-  //             `[L]Grand Total[R]${itemListBluetooth?.reduce((acc, curr) => acc + curr.LINE_TOTAL, 0)?.toFixed(2)}\n` +
-  //             `[L]VAT(5%)[R]${(itemListBluetooth?.reduce((acc, curr) => acc + curr.LINE_TOTAL, 0) * 0.05)?.toFixed(2)}\n` +
-  //             '[R]CASH RECEIVED \n' +
-  //             '[R]CARD RECEIVED \n' +
-  //             '[C]<b>============================================================</b>\n' +
-  //             // Footer
-  //             '[L]\n' +
-  //             '[C]THE ICELAB MANUFACTURING LLC\n' +
-  //             '[C]Central Plazza2, Al jurf\n' +
-  //             '[C]Ajman, UAE\n'
-  //     }
-  // }
-
-  // --- Define Padding Functions ---
   const pad = count => ' '.repeat(count);
-  // Adjusted for a wider print area (e.g., 64 characters)
 
   // Text Length: "THE ICE LAB MANUFACTURING LLC" (29 chars) -> (64-29)/2 = 17.5
   const COMP_PAD = pad(18);
@@ -182,6 +108,63 @@ const InvoiceList = () => {
   // Text Length: "Signature/date" (14 chars) -> (64-14)/2 = 25
   const FOOT_PAD = pad(20);
   const FOOT_PAD_SIGN = pad(23);
+  const getCompanyDetails = code => {
+    const c = (code || '').trim().toUpperCase();
+    const companyMap = {
+      MALBAR: {
+        name: 'MALBAR',
+        trn: '100335207500003',
+        address: 'Address line 1',
+        city: 'City',
+        tel: 'Tel',
+      },
+      PREMIER: {
+        name: 'PREMIER AUTO PARTS LLC',
+        trn: '10027835690000',
+        address: 'Address line 1',
+        city: 'City',
+        tel: 'Tel',
+      },
+      ICELAB: {
+        name: 'THE ICE LAB MANUFACTURING LLC',
+        trn: '104112430400003',
+        address: 'Central Plaza 2, Al Jurf',
+        city: 'Ajman, UAE',
+        tel: '065617700',
+      },
+      ICELAB_TEST: {
+        name: 'CUBIX TEST COMPANY VAN SALES',
+        trn: '1041000000000000',
+        address: 'Dumuscusss, Al Qusais',
+        city: 'Dubai, UAE',
+        tel: '000617700',
+      },
+      POPULAR: {
+        name: 'POPULAR AUTO SPARE PARTS TRADING LLC',
+        trn: '100327766000003',
+        address: 'Address line 1',
+        city: 'City',
+        tel: 'Tel',
+      },
+      MESHARI: {
+        name: 'MESHARI FOODSTUFF TRADING LLC',
+        trn: '100449215100003',
+        address: 'Address line 1',
+        city: 'City',
+        tel: 'Tel',
+      },
+    };
+
+    return (
+      companyMap[c] || {
+        name: cmpName || code || 'Company',
+        trn: '-',
+        address: '-',
+        city: '-',
+        tel: '-',
+      }
+    );
+  };
 
   const formatTotalLine = (label, value) => {
     const valueStr =
@@ -225,18 +208,19 @@ const InvoiceList = () => {
   };
   // this one based on the reference syed icelab given
   const setFormatTextForBluetooth = () => {
+    const details = getCompanyDetails(cmpcode?.toUpperCase());
     return {
       text:
         COMP_PAD +
-        "[C]<b><font size='tall'>THE ICE LAB MANUFACTURING LLC</font></b>\n" +
+        `[C]<b><font size='tall'>${details.name}</font></b>\n` +
         ADD_PAD +
-        '[C]Central Plaza 2, Al Jurf\n' +
+        `[C]${details.address}\n` +
         CITY_PAD +
-        '[C]Ajman, UAE\n' +
+        `[C]${details.city}\n` +
         TEL_PAD +
-        '[C]Tel:065617700\n' +
+        `[C]Tel:${details.tel}\n` +
         TRN_PAD +
-        '[C]TRN : 104112430400003\n' +
+        `[C]TRN : ${details.trn}\n` +
         // Invoice and Customer Info
         '[L]\n' +
         INV_PAD +
@@ -617,7 +601,7 @@ const InvoiceList = () => {
       case 'ICELAB':
         return '104112430400003';
       case 'ICELAB_TEST':
-        return '104112430400003';
+        return '104100000000000';
       case 'MESHARI':
         return '100449215100003';
       case 'POPULAR':
@@ -634,6 +618,8 @@ const InvoiceList = () => {
         return 'MESHARI FOODSTUFF TRADING LLC';
       case 'ICELAB':
         return 'THE ICE LAB MANUFACTURING LLC';
+      case 'ICELAB_TEST':
+        return 'CUBIX TEST COMPANY VAN SALES';
       case 'POPULAR':
         return 'POPULAR AUTO SPARE PARTS TRADING LLC';
       default:
@@ -767,8 +753,14 @@ const InvoiceList = () => {
                 base64Header
                   ? `<img src="data:image/jpeg;base64,${base64Header}" class="header-img" />`
                   : `<div style="padding:16px 0 8px 0; border-bottom:2px solid #333; margin-bottom:8px;">
-                      <div style="font-size:20px; font-weight:bold; text-align:center; letter-spacing:1px;">${getCompanyname(cmpcode) !== '-' ? getCompanyname(cmpcode) : cmpcode}</div>
-                      <div style="font-size:12px; text-align:center; margin-top:4px; color:#444;">TRN: ${getTRNnumber(cmpcode)}</div>
+                      <div style="font-size:20px; font-weight:bold; text-align:center; letter-spacing:1px;">${
+                        getCompanyname(cmpcode) !== '-'
+                          ? getCompanyname(cmpcode)
+                          : cmpcode
+                      }</div>
+                      <div style="font-size:12px; text-align:center; margin-top:4px; color:#444;">TRN: ${getTRNnumber(
+                        cmpcode,
+                      )}</div>
                     </div>`
               }
             </div>
@@ -997,36 +989,36 @@ const InvoiceList = () => {
     fetchAsyncUser();
   }, []);
 
-  useEffect(() => {
+  const fetchList = useCallback(async () => {
     if (salesMan && deptNo && appUrl && cmpcode) {
       setShowLoader(true);
-      const fetchList = async () => {
-        try {
-          console.log(
-            `${appUrl}SalesInvoice/${cmpcode}/invoicelist/${deptNo}/${salesMan}/-`,
-          );
-          const response = await axios.get(
-            `${appUrl}SalesInvoice/${cmpcode}/invoicelist/${deptNo}/${salesMan}/-`,
-          );
+      try {
+        console.log(
+          `${appUrl}SalesInvoice/${cmpcode}/invoicelist/${deptNo}/${salesMan}/-`,
+        );
+        const response = await axios.get(
+          `${appUrl}SalesInvoice/${cmpcode}/invoicelist/${deptNo}/${salesMan}/-`,
+        );
 
-          // console.log(response.data)
-
-          if (response.status === 200) {
-            setListData(response.data);
-            setData(response.data);
-            setShowLoader(false);
-          }
-          setShowLoader(false);
-        } catch (error) {
-          console.log('fetchList', error);
-          setApiError('Some Error Occured');
+        if (response.status === 200) {
+          setListData(response.data);
+          setData(response.data);
           setShowLoader(false);
         }
-      };
-
-      fetchList();
+        setShowLoader(false);
+      } catch (error) {
+        console.log('fetchList', error);
+        setApiError('Some Error Occured');
+        setShowLoader(false);
+      }
     }
   }, [salesMan, deptNo, appUrl, cmpcode]);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchList();
+    }, [fetchList]),
+  );
 
   const fetchAppUrl = async () => {
     const appUrl = await AsyncStorage.getItem('appUrl');
@@ -1378,18 +1370,19 @@ Thank you!
                     )}
                   </TouchableOpacity>
 
-                  {cmpcode?.toUpperCase().trim() == 'ICELAB' && (
-                    <TouchableOpacity
-                      style={[styles.PrintAcceptButtonBT]}
-                      onPress={() => fetchItemListBLuetooth(item)}>
-                      {showPrintButtonLoaderBluetooth &&
-                      item.INVNO === selectedInvoiceNo ? (
-                        <ActivityIndicator color={'white'} />
-                      ) : (
-                        <Text style={styles.PrintAcceptText}>Print BT </Text>
-                      )}
-                    </TouchableOpacity>
-                  )}
+                  {cmpcode?.toUpperCase().trim() == 'ICELAB' ||
+                    (cmpcode?.toUpperCase().trim() == 'ICELAB_TEST' && (
+                      <TouchableOpacity
+                        style={[styles.PrintAcceptButtonBT]}
+                        onPress={() => fetchItemListBLuetooth(item)}>
+                        {showPrintButtonLoaderBluetooth &&
+                        item.INVNO === selectedInvoiceNo ? (
+                          <ActivityIndicator color={'white'} />
+                        ) : (
+                          <Text style={styles.PrintAcceptText}>Print BT </Text>
+                        )}
+                      </TouchableOpacity>
+                    ))}
                   {cmpcode?.toUpperCase().trim() === 'ICUP' ||
                   cmpcode?.toUpperCase().trim() === 'ICELAB_TEST' ? (
                     <TouchableOpacity
@@ -1440,6 +1433,20 @@ Thank you!
                       )}
                     </TouchableOpacity>
                   ) : null}
+
+                  <TouchableOpacity
+                    style={[
+                      styles.PrintAcceptButton,
+                      {backgroundColor: '#1A6CF6', marginLeft: 10},
+                    ]}
+                    onPress={() =>
+                      navigation.navigate('EditSalesInvoice', {
+                        id: item.INVNO,
+                        type: 'invoice',
+                      })
+                    }>
+                    <Text style={styles.PrintAcceptText}>Edit</Text>
+                  </TouchableOpacity>
                 </View>
 
                 {/* {

@@ -104,6 +104,7 @@ const NewCollections = () => {
   const [salesManName, setSalesManName] = useState('');
 
   const [cmpName, setCmopName] = useState('');
+  const [userAccess, setUserAccess] = useState('');
 
   // const getCurrentFormattedDateTime = () => {
   //     return format(currentDate, 'yyyy-mm-dd');
@@ -700,6 +701,11 @@ const NewCollections = () => {
       const parsedUserDataArray =
         (storedUserDataArray && JSON.parse(storedUserDataArray)) || [];
 
+      const useraccess = await AsyncStorage.getItem('useraccess');
+      if (useraccess) {
+        setUserAccess(useraccess);
+      }
+
       const portNoData = await AsyncStorage.getItem('portNoData');
 
       console.log('parsedUserDataArray', parsedUserDataArray);
@@ -920,31 +926,11 @@ const NewCollections = () => {
       let apiUrlCustomerSearch = `${appUrl}Search_Customer/${cmpcode}/Cust/${value}/${deptno}`;
       console.log('apiUrlCustomerSearch ', apiUrlCustomerSearch);
       await axios.get(apiUrlCustomerSearch).then(res => {
-        if (cmpcode?.trim().toUpperCase() == 'SOCA') {
-          // if accegrp that is role is Driver show all customers else show only their customers
-          if (accessGrp?.trim()?.toUpperCase() == 'DRIVER') {
-            setStockData(res.data);
-          } else {
-            let filteredArrayBasedOnSalesman = res.data.filter(item => {
-              return (
-                item.sale_man?.trim().toUpperCase() ==
-                salesMan.trim().toUpperCase()
-              );
-            });
-
-            setStockData(filteredArrayBasedOnSalesman);
-
-            console.log(
-              'filteredArrayBasedOnSalesman>> NewC',
-              filteredArrayBasedOnSalesman,
-              salesMan.trim().toUpperCase(),
-            );
-          }
-        } else if (cmpcode?.trim().toUpperCase() == 'TAMMDOOD') {
+        if (userAccess && userAccess.includes('-NE')) {
           let filteredArrayBasedOnSalesman = res.data.filter(item => {
             return (
               item.sale_man?.trim().toUpperCase() ==
-              salesManKey.trim().toUpperCase()
+              salesMan.trim().toUpperCase()
             );
           });
 
@@ -978,29 +964,10 @@ const NewCollections = () => {
       );
       console.log('fetchTop50Customers', response.data);
 
-      if (cmpcode?.trim().toUpperCase() == 'SOCA') {
-        if (accessGrp?.trim()?.toUpperCase() == 'DRIVER') {
-          setTop50Customers(response.data);
-        } else {
-          let filteredArrayBasedOnSalesman = response.data.filter(item => {
-            return (
-              item.sale_man?.trim().toUpperCase() ==
-              salesMan.trim().toUpperCase()
-            );
-          });
-          setTop50Customers(filteredArrayBasedOnSalesman);
-
-          console.log(
-            'filteredArrayBasedOnSalesman>> NewC',
-            filteredArrayBasedOnSalesman,
-            salesMan.trim().toUpperCase(),
-          );
-        }
-      } else if (cmpcode?.trim().toUpperCase() == 'TAMMDOOD') {
+      if (userAccess && userAccess.includes('-NE')) {
         let filteredArrayBasedOnSalesman = response.data.filter(item => {
           return (
-            item.sale_man?.trim().toUpperCase() ==
-            salesManKey.trim().toUpperCase()
+            item.sale_man?.trim().toUpperCase() == salesMan.trim().toUpperCase()
           );
         });
         setTop50Customers(filteredArrayBasedOnSalesman);
@@ -1111,7 +1078,7 @@ const NewCollections = () => {
     if (appUrl && cmpcode && deptno && salesMan) {
       fetchTop50Customers();
     }
-  }, [appUrl, cmpcode, deptno, salesMan]);
+  }, [appUrl, cmpcode, deptno, salesMan, userAccess]);
 
   useEffect(() => {
     if (searchItem !== '') {

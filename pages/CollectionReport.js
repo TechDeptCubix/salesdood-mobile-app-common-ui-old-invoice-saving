@@ -137,6 +137,71 @@ const CollectionReport = () => {
   const [salesManName, setSalesManName] = useState('');
   const [cmpName, setCmpName] = useState('');
 
+  const getCompanyDetails = code => {
+    const c = (code || '').trim().toUpperCase();
+    const companyMap = {
+      MALBAR: {
+        name: 'MALBAR',
+        trn: '100335207500003',
+        address: 'Address line 1',
+        city: 'City',
+        tel: 'Tel',
+      },
+      PREMIER: {
+        name: 'PREMIER AUTO PARTS LLC',
+        trn: '10027835690000',
+        address: 'Address line 1',
+        city: 'City',
+        tel: 'Tel',
+      },
+      ICELAB: {
+        name: 'THE ICE LAB MANUFACTURING LLC',
+        trn: '104112430400003',
+        address: 'Central Plaza 2, Al Jurf',
+        city: 'Ajman, UAE',
+        tel: '065617700',
+      },
+      ICELAB_TEST: {
+        name: 'CUBIX TEST COMPANY VAN SALES',
+        trn: '1041000000000000',
+        address: 'Dumuscusss, Al Qusais',
+        city: 'Dubai, UAE',
+        tel: '000617700',
+      },
+      POPULAR: {
+        name: 'POPULAR AUTO SPARE PARTS TRADING LLC',
+        trn: '100327766000003',
+        address: 'Address line 1',
+        city: 'City',
+        tel: 'Tel',
+      },
+      MESHARI: {
+        name: 'MESHARI FOODSTUFF TRADING LLC',
+        trn: '100449215100003',
+        address: 'Address line 1',
+        city: 'City',
+        tel: 'Tel',
+      },
+      ICUP: {
+        name: 'ICECUP FOOD INDUSTRIES L.L.C',
+        trn: '100456789000003',
+        address: 'Address line 1',
+        city: 'City',
+        tel: 'Tel',
+      },
+    };
+
+    return (
+      companyMap[c] || {
+        name: cmpName || code || 'Company',
+        trn: '-',
+        address: '-',
+        city: '-',
+        tel: '-',
+      }
+    );
+  };
+
   const [isFromDatePickerVisible, setFromDatePickerVisibility] =
     useState(false);
   const [fromData, setFromData] = useState(null);
@@ -359,11 +424,9 @@ const CollectionReport = () => {
       }</span></div>
     </div>
     <div class="sig"><div>Signature</div><div>${salesManName}</div></div>
-    <div class="footer">${
-      cmpCode?.trim()?.toUpperCase() === 'SOCA'
-        ? 'SOCA TOOLS INTERNATIONAL TRADING LLC | Al Khabeesi bldg, Dubai | +971 54 247 9690'
-        : cmpName
-    }</div>
+    <div class="footer">${getCompanyDetails(cmpCode).name} | ${
+      getCompanyDetails(cmpCode).address
+    } | ${getCompanyDetails(cmpCode).tel}</div>
     </body></html>`;
 
     try {
@@ -383,7 +446,20 @@ const CollectionReport = () => {
 
   // ── Collection Report PDF (list) ──────────────────────────────────────────
   const buildCollectionReportHtml = (data, grouped) => {
+    const details = getCompanyDetails(cmpCode);
     const infoSection = `
+      <div style="text-align:center; margin-bottom:16px;">
+        <h2 style="margin:0; color:#1a1a2e;">${details.name}</h2>
+        <div style="font-size:12px; color:#666;">${details.address} | Tel: ${
+      details.tel
+    }</div>
+        ${
+          details.trn !== '-'
+            ? `<div style="font-size:12px; color:#666; font-weight:bold;">TRN: ${details.trn}</div>`
+            : ''
+        }
+        <h3 style="margin:10px 0 0; color:#5A55CA; text-transform:uppercase; letter-spacing:1px;">Collection Report</h3>
+      </div>
       <div style="margin-bottom:12px; padding:10px; background:#f8f8ff; border-radius:6px; border:1px solid #ddd;">
         <div style="display:flex; gap:24px; flex-wrap:wrap;">
           <span><b>Date:</b> ${fromData}</span>
@@ -445,7 +521,6 @@ const CollectionReport = () => {
       table{border-collapse:collapse;width:100%;}
       td{border-bottom:1px solid #eee;}
     </style></head><body>
-    <h2>Collection Report</h2>
     ${infoSection}
     ${cashSalesSection}
     ${cashCollSection}
@@ -492,10 +567,12 @@ const CollectionReport = () => {
       {label: 'Credit Sales Return', value: creditSalesReturnSum},
     ];
 
+    const details = getCompanyDetails(cmpCode);
     const html = `<!DOCTYPE html><html><head><meta charset="UTF-8">
     <style>
       body{font-family:'Calibri',sans-serif;margin:0;padding:16px;font-size:13px;color:#222;}
-      h2{text-align:center;color:#5A55CA;margin-bottom:4px;}
+      h2{text-align:center;color:#1a1a2e;margin-bottom:4px;}
+      h3{text-align:center;color:#5A55CA;margin-top:0;margin-bottom:12px;}
       .info{background:#f8f8ff;border:1px solid #ddd;border-radius:6px;padding:10px;margin-bottom:16px;}
       .info span{margin-right:20px;}
       .row{display:flex;justify-content:space-between;padding:8px 12px;border-bottom:1px solid #eee;}
@@ -504,7 +581,8 @@ const CollectionReport = () => {
       .value{font-size:14px;font-weight:bold;}
       .total-row{display:flex;justify-content:space-between;padding:10px 12px;background:#5A55CA;color:white;border-radius:4px;margin-top:10px;font-size:16px;font-weight:bold;}
     </style></head><body>
-    <h2>Daily Report – ${fromData}</h2>
+    <h2>${details.name}</h2>
+    <h3>Daily Report – ${fromData}</h3>
     <div class="info">
       <span><b>Date:</b> ${fromData}</span>
       <span><b>Location:</b> ${van}</span>
@@ -546,13 +624,18 @@ const CollectionReport = () => {
   // ── Sunmi print ────────────────────────────────────────────────────────────
   const printToSunmi = async () => {
     try {
+      const details = getCompanyDetails(cmpCode);
       SunmiPrinter.printerInit();
       SunmiPrinter.setAlignment(AlignValue.CENTER);
       SunmiPrinter.setFontSize(32);
       SunmiPrinter.setFontWeight(true);
+      SunmiPrinter.printerText(`${details.name}\n`);
+      SunmiPrinter.setFontSize(24);
       SunmiPrinter.printerText('DAILY COLLECTION REPORT\n');
-      SunmiPrinter.setFontSize(28);
-      SunmiPrinter.printerText('ICECUP FOOD INDUSTRIES L.L.C\n');
+      if (details.trn !== '-') {
+        SunmiPrinter.setFontSize(20);
+        SunmiPrinter.printerText(`TRN: ${details.trn}\n`);
+      }
       SunmiPrinter.lineWrap(1);
 
       const infoWeights = [200, 360];
@@ -614,30 +697,33 @@ const CollectionReport = () => {
   };
 
   // ── Bluetooth format ───────────────────────────────────────────────────────
-  const setFormatTextForBluetooth = item => ({
-    text:
-      "[C]<b><font size='tall'>THE ICE LAB MANUFACTURING LLC</font></b>\n" +
-      '[C]Central Plaza 2, Al Jurf\n' +
-      '[C]Ajman, UAE\n' +
-      '[C]Tel:065617700\n' +
-      '[C]TRN : 104112430400003\n' +
-      '[L]\n' +
-      "[L]<font size='tall'>Collection Voucher</font>\n" +
-      `[L]Voucher number :  ${item?.rv_no}\n` +
-      `[L]Invoice References  :  ${item?.Inv_ref}\n` +
-      `[L]Received with thanks from : ${item['Customer Name'] || ''}\n` +
-      `[L]Collection Type :  ${
-        item?.Type === 'CASH-SALES' || item?.Type === 'cash-collection'
-          ? 'CASH'
-          : item?.Type === 'cheque-collection'
-          ? 'CHEQUE'
-          : ''
-      } [R]Amount : ${item.Amount}\n` +
-      `[L]Remarks  :  ${item?.Remarks ?? ''}\n` +
-      '[L]\n[R]Signature\n' +
-      `[R]${item?.Salesman}\n` +
-      '[L]\n[L]\n[L]\n',
-  });
+  const setFormatTextForBluetooth = item => {
+    const details = getCompanyDetails(cmpCode);
+    return {
+      text:
+        `[C]<b><font size='tall'>${details.name}</font></b>\n` +
+        `[C]${details.address}\n` +
+        `[C]${details.city}\n` +
+        `[C]Tel:${details.tel}\n` +
+        `[C]TRN : ${details.trn}\n` +
+        '[L]\n' +
+        "[L]<font size='tall'>Collection Voucher</font>\n" +
+        `[L]Voucher number :  ${item?.rv_no}\n` +
+        `[L]Invoice References  :  ${item?.Inv_ref}\n` +
+        `[L]Received with thanks from : ${item['Customer Name'] || ''}\n` +
+        `[L]Collection Type :  ${
+          item?.Type === 'CASH-SALES' || item?.Type === 'cash-collection'
+            ? 'CASH'
+            : item?.Type === 'cheque-collection'
+            ? 'CHEQUE'
+            : ''
+        } [R]Amount : ${item.Amount}\n` +
+        `[L]Remarks  :  ${item?.Remarks ?? ''}\n` +
+        '[L]\n[R]Signature\n' +
+        `[R]${item?.Salesman}\n` +
+        '[L]\n[L]\n[L]\n',
+    };
+  };
 
   const printBluetooth = async item => {
     try {

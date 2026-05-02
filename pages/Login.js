@@ -352,6 +352,10 @@ const Login = () => {
           await AsyncStorage.setItem('VAN', result.VAN?.trim());
         }
 
+        if (result.useraccess) {
+          await AsyncStorage.setItem('useraccess', result.useraccess?.trim());
+        }
+
         setLoading(false);
 
         setUserId('');
@@ -472,6 +476,10 @@ const Login = () => {
               'VAN',
               result.VAN?.trim() ? result.VAN?.trim() : '',
             );
+          }
+
+          if (result.useraccess) {
+            await AsyncStorage.setItem('useraccess', result.useraccess?.trim());
           }
           setLoading(false);
 

@@ -59,14 +59,15 @@ const CustomerDetails = () => {
 
   const [deptNo, setDeptNo] = useState('');
   const [showAddCustomerModal, setShowAddCustomerModal] = useState(false);
+  const [userAccess, setUserAccess] = useState('');
 
   const fetchAppUrl = async () => {
     const appUrl = await AsyncStorage.getItem('appUrl');
 
     const deptNo = await AsyncStorage.getItem('DEPTNO');
 
-    const salesName = await AsyncStorage.getItem('salesman_name');
-
+    const salesmanName = await AsyncStorage.getItem('salesman_name');
+    console.log('Salesman Name', salesmanName);
     const sman_key = await AsyncStorage.getItem('Smankey');
 
     console.log('sman_key in customer details', sman_key);
@@ -86,12 +87,17 @@ const CustomerDetails = () => {
       setDeptNo(deptNo);
     }
 
-    if (salesName) {
-      setSalseName(salesName);
+    if (salesmanName) {
+      setSalseName(salesmanName);
     }
 
     if (sman_key) {
       setSalesManKey(sman_key);
+    }
+
+    const useraccess = await AsyncStorage.getItem('useraccess');
+    if (useraccess) {
+      setUserAccess(useraccess);
     }
   };
 
@@ -120,7 +126,7 @@ const CustomerDetails = () => {
       await axios
         .get(`${appUrl}Search_Customer/${cmpcode}/Cust/${value}/${deptNo}`)
         .then(res => {
-          if (cmpcode?.trim().toUpperCase() === 'SOCA') {
+          if (userAccess && userAccess.includes('-NE')) {
             let filteredArrayBasedOnSalesman = res.data.filter(item => {
               return (
                 item.sale_man?.trim().toUpperCase() ===
@@ -149,13 +155,17 @@ const CustomerDetails = () => {
   const fetchTop50Customers = async () => {
     setShowActivity(true);
     try {
+      console.log(
+        'SEARCH_CUSTOMER_LINK_50',
+        `${appUrl}Search_Customer/${cmpcode}/Cust50/-/${deptNo}`,
+      );
       const response = await axios.get(
         `${appUrl}Search_Customer/${cmpcode}/Cust50/-/${deptNo}`,
       );
 
-      console.log('fetchTop50Customers>>', response.data);
-
-      if (cmpcode?.trim().toUpperCase() === 'SOCA') {
+      // console.log('fetchTop50Customers>>', response.data);
+      console.log('User Access', userAccess);
+      if (userAccess && userAccess.includes('-NE')) {
         let filteredArrayBasedOnSalesman = response.data.filter(item => {
           return (
             item.sale_man?.trim().toUpperCase() ===
@@ -210,7 +220,7 @@ const CustomerDetails = () => {
     if (appUrl && cmpcode && deptNo && salesName) {
       fetchTop50Customers();
     }
-  }, [appUrl, cmpcode, deptNo, salesName]);
+  }, [appUrl, cmpcode, deptNo, salesName, userAccess]);
 
   useEffect(() => {
     if (searchItem !== '') {
@@ -234,7 +244,7 @@ const CustomerDetails = () => {
     fetchAppUrl();
   }, []);
 
-  console.log('top50Customers', top50Customers && top50Customers[0]);
+  // console.log('top50Customers', top50Customers && top50Customers[0]);
   // console.log('searchItem', searchItem)
   // console.log('stockData', stockData)
   // console.log('selectedStock', selectedStock)

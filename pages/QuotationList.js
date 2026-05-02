@@ -8,9 +8,9 @@ import {
   ActivityIndicator,
   Image,
 } from 'react-native';
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useState, useCallback} from 'react';
 import Header from './Header';
-import {useNavigation} from '@react-navigation/native';
+import {useNavigation, useFocusEffect} from '@react-navigation/native';
 import axios from 'axios';
 import StatusLogPop from '../popups/StatusLogPop';
 import HeaderUiNew from './HeaderUiNew';
@@ -98,11 +98,8 @@ const QuotationList = () => {
     }
   };
 
-  const fetchPreviousOrders = async () => {
+  const fetchPreviousOrders = useCallback(async () => {
     try {
-      // const response = await axios.get(`${REACT_APP_BASE_URL}Sales_Order/Salesall/ALL`);
-      // const response = await axios.get(`https://cubixweberp.com:208/api/Sales_Order/automax/Salesall/ALL`);
-
       const deptno = await AsyncStorage.getItem('DEPTNO');
 
       console.log(
@@ -115,9 +112,6 @@ const QuotationList = () => {
       );
       console.log('API RESPONSE --------', response.data);
 
-      // console.log(`${appUrl}Sales_Order/${cmpcode}/previous/${salesMan}`)
-
-      // https://cubixweberp.com:208/api/Sales_Order/automax/previous/SHA01
       setData(response.data);
     } catch (err) {
       console.log('fetchPreviousOrdersError', err);
@@ -125,7 +119,13 @@ const QuotationList = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [salesMan, appUrl, cmpcode]);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchPreviousOrders();
+    }, [fetchPreviousOrders]),
+  );
 
   const getCompanyDetails = code => {
     const c = (code || '').trim().toUpperCase();
@@ -143,6 +143,11 @@ const QuotationList = () => {
       STARLINK: {
         name: 'STARLINK COMMUNICATIONS',
         trn: '100456123400003',
+        logo: STARLINK_LOGO,
+      },
+      ICELAB_TEST: {
+        name: 'CUBIX TEST COMPANY VAN SALES',
+        trn: '0000000000000',
         logo: STARLINK_LOGO,
       },
     };
@@ -411,12 +416,6 @@ const QuotationList = () => {
           </View>
         )}
 
-        {error && (
-          <View style={styles.centered}>
-            <Text>Error fetching data: {error.message}</Text>
-          </View>
-        )}
-
         {data.length === 0 && !loading && (
           <View>
             <Text style={styles.NoDataText}>No Data Available</Text>
@@ -506,6 +505,16 @@ const QuotationList = () => {
                       ) : (
                         <Icon name="print" size={24} color="#4F46E5" />
                       )}
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() =>
+                        navigation.navigate('EditSalesInvoice', {
+                          id: item['QUOT NO'],
+                          type: 'quotation',
+                        })
+                      }
+                      style={[styles.PrintIconContainer, {marginLeft: 10}]}>
+                      <Icon name="edit" size={24} color="#1A6CF6" />
                     </TouchableOpacity>
                   </View>
                 </View>

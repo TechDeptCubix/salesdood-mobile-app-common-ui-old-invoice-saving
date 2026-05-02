@@ -147,6 +147,7 @@ const SalesOrder = ({route}) => {
   const [customerCreditBlocked, setCustomerCreditBlocked] = useState(false);
 
   const [totalWithVAT, setTotalWithVAT] = useState(0);
+  const [userAccess, setUserAccess] = useState('');
 
   const [showCartPanel, setShowCartPanel] = useState(false);
 
@@ -251,6 +252,11 @@ const SalesOrder = ({route}) => {
       setAppUrl(appUrl);
     }
 
+    const useraccess = await AsyncStorage.getItem('useraccess');
+    if (useraccess) {
+      setUserAccess(useraccess);
+    }
+
     if (van) {
       setVan(van);
     }
@@ -340,7 +346,7 @@ const SalesOrder = ({route}) => {
         .then(res => {
           const data = res.data;
 
-          if (cmpcode?.trim().toUpperCase() === 'SOCA') {
+          if (userAccess && userAccess.includes('-NE')) {
             let filteredArrayBasedOnSalesman = data.filter(item => {
               return (
                 item.sale_man?.trim().toUpperCase() ===
@@ -359,27 +365,7 @@ const SalesOrder = ({route}) => {
 
             // Set the limited data to the state
             setCustomerData(limitedData);
-            console.log('SOCA customer data', limitedData);
-          } else if (cmpcode?.trim().toUpperCase() == 'TAMMDOOD') {
-            let filteredArrayBasedOnSalesman = data.filter(item => {
-              return (
-                item.sale_man?.trim().toUpperCase() ==
-                salesManKey.trim().toUpperCase()
-              );
-            });
-
-            console.log(
-              'filteredArrayBasedOnSalesman>> SO',
-              filteredArrayBasedOnSalesman,
-              salesManKey.trim().toUpperCase(),
-            );
-
-            // Limit the data to the first 25 items
-            const limitedData = filteredArrayBasedOnSalesman.slice(0, 25);
-
-            // Set the limited data to the state
-            setCustomerData(limitedData);
-            console.log('TAMMDOOD customer data', limitedData);
+            console.log('Filtered customer data', limitedData);
           } else {
             // Limit the data to the first 25 items
             const limitedData = data.slice(0, 25);
@@ -438,7 +424,7 @@ const SalesOrder = ({route}) => {
 
       console.log('nosrchuf');
     }
-  }, [customerSearchItem]);
+  }, [customerSearchItem, userAccess]);
 
   useEffect(() => {
     if (selectedCustomer) {
@@ -1547,7 +1533,7 @@ const SalesOrder = ({route}) => {
       const currentDueDays = Number(selectedCustomer.curduedays);
 
       // Credit limit check
-      if (avaiBal >= creditLimit) {
+      if (avaiBal > creditLimit) {
         setBlockNextButtonView(true);
         Alert.alert(
           'Credit Limit Reached',
@@ -1630,30 +1616,6 @@ const SalesOrder = ({route}) => {
     {
       unit: 'PCS',
     },
-    // {
-    //     "unit": "ele",
-    // },
-    // {
-    //     "unit": "kg",
-    // },
-    // {
-    //     "unit": "pcs",
-    // },
-    // {
-    //     "unit": "ele",
-    // },
-    // {
-    //     "unit": "kg",
-    // },
-    // {
-    //     "unit": "pcs",
-    // },
-    // {
-    //     "unit": "ele",
-    // },
-    // {
-    //     "unit": "kg",
-    // },
   ];
 
   useEffect(() => {
