@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   SafeAreaView,
   StyleSheet,
@@ -15,10 +15,10 @@ import {
 } from 'react-native';
 import cbxLogo from '../images/cbxLogo.png';
 import axios from 'axios';
-import {useNavigation} from '@react-navigation/native';
-import ToastManager, {Toast} from 'toastify-react-native';
+import { useNavigation } from '@react-navigation/native';
+import ToastManager, { Toast } from 'toastify-react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {useFocusEffect} from '@react-navigation/native';
+import { useFocusEffect } from '@react-navigation/native';
 import Loader from '../popups/Loader';
 import messaging from '@react-native-firebase/messaging';
 
@@ -363,7 +363,7 @@ const Login = () => {
 
         // navigation.navigate('Home')
       }
-    } catch (error) {}
+    } catch (error) { }
   };
 
   const login = async () => {
@@ -526,7 +526,7 @@ const Login = () => {
             // alignItems: 'center'
           }}
           bounces={false}>
-          <ToastManager width={380} height={120} textStyle={{fontSize: 16}} />
+          <ToastManager width={380} height={120} textStyle={{ fontSize: 16 }} />
 
           {/* <View style={{
                         width: Dimensions.get('window').width,
@@ -608,7 +608,7 @@ const Login = () => {
                 <Text
                   style={[
                     styles.optionText,
-                    {color: 'grey', padding: 0, marginTop: 0},
+                    { color: 'grey', padding: 0, marginTop: 0 },
                   ]}>
                   Continue as user {localUser}
                 </Text>
@@ -624,7 +624,7 @@ const Login = () => {
                     },
                   ]}
                   onPress={() => navigation.navigate('Home')}>
-                  <Text style={[styles.buttonText, {color: 'grey'}]}>YES</Text>
+                  <Text style={[styles.buttonText, { color: 'grey' }]}>YES</Text>
                 </TouchableOpacity>
               </View>
             )}
@@ -636,7 +636,7 @@ const Login = () => {
                 marginRight: 6,
                 fontFamily: 'Lexend-Regular',
               }}>
-              version number 6.6.0
+              version number 6.8.0
             </Text>
 
             <View style={styles.CBXImgWrap}>

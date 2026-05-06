@@ -13,24 +13,24 @@ import {
   Alert,
   Keyboard,
 } from 'react-native';
-import React, {useEffect, useMemo, useRef, useState} from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import Header from './Header';
 import axios from 'axios';
 import SelectedStockPop from '../popups/SelectedStockPop';
 import QuotationPop from '../popups/QuotationPop';
-import ToastManager, {Toast} from 'toastify-react-native';
+import ToastManager, { Toast } from 'toastify-react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {useNavigation} from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 import REACT_APP_BASE_URL from '../url/AppUrl';
 import HeaderUiNew from './HeaderUiNew';
-import {format} from 'date-fns';
+import { format } from 'date-fns';
 import RadioGroup from 'react-native-radio-buttons-group';
 import formatPrice3Decimal from '../utils';
 
-import {SERVER_KEY} from '@env';
-import {resolver} from '../metro.config';
+import { SERVER_KEY } from '@env';
+import { resolver } from '../metro.config';
 
-const SalesOrder = ({route}) => {
+const SalesOrder = ({ route }) => {
   const [salesManKey, setSalesManKey] = useState('');
   const [isItemFOC, setIsItemFOC] = useState(false);
   const this_item_is_foc = useRef(false);
@@ -42,7 +42,7 @@ const SalesOrder = ({route}) => {
     useState(false);
   const [isCallingBulkApi, setIsCallingBulkPriceApi] = useState(false);
 
-  const {orderId, type} = route.params || {};
+  const { orderId, type } = route.params || {};
 
   const navigation = useNavigation();
 
@@ -478,7 +478,7 @@ const SalesOrder = ({route}) => {
           Alert.alert(
             'Amount Exceed',
             'Available balance is greater than Credit limit. Please choose cash customer to add more items.',
-            [{text: 'OK'}],
+            [{ text: 'OK' }],
           );
         }
         if (selectedCustomer.Avai_Bal <= 0) {
@@ -486,7 +486,7 @@ const SalesOrder = ({route}) => {
           Alert.alert(
             'Amount Zero',
             'Available balance is Zero. Please choose cash customer to add more items.',
-            [{text: 'OK'}],
+            [{ text: 'OK' }],
           );
         }
       }
@@ -656,7 +656,7 @@ const SalesOrder = ({route}) => {
           Alert.alert(
             'Amount Exceed',
             'Amount exceed available limit. Please choose cash customer to add more items.',
-            [{text: 'OK'}],
+            [{ text: 'OK' }],
           );
           return;
         }
@@ -816,7 +816,7 @@ const SalesOrder = ({route}) => {
         Alert.alert(
           'Amount Exceed',
           'Amount exceed available limit. Please choose cash customer to add more items.',
-          [{text: 'OK'}],
+          [{ text: 'OK' }],
         );
         return;
       } else {
@@ -1175,7 +1175,7 @@ const SalesOrder = ({route}) => {
 
       console.log('All items removed from AsyncStorage.');
 
-      navigation.setParams({type: undefined});
+      navigation.setParams({ type: undefined });
 
       showAsyncItemRemove();
       logAsyncData();
@@ -1211,7 +1211,7 @@ const SalesOrder = ({route}) => {
 
       console.log('All items removed from AsyncStorage.');
 
-      navigation.setParams({type: undefined});
+      navigation.setParams({ type: undefined });
 
       // showAsyncItemRemove()
       showMakeOrderSuccess();
@@ -1494,13 +1494,11 @@ const SalesOrder = ({route}) => {
       if (selectedCustomer) {
         setCashCustomerName(selectedCustomer.Custname);
         setCashCustomerAddress(
-          `${
-            selectedCustomer.address1 ? selectedCustomer.address1 + ' ' : ''
+          `${selectedCustomer.address1 ? selectedCustomer.address1 + ' ' : ''
           }` +
-            `${
-              selectedCustomer.address2 ? selectedCustomer.address2 + ' ' : ''
-            }` +
-            `${selectedCustomer.address3 ? selectedCustomer.address3 : ''}`,
+          `${selectedCustomer.address2 ? selectedCustomer.address2 + ' ' : ''
+          }` +
+          `${selectedCustomer.address3 ? selectedCustomer.address3 : ''}`,
         );
         setCashCustomerPhone(
           selectedCustomer.phone && selectedCustomer.phone.trim(),
@@ -1538,7 +1536,7 @@ const SalesOrder = ({route}) => {
         Alert.alert(
           'Credit Limit Reached',
           'Available balance reached the credit limit. Please choose a cash customer.',
-          [{text: 'OK'}],
+          [{ text: 'OK' }],
         );
         return;
       }
@@ -1549,7 +1547,7 @@ const SalesOrder = ({route}) => {
         Alert.alert(
           'Overdue',
           'Customer exceeded allowed due days. Please collect payment or choose cash customer.',
-          [{text: 'OK'}],
+          [{ text: 'OK' }],
         );
         return;
       }
@@ -1796,14 +1794,14 @@ const SalesOrder = ({route}) => {
           totalUnitPrice={totalUnitPrice}
         />
 
-        <ToastManager width={350} height={100} textStyle={{fontSize: 17}} />
+        <ToastManager width={350} height={100} textStyle={{ fontSize: 17 }} />
 
         {/* <TouchableWithoutFeedback onPress={Keyboard.dismiss}> */}
         <KeyboardAvoidingView
           behavior="padding"
           keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 0}
           style={styles.HomeCont}>
-          <View style={{width: '100%', height: '100%'}}>
+          <View style={{ width: '100%', height: '100%' }}>
             {/* {
                                 showCartPanel === false &&
                                 <View style={styles.RadioWrap}>
@@ -1829,7 +1827,7 @@ const SalesOrder = ({route}) => {
               {showCartPanel === false && (
                 <>
                   <View style={styles.RadioWrap}>
-                    <View style={{width: '100%'}}>
+                    <View style={{ width: '100%' }}>
                       <RadioGroup
                         radioButtons={regUnregUserRadio}
                         onPress={setSelectedUserType}
@@ -1864,7 +1862,7 @@ const SalesOrder = ({route}) => {
                           //     />
 
                           // </View>
-                          <View style={[styles.TANDCInpCont, {width: '90%'}]}>
+                          <View style={[styles.TANDCInpCont, { width: '90%' }]}>
                             <TextInput
                               style={styles.NewInputStyle}
                               ref={searchUserInputRef}
@@ -1879,7 +1877,7 @@ const SalesOrder = ({route}) => {
 
                       {showActivity && <ActivityIndicator />}
 
-                      <View style={{width: '100%'}}>
+                      <View style={{ width: '100%' }}>
                         {customerSearchError && !showActivity && (
                           <Text style={styles.ErrorText}>
                             {customerSearchError}
@@ -1941,7 +1939,7 @@ const SalesOrder = ({route}) => {
                                         item,
                                       );
                                     }}>
-                                    <View style={{padding: 6}}>
+                                    <View style={{ padding: 6 }}>
                                       {/* Customer Name + Credit Status */}
                                       <View
                                         style={{
@@ -1964,15 +1962,15 @@ const SalesOrder = ({route}) => {
                                             fontWeight: '600',
                                             color:
                                               item.CREDITMETHOD?.trim().toUpperCase() ===
-                                              'OPEN'
+                                                'OPEN'
                                                 ? 'green'
                                                 : item.CREDITMETHOD?.trim().toUpperCase() ===
                                                   'BLOCKED'
-                                                ? 'red'
-                                                : item.CREDITMETHOD?.trim().toUpperCase() ===
-                                                  'CREDIT BLOCK'
-                                                ? 'orange'
-                                                : 'black',
+                                                  ? 'red'
+                                                  : item.CREDITMETHOD?.trim().toUpperCase() ===
+                                                    'CREDIT BLOCK'
+                                                    ? 'orange'
+                                                    : 'black',
                                           }}>
                                           {item.CREDITMETHOD}
                                         </Text>
@@ -2041,7 +2039,7 @@ const SalesOrder = ({route}) => {
                                             fontWeight: '600',
                                             color:
                                               Number(item.curduedays) >
-                                              Number(item.duedays)
+                                                Number(item.duedays)
                                                 ? 'red'
                                                 : 'green',
                                           }}>
@@ -2126,7 +2124,7 @@ const SalesOrder = ({route}) => {
                                   <View>
                                     <Text style={styles.SelectCustNewText}>
                                       {selectedCustomer &&
-                                      selectedCustomer.Custname?.trim() !== ''
+                                        selectedCustomer.Custname?.trim() !== ''
                                         ? selectedCustomer.Custname
                                         : ''}
                                     </Text>
@@ -2140,10 +2138,10 @@ const SalesOrder = ({route}) => {
                                       <Text
                                         style={[
                                           styles.SelectCustNewBottomText,
-                                          {marginLeft: 8},
+                                          { marginLeft: 8 },
                                         ]}>
                                         {selectedCustomer &&
-                                        selectedCustomer.account?.trim() !== ''
+                                          selectedCustomer.account?.trim() !== ''
                                           ? selectedCustomer.account
                                           : ''}
                                       </Text>
@@ -2156,7 +2154,7 @@ const SalesOrder = ({route}) => {
                                       <Text
                                         style={[
                                           styles.SelectCustNewBottomText,
-                                          {marginLeft: 8},
+                                          { marginLeft: 8 },
                                         ]}>
                                         {selectedCustomer &&
                                           selectedCustomer.CREDITMETHOD}
@@ -2175,7 +2173,7 @@ const SalesOrder = ({route}) => {
                                     <Text
                                       style={[
                                         styles.CustHeadTextValue,
-                                        {marginLeft: 12},
+                                        { marginLeft: 12 },
                                       ]}>
                                       {selectedCustomer &&
                                         selectedCustomer.Credit_Limit}
@@ -2188,7 +2186,7 @@ const SalesOrder = ({route}) => {
                                     <Text
                                       style={[
                                         styles.CustHeadTextValue,
-                                        {marginLeft: 12},
+                                        { marginLeft: 12 },
                                       ]}>
                                       {selectedCustomer &&
                                         selectedCustomer.Avai_Bal}
@@ -2203,7 +2201,7 @@ const SalesOrder = ({route}) => {
                                       <Text
                                         style={[
                                           styles.CustHeadText,
-                                          {color: 'white'},
+                                          { color: 'white' },
                                         ]}>
                                         Next
                                       </Text>
@@ -2252,7 +2250,7 @@ const SalesOrder = ({route}) => {
                                     <Text
                                       style={[
                                         styles.CustHeadText,
-                                        {width: '20%'},
+                                        { width: '20%' },
                                       ]}>
                                       Payment
                                     </Text>
@@ -2271,7 +2269,7 @@ const SalesOrder = ({route}) => {
                                     <Text
                                       style={[
                                         styles.CustHeadText,
-                                        {width: '20%'},
+                                        { width: '20%' },
                                       ]}>
                                       Delivery
                                     </Text>
@@ -2290,7 +2288,7 @@ const SalesOrder = ({route}) => {
                                     <Text
                                       style={[
                                         styles.CustHeadText,
-                                        {width: '20%'},
+                                        { width: '20%' },
                                       ]}>
                                       Validity
                                     </Text>
@@ -2309,7 +2307,7 @@ const SalesOrder = ({route}) => {
                                     <Text
                                       style={[
                                         styles.CustHeadText,
-                                        {width: '20%'},
+                                        { width: '20%' },
                                       ]}>
                                       TRN
                                     </Text>
@@ -2329,7 +2327,7 @@ const SalesOrder = ({route}) => {
                                       <Text
                                         style={[
                                           styles.CustHeadText,
-                                          {width: '20%'},
+                                          { width: '20%' },
                                         ]}>
                                         LPO
                                       </Text>
@@ -2461,7 +2459,7 @@ const SalesOrder = ({route}) => {
                                     <Text
                                       style={[
                                         styles.CustHeadTextValue,
-                                        {marginLeft: 12},
+                                        { marginLeft: 12 },
                                       ]}>
                                       {selectedCustomer &&
                                         selectedCustomer.Credit_Limit}
@@ -2474,7 +2472,7 @@ const SalesOrder = ({route}) => {
                                     <Text
                                       style={[
                                         styles.CustHeadTextValue,
-                                        {marginLeft: 12},
+                                        { marginLeft: 12 },
                                       ]}>
                                       {selectedCustomer &&
                                         selectedCustomer.Avai_Bal}
@@ -2489,7 +2487,7 @@ const SalesOrder = ({route}) => {
                                       <Text
                                         style={[
                                           styles.CustHeadText,
-                                          {color: 'white'},
+                                          { color: 'white' },
                                         ]}>
                                         Next
                                       </Text>
@@ -2510,7 +2508,7 @@ const SalesOrder = ({route}) => {
                                     <Text
                                       style={[
                                         styles.CustHeadText,
-                                        {width: '20%'},
+                                        { width: '20%' },
                                       ]}>
                                       Name
                                     </Text>
@@ -2524,11 +2522,11 @@ const SalesOrder = ({route}) => {
                                           setCashCustomerName(text)
                                         }
                                         placeholderTextColor="#aaa"
-                                        // onBlur={() => {
-                                        //     if (cashCustAddressRef.current) {
-                                        //         cashCustAddressRef.current.focus();
-                                        //     }
-                                        // }}
+                                      // onBlur={() => {
+                                      //     if (cashCustAddressRef.current) {
+                                      //         cashCustAddressRef.current.focus();
+                                      //     }
+                                      // }}
                                       />
                                     </View>
                                   </View>
@@ -2537,7 +2535,7 @@ const SalesOrder = ({route}) => {
                                     <Text
                                       style={[
                                         styles.CustHeadText,
-                                        {width: '20%'},
+                                        { width: '20%' },
                                       ]}>
                                       Address
                                     </Text>
@@ -2551,11 +2549,11 @@ const SalesOrder = ({route}) => {
                                           setCashCustomerAddress(text)
                                         }
                                         placeholderTextColor="#aaa"
-                                        // onBlur={() => {
-                                        //     if (cashCustPhoneRef.current) {
-                                        //         cashCustPhoneRef.current.focus();
-                                        //     }
-                                        // }}
+                                      // onBlur={() => {
+                                      //     if (cashCustPhoneRef.current) {
+                                      //         cashCustPhoneRef.current.focus();
+                                      //     }
+                                      // }}
                                       />
                                     </View>
                                   </View>
@@ -2564,7 +2562,7 @@ const SalesOrder = ({route}) => {
                                     <Text
                                       style={[
                                         styles.CustHeadText,
-                                        {width: '20%'},
+                                        { width: '20%' },
                                       ]}>
                                       Phone Number
                                     </Text>
@@ -2578,11 +2576,11 @@ const SalesOrder = ({route}) => {
                                           setCashCustomerPhone(text)
                                         }
                                         placeholderTextColor="#aaa"
-                                        // onBlur={() => {
-                                        //     if (searchItemInpRef.current) {
-                                        //         searchItemInpRef.current.focus();
-                                        //     }
-                                        // }}
+                                      // onBlur={() => {
+                                      //     if (searchItemInpRef.current) {
+                                      //         searchItemInpRef.current.focus();
+                                      //     }
+                                      // }}
                                       />
                                     </View>
                                   </View>
@@ -2591,7 +2589,7 @@ const SalesOrder = ({route}) => {
                                     <Text
                                       style={[
                                         styles.CustHeadText,
-                                        {width: '20%'},
+                                        { width: '20%' },
                                       ]}>
                                       Remark
                                     </Text>
@@ -2612,7 +2610,7 @@ const SalesOrder = ({route}) => {
                                     <Text
                                       style={[
                                         styles.CustHeadText,
-                                        {width: '20%'},
+                                        { width: '20%' },
                                       ]}>
                                       TRN
                                     </Text>
@@ -2631,7 +2629,7 @@ const SalesOrder = ({route}) => {
                                     <Text
                                       style={[
                                         styles.CustHeadText,
-                                        {width: '20%'},
+                                        { width: '20%' },
                                       ]}>
                                       Payment
                                     </Text>
@@ -2650,7 +2648,7 @@ const SalesOrder = ({route}) => {
                                     <Text
                                       style={[
                                         styles.CustHeadText,
-                                        {width: '20%'},
+                                        { width: '20%' },
                                       ]}>
                                       Delivery
                                     </Text>
@@ -2669,7 +2667,7 @@ const SalesOrder = ({route}) => {
                                     <Text
                                       style={[
                                         styles.CustHeadText,
-                                        {width: '20%'},
+                                        { width: '20%' },
                                       ]}>
                                       Validity
                                     </Text>
@@ -2838,7 +2836,7 @@ const SalesOrder = ({route}) => {
                     </View>
                   )}
 
-                  <View style={[styles.HomeTextCont, {marginTop: 24}]}>
+                  <View style={[styles.HomeTextCont, { marginTop: 24 }]}>
                     <TouchableOpacity
                       style={styles.DeleteAllDataButton}
                       onPress={() => setShowResetPop(true)}>
@@ -2888,7 +2886,7 @@ const SalesOrder = ({route}) => {
                         <View
                           style={[
                             styles.TANDCInpCont,
-                            {width: '95%', marginTop: 12},
+                            { width: '95%', marginTop: 12 },
                           ]}>
                           <TextInput
                             style={styles.NewInputStyle}
@@ -2983,7 +2981,7 @@ const SalesOrder = ({route}) => {
                                     <Text
                                       style={[
                                         styles.StockListDescTextSmall,
-                                        {color: '#64748B'},
+                                        { color: '#64748B' },
                                       ]}>
                                       {item.Code}
                                     </Text>
@@ -2991,7 +2989,7 @@ const SalesOrder = ({route}) => {
                                     <Text
                                       style={[
                                         styles.StockListDescTextSmall,
-                                        {color: '#2563EB'},
+                                        { color: '#2563EB' },
                                       ]}>
                                       Cash: {item['Cash Price']}
                                     </Text>
@@ -2999,7 +2997,7 @@ const SalesOrder = ({route}) => {
                                     <Text
                                       style={[
                                         styles.StockListDescTextSmall,
-                                        {color: '#0EA5E9'},
+                                        { color: '#0EA5E9' },
                                       ]}>
                                       Credit: {item['Credit Price']}
                                     </Text>
@@ -3030,7 +3028,7 @@ const SalesOrder = ({route}) => {
                             <Text
                               style={[
                                 styles.SelectedItemText,
-                                {fontSize: 13, width: '85%'},
+                                { fontSize: 13, width: '85%' },
                               ]}>
                               {selectedStock && selectedStock.Description !== ''
                                 ? selectedStock.Description
@@ -3039,7 +3037,7 @@ const SalesOrder = ({route}) => {
                             <Text
                               style={[
                                 styles.SelectedItemText,
-                                {fontSize: 13, fontFamily: 'Lexend-Regular'},
+                                { fontSize: 13, fontFamily: 'Lexend-Regular' },
                               ]}>
                               {selectedStock && selectedStock.Code !== ''
                                 ? selectedStock.Code
@@ -3058,7 +3056,7 @@ const SalesOrder = ({route}) => {
                       )}
 
                       <View style={styles.AddtoCartInps}>
-                        <View style={[styles.TANDCInpItem, {width: '75%'}]}>
+                        <View style={[styles.TANDCInpItem, { width: '75%' }]}>
                           <View
                             style={{
                               flexDirection: 'row',
@@ -3068,7 +3066,7 @@ const SalesOrder = ({route}) => {
                             <Text style={styles.StockListDescTextSmall}>
                               AvlQty
                             </Text>
-                            <Text style={{marginLeft: 10}}>
+                            <Text style={{ marginLeft: 10 }}>
                               {selectedStock && selectedStock.Code !== ''
                                 ? selectedStock.AvlQty
                                 : ''}
@@ -3076,11 +3074,11 @@ const SalesOrder = ({route}) => {
                           </View>
                         </View>
 
-                        <View style={[styles.TANDCInpItem, {width: '75%'}]}>
-                          <Text style={[styles.CustHeadText, {width: '20%'}]}>
+                        <View style={[styles.TANDCInpItem, { width: '75%' }]}>
+                          <Text style={[styles.CustHeadText, { width: '20%' }]}>
                             Unit
                           </Text>
-                          <View style={[styles.AddItemInpCont, {marginTop: 0}]}>
+                          <View style={[styles.AddItemInpCont, { marginTop: 0 }]}>
                             {/* <Text style={styles.AddCartInpLabel}>Unit</Text> */}
                             <View
                               style={[
@@ -3093,7 +3091,7 @@ const SalesOrder = ({route}) => {
                               ]}>
                               <Text
                                 style={[
-                                  {marginLeft: 4, color: '#aaa', width: '100%'},
+                                  { marginLeft: 4, color: '#aaa', width: '100%' },
                                 ]}>
                                 {unitValue}
                               </Text>
@@ -3112,15 +3110,15 @@ const SalesOrder = ({route}) => {
                           </View>
                         </View>
 
-                        <View style={[styles.TANDCInpItem, {width: '75%'}]}>
-                          <Text style={[styles.CustHeadText, {width: '20%'}]}>
+                        <View style={[styles.TANDCInpItem, { width: '75%' }]}>
+                          <Text style={[styles.CustHeadText, { width: '20%' }]}>
                             Qty
                           </Text>
 
                           <View
                             style={[
                               styles.TANDCInpCont,
-                              {marginTop: 0, width: '60%'},
+                              { marginTop: 0, width: '60%' },
                             ]}>
                             {/* <Text style={styles.AddCartInpLabel}>Qty</Text> */}
                             <TextInput
@@ -3146,8 +3144,8 @@ const SalesOrder = ({route}) => {
                           </View>
                         </View>
 
-                        <View style={[styles.TANDCInpItem, {width: '75%'}]}>
-                          <Text style={[styles.CustHeadText, {width: '20%'}]}>
+                        <View style={[styles.TANDCInpItem, { width: '75%' }]}>
+                          <Text style={[styles.CustHeadText, { width: '20%' }]}>
                             Price
                           </Text>
 
@@ -3159,7 +3157,7 @@ const SalesOrder = ({route}) => {
                           <View
                             style={[
                               styles.TANDCInpCont,
-                              {marginTop: 0, width: '60%'},
+                              { marginTop: 0, width: '60%' },
                             ]}>
                             {/* <Text style={styles.AddCartInpLabel}>Price</Text> */}
                             <TextInput
@@ -3191,11 +3189,11 @@ const SalesOrder = ({route}) => {
                           {isCallingBulkApi && <ActivityIndicator />}
                         </View>
 
-                        <View style={[styles.TANDCInpItem, {width: '75%'}]}>
-                          <Text style={[styles.CustHeadText, {width: '20%'}]}>
+                        <View style={[styles.TANDCInpItem, { width: '75%' }]}>
+                          <Text style={[styles.CustHeadText, { width: '20%' }]}>
                             Total
                           </Text>
-                          <View style={[styles.AddItemInpCont, {marginTop: 0}]}>
+                          <View style={[styles.AddItemInpCont, { marginTop: 0 }]}>
                             {/* <Text style={styles.AddCartInpLabel}>Unit</Text> */}
                             <View
                               style={[
@@ -3208,7 +3206,7 @@ const SalesOrder = ({route}) => {
                               ]}>
                               <Text
                                 style={[
-                                  {marginLeft: 4, color: '#aaa', width: '100%'},
+                                  { marginLeft: 4, color: '#aaa', width: '100%' },
                                 ]}>
                                 {(quantity * unitPrice).toFixed(2)}
                               </Text>
@@ -3217,12 +3215,12 @@ const SalesOrder = ({route}) => {
                         </View>
 
                         {isItemFOC && (
-                          <Text style={{color: '#f00', fontSize: 18}}>FOC</Text>
+                          <Text style={{ color: '#f00', fontSize: 18 }}>FOC</Text>
                         )}
                         {console.log('selectedStock -->++', selectedStock)}
                         {cmpcode?.trim().toUpperCase() == 'SOCA' && (
                           <View
-                            style={{flexDirection: 'row', flexWrap: 'wrap'}}>
+                            style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
                             {console.log(
                               'selectedStock?.price ',
                               selectedStock,
@@ -3235,7 +3233,7 @@ const SalesOrder = ({route}) => {
                                 color: '#000000',
                               }}>
                               Cash Price{' '}
-                              <Text style={{fontSize: 18, color: '#000000'}}>
+                              <Text style={{ fontSize: 18, color: '#000000' }}>
                                 {selectedStock && selectedStock['Cash Price']}{' '}
                               </Text>
                             </Text>
@@ -3248,7 +3246,7 @@ const SalesOrder = ({route}) => {
                               }}>
                               {' '}
                               Credit price{' '}
-                              <Text style={{fontSize: 18, color: '#000000'}}>
+                              <Text style={{ fontSize: 18, color: '#000000' }}>
                                 {selectedStock && selectedStock['Credit Price']}
                               </Text>{' '}
                             </Text>
@@ -3261,7 +3259,7 @@ const SalesOrder = ({route}) => {
                                 color: '#000000',
                               }}>
                               Special Price{' '}
-                              <Text style={{fontSize: 18, color: '#000000'}}>
+                              <Text style={{ fontSize: 18, color: '#000000' }}>
                                 {' '}
                                 {selectedStock && selectedStock['Spl.Price']}
                               </Text>{' '}
@@ -3275,7 +3273,7 @@ const SalesOrder = ({route}) => {
                                 color: '#000000',
                               }}>
                               Qty{' '}
-                              <Text style={{fontSize: 18, color: '#000000'}}>
+                              <Text style={{ fontSize: 18, color: '#000000' }}>
                                 {selectedStock && selectedStock['STOCK']}
                               </Text>{' '}
                             </Text>
@@ -3288,7 +3286,7 @@ const SalesOrder = ({route}) => {
                               }}>
                               {' '}
                               Ord pend{' '}
-                              <Text style={{fontSize: 18, color: '#000000'}}>
+                              <Text style={{ fontSize: 18, color: '#000000' }}>
                                 {selectedStock && selectedStock['ORD_PEND']}
                               </Text>
                             </Text>
@@ -3301,7 +3299,7 @@ const SalesOrder = ({route}) => {
                               }}>
                               {' '}
                               Avl Qty{' '}
-                              <Text style={{fontSize: 18, color: '#000000'}}>
+                              <Text style={{ fontSize: 18, color: '#000000' }}>
                                 {selectedStock && selectedStock.AvlQty}{' '}
                               </Text>
                             </Text>
@@ -3313,7 +3311,7 @@ const SalesOrder = ({route}) => {
                                 color: '#000000',
                               }}>
                               Carton Qty{' '}
-                              <Text style={{fontSize: 18, color: '#000000'}}>
+                              <Text style={{ fontSize: 18, color: '#000000' }}>
                                 {' '}
                                 {selectedStock && selectedStock['CTN QTY']}{' '}
                               </Text>{' '}
@@ -3326,7 +3324,7 @@ const SalesOrder = ({route}) => {
                                 color: '#000000',
                               }}>
                               Packet Qty{' '}
-                              <Text style={{fontSize: 18, color: '#000000'}}>
+                              <Text style={{ fontSize: 18, color: '#000000' }}>
                                 {' '}
                                 {selectedStock && selectedStock['PKT QTY']}
                               </Text>{' '}
@@ -3339,7 +3337,7 @@ const SalesOrder = ({route}) => {
                                 color: '#000000',
                               }}>
                               Last Selling Price{' '}
-                              <Text style={{fontSize: 18, color: '#000000'}}>
+                              <Text style={{ fontSize: 18, color: '#000000' }}>
                                 {' '}
                                 {lastSellingPrice}
                               </Text>{' '}
@@ -3359,25 +3357,25 @@ const SalesOrder = ({route}) => {
                       marginTop: 16,
                     }}>
                     <TouchableOpacity
-                      style={[styles.NextButton, {width: '30%'}]}
+                      style={[styles.NextButton, { width: '30%' }]}
                       onPress={() => {
                         setShowCartPanel(false);
                       }}>
                       <Text
                         style={[
                           styles.CustHeadText,
-                          {color: 'white', textAlign: 'center'},
+                          { color: 'white', textAlign: 'center' },
                         ]}>
                         Back
                       </Text>
                     </TouchableOpacity>
                     <TouchableOpacity
-                      style={[styles.AddCartButton, {width: '30%'}]}
+                      style={[styles.AddCartButton, { width: '30%' }]}
                       onPress={() => SaveItem()}>
                       <Text
                         style={[
                           styles.CustHeadText,
-                          {color: 'white', textAlign: 'center'},
+                          { color: 'white', textAlign: 'center' },
                         ]}>
                         Add to Cart
                       </Text>
@@ -3565,7 +3563,7 @@ const SalesOrder = ({route}) => {
       {isCallingDueDateApi && (
         <View style={styles.UnitModalWrapper}>
           <View style={styles.UnitModal}>
-            <Text style={{margin: 4, color: '#000000'}}>
+            <Text style={{ margin: 4, color: '#000000' }}>
               Checking Customer Due Days...Please wait
             </Text>
             <ActivityIndicator />
@@ -3576,7 +3574,7 @@ const SalesOrder = ({route}) => {
       {isCallingPriceManagementApi && (
         <View style={styles.UnitModalWrapper}>
           <View style={styles.UnitModal}>
-            <Text style={{margin: 4, color: '#000000'}}>
+            <Text style={{ margin: 4, color: '#000000' }}>
               Checking if item is in Price Management...Please wait
             </Text>
             <ActivityIndicator />
@@ -4823,7 +4821,7 @@ const styles = StyleSheet.create({
     marginLeft: 12,
 
     shadowColor: '#000', // Shadow color for iOS
-    shadowOffset: {width: 0, height: 2}, // Shadow offset for iOS
+    shadowOffset: { width: 0, height: 2 }, // Shadow offset for iOS
     shadowOpacity: 0.25, // Shadow opacity for iOS
     shadowRadius: 3.84, // Shadow radius for iOS
     elevation: 1.5, // Elevation for Android
@@ -4846,7 +4844,7 @@ const styles = StyleSheet.create({
     marginLeft: 12,
 
     shadowColor: '#000', // Shadow color for iOS
-    shadowOffset: {width: 0, height: 2}, // Shadow offset for iOS
+    shadowOffset: { width: 0, height: 2 }, // Shadow offset for iOS
     shadowOpacity: 0.25, // Shadow opacity for iOS
     shadowRadius: 3.84, // Shadow radius for iOS
     elevation: 1.5, // Elevation for Android
