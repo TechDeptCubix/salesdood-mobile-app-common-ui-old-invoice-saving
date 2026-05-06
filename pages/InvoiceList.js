@@ -11,23 +11,26 @@ import {
   PermissionsAndroid,
   Platform,
 } from 'react-native';
-import React, {useEffect, useState, useCallback} from 'react';
-import {useNavigation, useFocusEffect} from '@react-navigation/native';
+import React, { useEffect, useState, useCallback } from 'react';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import axios from 'axios';
 import StatusLogPop from '../popups/StatusLogPop';
 import HeaderUiNew from './HeaderUiNew';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {format} from 'date-fns';
-import {ToWords} from 'to-words';
+import { format } from 'date-fns';
+import { ToWords } from 'to-words';
 import * as RNFS from 'react-native-fs';
 import ThermalPrinterModule from 'react-native-thermal-printer';
-import {generatePDF} from './InvoicePdf';
-import SunmiPrinter, {AlignValue} from '@heasy/react-native-sunmi-printer';
-import {ICUP_LOGO_BASE64} from '../images/icup_logo';
+import { generatePDF } from './InvoicePdf';
+import SunmiPrinter, { AlignValue } from '@heasy/react-native-sunmi-printer';
+import { ICUP_LOGO_BASE64 } from '../images/icup_logo';
 import RNHTMLtoPDF from 'react-native-html-to-pdf';
 import Share from 'react-native-share';
 
 const InvoiceList = () => {
+
+
+
   // new generated dynamic solution
   const generateItemLines = () => {
     const DESC_MAX_LEN = 20;
@@ -226,8 +229,7 @@ const InvoiceList = () => {
         INV_PAD +
         "[L]<font size='tall'>Tax Invoice</font>\n \n" +
         `[L]INVOICE NO       :  ${itemListBluetooth[0]?.inv_no}\n` +
-        `[L]INVOICE DATE     :  ${
-          itemListBluetooth[0]?.inv_date.split('T')[0]
+        `[L]INVOICE DATE     :  ${itemListBluetooth[0]?.inv_date.split('T')[0]
         } ${itemListBluetooth[0]?.time}\n` +
         `[L]SALESMAN NAME    :  ${itemListBluetooth[0]?.sale_man}\n` +
         `[L]SALESMAN PHONE   :  ${itemListBluetooth[0]?.Sman_Mobile}\n` +
@@ -659,6 +661,8 @@ const InvoiceList = () => {
   // getPrintItemDetails
 
   const fetchItemList = async item => {
+
+    console.log(" getCompanyname(cmpcode) ", getCompanyname(cmpcode), cmpcode)
     setShowPrintButtonLoader(true);
 
     try {
@@ -749,20 +753,19 @@ const InvoiceList = () => {
           </head>
           <body>
             <div class="company-header">
-              ${
-                base64Header
-                  ? `<img src="data:image/jpeg;base64,${base64Header}" class="header-img" />`
-                  : `<div style="padding:16px 0 8px 0; border-bottom:2px solid #333; margin-bottom:8px;">
-                      <div style="font-size:20px; font-weight:bold; text-align:center; letter-spacing:1px;">${
-                        getCompanyname(cmpcode) !== '-'
-                          ? getCompanyname(cmpcode)
-                          : cmpcode
-                      }</div>
+              ${base64Header
+            ? `<img src="data:image/jpeg;base64,${base64Header}" class="header-img" />`
+            : `<div style="padding:16px 0 8px 0; border-bottom:2px solid #333; margin-bottom:8px;">
+                      <div style="font-size:20px; font-weight:bold; text-align:center; letter-spacing:1px;">${getCompanyname(cmpcode?.toUpperCase()) !== '-'
+              ? getCompanyname(cmpcode?.toUpperCase())
+              : cmpcode
+            }</div>
                       <div style="font-size:12px; text-align:center; margin-top:4px; color:#444;">TRN: ${getTRNnumber(
-                        cmpcode,
-                      )}</div>
+              cmpcode?.toUpperCase()?.trim(),
+            )}</div>
+                     
                     </div>`
-              }
+          }
             </div>
 
             <div class="title">TAX INVOICE</div>
@@ -776,9 +779,8 @@ const InvoiceList = () => {
               </div>
               <div class="box" style="text-align: right;">
                 <strong>Invoice No:</strong> ${firstItem.inv_no}<br>
-                <strong>Date:</strong> ${new Date(
-                  firstItem.inv_date,
-                ).toLocaleDateString()}<br>
+                <strong>Date:</strong> ${format(new Date(firstItem.inv_date), 'dd/MM/yyyy')
+          }<br>
                 <strong>Salesman:</strong> ${firstItem.sale_man}
               </div>
             </div>
@@ -804,26 +806,26 @@ const InvoiceList = () => {
                 <tr>
                   <td>Total Gross Amount</td>
                   <td style="text-align: right;">${totalGrossAmount.toFixed(
-                    3,
-                  )}</td>
+            3,
+          )}</td>
                 </tr>
                 <tr>
                   <td>Discount</td>
                   <td style="text-align: right;">(-) ${overallDiscount.toFixed(
-                    3,
-                  )}</td>
+            3,
+          )}</td>
                 </tr>
                 <tr style="background-color: #fafafa;">
                   <td>Net Taxable Value</td>
                   <td style="text-align: right;">${amountAfterDiscount.toFixed(
-                    3,
-                  )}</td>
+            3,
+          )}</td>
                 </tr>
                 <tr>
                   <td>Total VAT (5%)</td>
                   <td style="text-align: right;">${totalVatAmount.toFixed(
-                    3,
-                  )}</td>
+            3,
+          )}</td>
                 </tr>
                 <tr class="total-row">
                   <td>Grand Total (OMR)</td>
@@ -1178,6 +1180,18 @@ const InvoiceList = () => {
   console.log('subTotal', subTotal);
 
   console.log('discount', discount);
+<<<<<<< HEAD
+=======
+  const handleDirectPrint = async (items, header) => {
+    try {
+      const receiptLines = items
+        .map(
+          item =>
+            `${item.QTY} x ${item.DESCRIPTION.slice(0, 15).padEnd(15)} ${item.LINE_TOTAL
+            }\n`,
+        )
+        .join('');
+>>>>>>> ea7d7317b298acd71fa59eeb0542db084b1d6c63
 
   return (
     <View style={styles.HomeWrap}>
@@ -1230,8 +1244,8 @@ const InvoiceList = () => {
         <FlatList
           data={getPaginatedData()}
           keyExtractor={(item, index) => index}
-          style={{width: '94%'}}
-          renderItem={({item}) => (
+          style={{ width: '94%' }}
+          renderItem={({ item }) => (
             <ScrollView style={styles.PreviousOrderWrap}>
               {/*  */}
 
@@ -1252,13 +1266,13 @@ const InvoiceList = () => {
                         justifyContent: 'space-between',
                         width: '100%',
                       }}>
-                      <Text style={[styles.StockListDescText, {width: '75%'}]}>
+                      <Text style={[styles.StockListDescText, { width: '75%' }]}>
                         {item.CUSTOMER}
                       </Text>
                       <Text
                         style={[
                           styles.StockListDescTextSmall,
-                          {color: '#30B3A4', fontFamily: 'Lexend-Regular'},
+                          { color: '#30B3A4', fontFamily: 'Lexend-Regular' },
                         ]}>
                         {item.AMOUNT}
                       </Text>
@@ -1280,7 +1294,8 @@ const InvoiceList = () => {
                         }}>
                         {/* <Text style={[styles.StockListDescTextSmall,]}>Inv Date:</Text> */}
                         <Text style={[styles.StockListDescTextSmall]}>
-                          {formattedDate(item.INV_DATE)}
+
+                          {format(new Date(item.INV_DATE), 'dd/MM/yyyy')}
                         </Text>
                       </View>
                       <View
@@ -1309,12 +1324,12 @@ const InvoiceList = () => {
                 </View>
 
                 <View
-                  style={{flexDirection: 'row', justifyContent: 'flex-end'}}>
+                  style={{ flexDirection: 'row', justifyContent: 'flex-end' }}>
                   <TouchableOpacity
                     style={[styles.PrintAcceptButton]}
                     onPress={() => fetchItemList(item)}>
                     {showPrintButtonLoader &&
-                    item.INVNO === selectedInvoiceNo ? (
+                      item.INVNO === selectedInvoiceNo ? (
                       <ActivityIndicator color={'white'} />
                     ) : (
                       <Text style={styles.PrintAcceptText}>Print</Text>
@@ -1335,11 +1350,11 @@ const InvoiceList = () => {
                     </TouchableOpacity>
                   )}
                   {cmpcode?.toUpperCase().trim() === 'ICUP' ||
-                  cmpcode?.toUpperCase().trim() === 'ICELAB_TEST' ? (
+                    cmpcode?.toUpperCase().trim() === 'ICELAB_TEST' ? (
                     <TouchableOpacity
                       style={[
                         styles.PrintAcceptButton,
-                        {backgroundColor: '#FF6B00', marginLeft: 10},
+                        { backgroundColor: '#FF6B00', marginLeft: 10 },
                       ]}
                       onPress={async () => {
                         try {
@@ -1377,7 +1392,7 @@ const InvoiceList = () => {
                         }
                       }}>
                       {showPrintButtonLoaderBluetooth &&
-                      item.INVNO === selectedInvoiceNo ? (
+                        item.INVNO === selectedInvoiceNo ? (
                         <ActivityIndicator color={'white'} />
                       ) : (
                         <Text style={styles.PrintAcceptText}>Print SUNMI</Text>
@@ -1385,7 +1400,7 @@ const InvoiceList = () => {
                     </TouchableOpacity>
                   ) : null}
 
-                  <TouchableOpacity
+                  {/* <TouchableOpacity
                     style={[
                       styles.PrintAcceptButton,
                       {backgroundColor: '#1A6CF6', marginLeft: 10},
@@ -1397,7 +1412,7 @@ const InvoiceList = () => {
                       })
                     }>
                     <Text style={styles.PrintAcceptText}>Edit</Text>
-                  </TouchableOpacity>
+                  </TouchableOpacity> */}
                 </View>
 
                 {/* {
@@ -1652,7 +1667,7 @@ const styles = StyleSheet.create({
     width: '100%',
 
     shadowColor: '#000', // Shadow color for iOS
-    shadowOffset: {width: 0, height: 2}, // Shadow offset for iOS
+    shadowOffset: { width: 0, height: 2 }, // Shadow offset for iOS
     shadowOpacity: 0.25, // Shadow opacity for iOS
     shadowRadius: 3.84, // Shadow radius for iOS
     elevation: 1.5, // Elevation for Android

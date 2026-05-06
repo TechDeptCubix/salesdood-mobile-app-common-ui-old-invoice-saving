@@ -1,0 +1,756 @@
+import {
+  View,
+  Text,
+  StyleSheet,
+  Dimensions,
+  TouchableOpacity,
+  TextInput,
+  ScrollView,
+  ActivityIndicator,
+  FlatList,
+  KeyboardAvoidingView,
+  Keyboard,
+  Platform,
+} from 'react-native';
+import React, {useEffect, useState, useCallback, useRef} from 'react';
+import HeaderUiNew from './HeaderUiNew';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios from 'axios';
+import formatPrice3Decimal from '../utils';
+
+const StockItem = ({
+  item,
+  isExpanded,
+  onToggleExpand,
+  onAddToCart,
+  selectedButton,
+  onSelectButton,
+  substituteData,
+  modalNumberData,
+  subLoader,
+  modalLoader,
+  cmpcode,
+}) => {
+  const code = item.Code || item.code;
+
+  return (
+    <View style={styles.card}>
+      {/* ── Header Row ── */}
+      <View style={styles.cardHeader}>
+        <View style={styles.cardHeaderLeft}>
+          <Text style={styles.cardCode}>{code}</Text>
+          <Text style={styles.cardUnit}>Unit: {item.unit || '—'}</Text>
+          <Text style={styles.cardUnit}>Brand: {item.Category || '—'}</Text>
+        </View>
+        <View style={styles.cardHeaderRight}>
+          <View style={styles.qtyBadge}>
+            <Text style={styles.qtyBadgeLabel}>Qty</Text>
+            <Text style={styles.qtyBadgeValue}>{item.Qty ?? '—'}</Text>
+          </View>
+          <TouchableOpacity
+            style={styles.expandBtn}
+            onPress={() => onToggleExpand(code, item.OEM)}
+            activeOpacity={0.7}>
+            <Text style={styles.expandBtnText}>{isExpanded ? '▲' : '▼'}</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* ── Description ── */}
+      <Text style={styles.cardDesc}>{item.Description}</Text>
+
+      {/* ── Expanded Details ── */}
+      {isExpanded && (
+        <View style={styles.expandedSection}>
+          {/* Price Cards */}
+          <View style={styles.priceGrid}>
+            <PriceCard
+              label="Cash Price"
+              value={formatPrice3Decimal(item.price)}
+            />
+            <PriceCard
+              label="Credit Price"
+              value={formatPrice3Decimal(item['Credit Price'])}
+            />
+            {cmpcode === 'STARLINK' && (
+              <PriceCard label="Cost" value={formatPrice3Decimal(item.Cost)} />
+            )}
+            {cmpcode === 'SOCA' ? (
+              <PriceCard
+                label="Special Price"
+                value={formatPrice3Decimal(item['Spcial Price'])}
+              />
+            ) : (
+              <PriceCard
+                label="Block Price"
+                value={formatPrice3Decimal(item['Block Price'])}
+              />
+            )}
+            {cmpcode?.toUpperCase() !== 'SOCA' &&
+              cmpcode?.toUpperCase() !== 'STARLINK' && (
+                <PriceCard
+                  label="Discount Price"
+                  value={formatPrice3Decimal(item.Discount_Price)}
+                />
+              )}
+            <PriceCard label="Order Pend." value={item.Ord_pend ?? '—'} />
+            <PriceCard label="BIN" value={item.BIN ?? '—'} />
+          </View>
+
+          {/* Add to Cart */}
+          {/* <TouchableOpacity
+            style={styles.cartBtn}
+            onPress={() => onAddToCart(item)}
+            activeOpacity={0.8}>
+            <Text style={styles.cartBtnText}>Add to Cart</Text>
+          </TouchableOpacity> */}
+
+          {/* Sub / Model Tabs */}
+          <View style={styles.tabRow}>
+            {['Substitute', 'Model'].map(tab => (
+              <TouchableOpacity
+                key={tab}
+                style={[
+                  styles.tabBtn,
+                  selectedButton === tab && styles.tabBtnActive,
+                ]}
+                onPress={() => onSelectButton(tab)}>
+                <Text
+                  style={[
+                    styles.tabBtnText,
+                    selectedButton === tab && styles.tabBtnTextActive,
+                  ]}>
+                  {tab === 'Model' ? 'Model Number' : tab}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          {/* Tab Content */}
+          {selectedButton === 'Substitute' && (
+            <SubstituteTable data={substituteData} loading={subLoader} />
+          )}
+          {selectedButton === 'Model' && (
+            <ModelTable data={modalNumberData} loading={modalLoader} />
+          )}
+        </View>
+      )}
+    </View>
+  );
+};
+
+const PriceCard = ({label, value}) => (
+  <View style={styles.priceCard}>
+    <Text style={styles.priceCardLabel}>{label}</Text>
+    <Text style={styles.priceCardValue}>{value}</Text>
+  </View>
+);
+
+const SubstituteTable = ({data, loading}) => {
+  if (loading) return <ActivityIndicator style={{marginVertical: 8}} />;
+  if (!data) return null;
+  if (data.length === 0)
+    return <Text style={styles.noData}>No substitutes available</Text>;
+
+  return (
+    <View style={styles.tableWrap}>
+      <View style={styles.tableHeaderRow}>
+        {['Part No', 'Qty', 'Price'].map(h => (
+          <Text
+            key={h}
+            style={[styles.tableHeaderCell, {flex: h === 'Part No' ? 2 : 1}]}>
+            {h}
+          </Text>
+        ))}
+      </View>
+      <ScrollView style={{maxHeight: 180}} nestedScrollEnabled>
+        {data.map((row, i) => (
+          <View
+            key={i}
+            style={[styles.tableDataRow, i % 2 === 0 && styles.tableRowEven]}>
+            <Text style={[styles.tableDataCell, {flex: 2}]}>{row.Part_No}</Text>
+            <Text style={[styles.tableDataCell, {flex: 1}]}>{row.Balance}</Text>
+            <Text style={[styles.tableDataCell, {flex: 1}]}>
+              {formatPrice3Decimal(row['Sales price'])}
+            </Text>
+          </View>
+        ))}
+      </ScrollView>
+    </View>
+  );
+};
+
+// ─── Model Number Table ───────────────────────────────────────────────────────
+
+const ModelTable = ({data, loading}) => {
+  if (loading) return <ActivityIndicator style={{marginVertical: 8}} />;
+  if (!data) return null;
+  if (data.length === 0)
+    return <Text style={styles.noData}>No model numbers available</Text>;
+
+  return (
+    <View style={styles.tableWrap}>
+      <View style={styles.tableHeaderRow}>
+        <Text style={[styles.tableHeaderCell, {flex: 1}]}>Model Number</Text>
+      </View>
+      <ScrollView style={{maxHeight: 180}} nestedScrollEnabled>
+        {data.map((row, i) => (
+          <View
+            key={i}
+            style={[styles.tableDataRow, i % 2 === 0 && styles.tableRowEven]}>
+            <Text style={[styles.tableDataCell, {flex: 1}]}>
+              {row.Model_Number}
+            </Text>
+          </View>
+        ))}
+      </ScrollView>
+    </View>
+  );
+};
+
+// ─── Main Component ───────────────────────────────────────────────────────────
+
+const CheckStock = () => {
+  const [vanFromLocalStorage, setVanFromLocalStorage] = useState(null);
+  const [appUrl, setAppUrl] = useState('');
+  const [cmpcode, setCmpCode] = useState('');
+
+  const [searchItem, setSearchItem] = useState('');
+  const [stockData, setStockData] = useState(null);
+  const [top50Items, setTop50Items] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  const [expandedCode, setExpandedCode] = useState(null);
+  const [selectedButton, setSelectedButton] = useState('Substitute');
+
+  const [modalNumberData, setModalNumberData] = useState(null);
+  const [substituteData, setSubstituteData] = useState(null);
+  const [modalLoader, setModalLoader] = useState(false);
+  const [subLoader, setSubLoader] = useState(false);
+
+  // Debounce ref
+  const debounceTimer = useRef(null);
+
+  // ── Bootstrap ──────────────────────────────────────────────────────────────
+
+  useEffect(() => {
+    const init = async () => {
+      const van = await AsyncStorage.getItem('VAN');
+      setVanFromLocalStorage(van);
+
+      const url = await AsyncStorage.getItem('appUrl');
+      if (url) setAppUrl(url);
+
+      const raw = await AsyncStorage.getItem('userDataArray');
+      const parsed = raw ? JSON.parse(raw) : [];
+      if (parsed[0]?.cmpcode) {
+        setCmpCode(parsed[0].cmpcode.trim().toUpperCase());
+      }
+    };
+    init();
+  }, []);
+
+  // ── Top 50 on ready ───────────────────────────────────────────────────────
+
+  useEffect(() => {
+    if (appUrl && cmpcode && vanFromLocalStorage !== null) {
+      fetchTop50StockItems();
+    }
+  }, [appUrl, cmpcode, vanFromLocalStorage]);
+
+  // ── Debounced search ──────────────────────────────────────────────────────
+
+  useEffect(() => {
+    if (debounceTimer.current) clearTimeout(debounceTimer.current);
+
+    if (!searchItem.trim()) {
+      setStockData(null);
+      setLoading(false);
+      return;
+    }
+
+    debounceTimer.current = setTimeout(() => {
+      searchStock(searchItem.trim());
+    }, 500);
+
+    return () => clearTimeout(debounceTimer.current);
+  }, [searchItem]);
+
+  // ── API Calls ─────────────────────────────────────────────────────────────
+
+  const locationParam =
+    vanFromLocalStorage === '----' ? 'MASTER' : vanFromLocalStorage;
+  const modeParam = vanFromLocalStorage === '----' ? 'MOBILE' : 'all_top1000';
+  const modeTop50 = vanFromLocalStorage === '----' ? 'MOBILE50' : 'all_top1000';
+
+  const searchStock = async value => {
+    setLoading(true);
+    try {
+      const encoded = encodeURIComponent(value);
+      const url = `${appUrl}Search_Items/InventoryList?cmpcode=${cmpcode}&guid=F4369B5E-8E23-4BCF-AC82-76C977991728&mod=${modeParam}&Loc=${locationParam}&searchKey=${encoded}`;
+      console.log('url check stock', url);
+      const res = await axios.get(url);
+      setStockData(res.data);
+    } catch (e) {
+      console.log('searchStock error', e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchTop50StockItems = async () => {
+    setLoading(true);
+    try {
+      const url = `${appUrl}Search_Items/InventoryList?cmpcode=${cmpcode}&guid=F4369B5E-8E23-4BCF-AC82-76C977991728&mod=${modeTop50}&Loc=${locationParam}&searchKey=-`;
+      const res = await axios.get(url);
+      setTop50Items(res.data);
+    } catch (e) {
+      console.log('fetchTop50 error', e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchModalNumberData = async oem => {
+    setModalLoader(true);
+    setModalNumberData(null);
+    try {
+      const encoded = encodeURIComponent(oem);
+      const res = await axios.get(
+        `${appUrl}MasterList/${cmpcode}/MODELNUMBER/${encoded}`,
+      );
+      setModalNumberData(res.data);
+    } catch (e) {
+      console.log('fetchModalNumber error', e);
+      setModalNumberData([]);
+    } finally {
+      setModalLoader(false);
+    }
+  };
+
+  const fetchSubstituteData = async code => {
+    setSubLoader(true);
+    setSubstituteData(null);
+    try {
+      
+      const encoded = encodeURIComponent(code);
+      const res = await axios.get(
+        `${appUrl}MasterList/${cmpcode}/SUBSTITUTE/${encoded}`,
+      );
+      console.log("substitute url new 4", `${appUrl}MasterList/${cmpcode}/SUBSTITUTE/${encoded}`)
+      setSubstituteData(res.data);
+    } catch (e) {
+      console.log('fetchSubstitute error', e);
+      setSubstituteData([]);
+    } finally {
+      setSubLoader(false);
+    }
+  };
+
+  // ── Interactions ──────────────────────────────────────────────────────────
+
+  const toggleExpand = useCallback(
+    (code, oem) => {
+      Keyboard.dismiss();
+      if (expandedCode === code) {
+        setExpandedCode(null);
+        return;
+      }
+      setExpandedCode(code);
+      setSelectedButton('Substitute');
+      fetchSubstituteData(code);
+      fetchModalNumberData(oem);
+    },
+    [expandedCode],
+  );
+
+  const handleAddToCart = item => {
+    // Wire up your cart logic here
+    console.log('Add to cart:', item);
+  };
+
+  // ── Render List ───────────────────────────────────────────────────────────
+
+  const displayData = searchItem.trim() ? stockData : top50Items;
+
+  const renderItem = item => {
+    const code = item.Code || item.code;
+    const isExpanded = expandedCode === code;
+    return (
+      <StockItem
+        key={code}
+        item={item}
+        isExpanded={isExpanded}
+        onToggleExpand={toggleExpand}
+        onAddToCart={handleAddToCart}
+        selectedButton={selectedButton}
+        onSelectButton={setSelectedButton}
+        substituteData={isExpanded ? substituteData : null}
+        modalNumberData={isExpanded ? modalNumberData : null}
+        subLoader={subLoader}
+        modalLoader={modalLoader}
+        cmpcode={cmpcode}
+      />
+    );
+  };
+
+  // ── JSX ───────────────────────────────────────────────────────────────────
+
+  return (
+    <View style={styles.root}>
+      <HeaderUiNew name={'Check Stock'} />
+
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 120 : 0}
+        style={styles.body}>
+        {/* Search Bar */}
+        <View style={styles.searchBar}>
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search item by name or code…"
+            placeholderTextColor="#9AA3B0"
+            value={searchItem}
+            onChangeText={setSearchItem}
+            returnKeyType="search"
+            clearButtonMode="while-editing"
+          />
+          {loading && (
+            <ActivityIndicator
+              size="small"
+              color="#3A80EA"
+              style={{marginRight: 8}}
+            />
+          )}
+        </View>
+
+        {/* Section Header */}
+        {!loading && displayData && (
+          <Text style={styles.sectionLabel}>
+            {searchItem.trim()
+              ? `${displayData.length} result${
+                  displayData.length !== 1 ? 's' : ''
+                }`
+              : 'Top Items'}
+          </Text>
+        )}
+
+        {/* Empty State */}
+        {!loading && displayData && displayData.length === 0 && (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyIcon}>📦</Text>
+            <Text style={styles.emptyText}>No items found</Text>
+          </View>
+        )}
+
+        {/* List */}
+        {displayData && displayData.length > 0 && (
+          <FlatList
+            data={displayData}
+            keyExtractor={(item, i) => (item.Code || item.code || i).toString()}
+            renderItem={({item}) => renderItem(item)}
+            contentContainerStyle={styles.list}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          />
+        )}
+
+        {/* Initial loading (top50 not yet loaded) */}
+        {loading && !displayData && (
+          <View style={styles.fullLoader}>
+            <ActivityIndicator size="large" color="#3A80EA" />
+            <Text style={styles.loaderText}>Loading items…</Text>
+          </View>
+        )}
+      </KeyboardAvoidingView>
+    </View>
+  );
+};
+
+// ─── Styles ───────────────────────────────────────────────────────────────────
+
+const {height} = Dimensions.get('window');
+
+const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+    backgroundColor: '#F2F4F8',
+  },
+  body: {
+    flex: 1,
+    paddingHorizontal: 12,
+    paddingTop: 12,
+  },
+
+  // Search
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.07,
+    shadowRadius: 6,
+    elevation: 3,
+    marginBottom: 12,
+  },
+  searchIcon: {
+    fontSize: 16,
+    marginRight: 8,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 15,
+    fontFamily: 'Lexend-Regular',
+    color: '#1A1A2E',
+  },
+
+  // Section
+  sectionLabel: {
+    fontFamily: 'Lexend-Light',
+    fontSize: 13,
+    color: '#7A8499',
+    marginBottom: 6,
+    marginLeft: 4,
+  },
+
+  // List
+  list: {
+    paddingBottom: 24,
+  },
+
+  // Card
+  card: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 10,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 1},
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 6,
+  },
+  cardHeaderLeft: {
+    flex: 1,
+  },
+  cardHeaderRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  cardCode: {
+    fontFamily: 'Lexend-Bold',
+    fontSize: 13,
+    color: '#3A80EA',
+  },
+  cardUnit: {
+    fontFamily: 'Lexend-Light',
+    fontSize: 12,
+    color: '#9AA3B0',
+    marginTop: 2,
+  },
+  cardDesc: {
+    fontFamily: 'Lexend-Regular',
+    fontSize: 14,
+    color: '#1A1A2E',
+    lineHeight: 20,
+  },
+  qtyBadge: {
+    backgroundColor: '#EBF8F6',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    alignItems: 'center',
+  },
+  qtyBadgeLabel: {
+    fontFamily: 'Lexend-Light',
+    fontSize: 10,
+    color: '#30B3A4',
+  },
+  qtyBadgeValue: {
+    fontFamily: 'Lexend-Bold',
+    fontSize: 13,
+    color: '#30B3A4',
+  },
+  expandBtn: {
+    backgroundColor: '#F2F4F8',
+    borderRadius: 8,
+    width: 32,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  expandBtnText: {
+    fontSize: 12,
+    color: '#7A8499',
+  },
+
+  // Expanded Section
+  expandedSection: {
+    marginTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#F0F0F0',
+    paddingTop: 12,
+  },
+
+  // Price Grid
+  priceGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 14,
+  },
+  priceCard: {
+    backgroundColor: '#F7F9FF',
+    borderRadius: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    width: '47%',
+    borderWidth: 1,
+    borderColor: '#E8EDFB',
+  },
+  priceCardLabel: {
+    fontFamily: 'Lexend-Light',
+    fontSize: 11,
+    color: '#7A8499',
+    marginBottom: 2,
+  },
+  priceCardValue: {
+    fontFamily: 'Lexend-Bold',
+    fontSize: 14,
+    color: '#1A1A2E',
+  },
+
+  // Cart Button
+  cartBtn: {
+    backgroundColor: '#3A80EA',
+    borderRadius: 10,
+    paddingVertical: 12,
+    alignItems: 'center',
+    marginBottom: 14,
+    shadowColor: '#3A80EA',
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  cartBtnText: {
+    fontFamily: 'Lexend-Bold',
+    fontSize: 15,
+    color: '#FFFFFF',
+    letterSpacing: 0.3,
+  },
+
+  // Tabs
+  tabRow: {
+    flexDirection: 'row',
+    backgroundColor: '#F2F4F8',
+    borderRadius: 10,
+    padding: 3,
+    marginBottom: 10,
+  },
+  tabBtn: {
+    flex: 1,
+    paddingVertical: 8,
+    alignItems: 'center',
+    borderRadius: 8,
+  },
+  tabBtnActive: {
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 1},
+    shadowOpacity: 0.08,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  tabBtnText: {
+    fontFamily: 'Lexend-Regular',
+    fontSize: 13,
+    color: '#7A8499',
+  },
+  tabBtnTextActive: {
+    fontFamily: 'Lexend-Bold',
+    color: '#3A80EA',
+  },
+
+  // Table
+  tableWrap: {
+    borderRadius: 10,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#E8EDFB',
+    marginBottom: 4,
+  },
+  tableHeaderRow: {
+    flexDirection: 'row',
+    backgroundColor: '#3A80EA',
+    paddingVertical: 8,
+    paddingHorizontal: 6,
+  },
+  tableHeaderCell: {
+    fontFamily: 'Lexend-Bold',
+    fontSize: 12,
+    color: '#FFFFFF',
+    textAlign: 'center',
+  },
+  tableDataRow: {
+    flexDirection: 'row',
+    paddingVertical: 8,
+    paddingHorizontal: 6,
+    backgroundColor: '#FFFFFF',
+  },
+  tableRowEven: {
+    backgroundColor: '#F7F9FF',
+  },
+  tableDataCell: {
+    fontFamily: 'Lexend-Regular',
+    fontSize: 12,
+    color: '#1A1A2E',
+    textAlign: 'center',
+  },
+
+  // States
+  noData: {
+    fontFamily: 'Lexend-Light',
+    fontSize: 13,
+    color: '#E05C5C',
+    textAlign: 'center',
+    paddingVertical: 12,
+  },
+  emptyState: {
+    alignItems: 'center',
+    paddingTop: 60,
+  },
+  emptyIcon: {
+    fontSize: 40,
+    marginBottom: 12,
+  },
+  emptyText: {
+    fontFamily: 'Lexend-Regular',
+    fontSize: 16,
+    color: '#9AA3B0',
+  },
+  fullLoader: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loaderText: {
+    fontFamily: 'Lexend-Light',
+    fontSize: 14,
+    color: '#9AA3B0',
+    marginTop: 10,
+  },
+});
+
+export default CheckStock;

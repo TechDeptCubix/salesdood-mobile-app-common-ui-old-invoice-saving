@@ -11,18 +11,18 @@ import {
   ActivityIndicator,
   Button,
 } from 'react-native';
-import React, {useEffect, useRef, useState} from 'react';
-import {useFocusEffect, useNavigation} from '@react-navigation/native';
+import React, { useEffect, useRef, useState } from 'react';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import axios, {all} from 'axios';
-import {Picker} from '@react-native-picker/picker';
+import axios, { all } from 'axios';
+import { Picker } from '@react-native-picker/picker';
 import LinearGradient from 'react-native-linear-gradient';
 import Home from '../dashPages/Home';
-import {format} from 'date-fns';
+import { format } from 'date-fns';
 import messaging from '@react-native-firebase/messaging';
-import {AppState, AppStateStatus} from 'react-native';
+import { AppState, AppStateStatus } from 'react-native';
 
-import {SERVER_KEY} from '@env';
+import { SERVER_KEY } from '@env';
 
 const HomeNew = () => {
   const [salesmanTarget, setSalesmanTarget] = useState(null);
@@ -708,8 +708,8 @@ const HomeNew = () => {
           {selectedBottomTab === 'Home' && (
             <LinearGradient
               colors={['#E4DFD7', '#FFFFFF']}
-              start={{x: 0, y: 0}}
-              end={{x: 0.5, y: 0.5}}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 0.5, y: 0.5 }}
               style={{
                 flexGrow: 1,
                 // backgroundColor: '#EFECE7'
@@ -791,7 +791,7 @@ const HomeNew = () => {
                     <View
                       style={[
                         styles.modernSalesBox,
-                        {borderLeftColor: '#AEADB2'},
+                        { borderLeftColor: '#AEADB2' },
                       ]}>
                       {/* {cmpCode?.toUpperCase() !== 'STARLINK' && ( */}
                       <View style={styles.metricRow}>
@@ -839,7 +839,7 @@ const HomeNew = () => {
                         <View
                           style={[
                             styles.modernSalesBox,
-                            {borderLeftColor: '#FF9501', marginBottom: 8},
+                            { borderLeftColor: '#FF9501', marginBottom: 8 },
                           ]}>
                           <Text style={styles.metricLabelSmall}>
                             Cash Collection
@@ -850,7 +850,7 @@ const HomeNew = () => {
                             <Text
                               style={[
                                 styles.metricValueMain,
-                                {color: '#FF9501'},
+                                { color: '#FF9501' },
                               ]}>
                               {(cashCollection && cashCollection[0].amount) ||
                                 '0.00'}
@@ -861,7 +861,7 @@ const HomeNew = () => {
                         <View
                           style={[
                             styles.modernSalesBox,
-                            {borderLeftColor: '#FF3B2F'},
+                            { borderLeftColor: '#FF3B2F' },
                           ]}>
                           <Text style={styles.metricLabelSmall}>
                             Cheque Collection
@@ -872,7 +872,7 @@ const HomeNew = () => {
                             <Text
                               style={[
                                 styles.metricValueMain,
-                                {color: '#FF3B2F'},
+                                { color: '#FF3B2F' },
                               ]}>
                               {(chequeCollection &&
                                 chequeCollection[0].amount) ||
@@ -890,11 +890,11 @@ const HomeNew = () => {
                 // source={require('../images/bottom_slant.png')}
                 style={styles.bottomCont}>
                 {userDataArray &&
-                userDataArray[0].cmpcode.trim().toUpperCase() != 'AUTOMAX' &&
-                userDataArray &&
-                userDataArray[0].cmpcode.trim().toUpperCase() != 'MALBAR' &&
-                userDataArray &&
-                userDataArray[0].cmpcode.trim().toUpperCase() != 'SUPERLAND' ? (
+                  userDataArray[0].cmpcode.trim().toUpperCase() != 'AUTOMAX' &&
+                  userDataArray &&
+                  userDataArray[0].cmpcode.trim().toUpperCase() != 'MALBAR' &&
+                  userDataArray &&
+                  userDataArray[0].cmpcode.trim().toUpperCase() != 'SUPERLAND' ? (
                   <ScrollView
                     contentContainerStyle={{
                       width: '100%',
@@ -933,7 +933,7 @@ const HomeNew = () => {
                           <TouchableOpacity
                             style={[
                               styles.ItemCont,
-                              {backgroundColor: '#D4CFC5'},
+                              { backgroundColor: '#D4CFC5' },
                             ]}
                             onPress={() => navigation.navigate('CheckStock')}>
                             <View style={styles.innerItem}>
@@ -942,7 +942,7 @@ const HomeNew = () => {
                                   source={require('../images/srchDark.png')}
                                   style={[
                                     styles.optionIcon,
-                                    {resizeMode: 'contain'},
+                                    { resizeMode: 'contain' },
                                   ]}></Image>
                               </View>
                               <View style={styles.innerText}>
@@ -957,7 +957,7 @@ const HomeNew = () => {
                         <TouchableOpacity
                           style={[
                             styles.ItemCont,
-                            {backgroundColor: '#D4CFC5'},
+                            { backgroundColor: '#D4CFC5' },
                           ]}
                           onPress={() => navigation.navigate('CheckStock')}>
                           <View style={styles.innerItem}>
@@ -966,7 +966,7 @@ const HomeNew = () => {
                                 source={require('../images/srchDark.png')}
                                 style={[
                                   styles.optionIcon,
-                                  {resizeMode: 'contain'},
+                                  { resizeMode: 'contain' },
                                 ]}></Image>
                             </View>
                             <View style={styles.innerText}>
@@ -990,7 +990,7 @@ const HomeNew = () => {
                           <TouchableOpacity
                             style={[
                               styles.ItemCont,
-                              {backgroundColor: '#D4CFC5'},
+                              { backgroundColor: '#D4CFC5' },
                             ]}
                             onPress={() =>
                               navigation.navigate('MakeQuotation')
@@ -1001,7 +1001,7 @@ const HomeNew = () => {
                                   source={require('../images/listDark.png')}
                                   style={[
                                     styles.optionIcon,
-                                    {resizeMode: 'contain'},
+                                    { resizeMode: 'contain' },
                                   ]}></Image>
                               </View>
                               <View style={styles.innerText}>
@@ -1014,7 +1014,7 @@ const HomeNew = () => {
                         <TouchableOpacity
                           style={[
                             styles.ItemCont,
-                            {backgroundColor: '#D4CFC5'},
+                            { backgroundColor: '#D4CFC5' },
                           ]}
                           onPress={() => navigation.navigate('MakeQuotation')}>
                           <View style={styles.innerItem}>
@@ -1023,7 +1023,7 @@ const HomeNew = () => {
                                 source={require('../images/listDark.png')}
                                 style={[
                                   styles.optionIcon,
-                                  {resizeMode: 'contain'},
+                                  { resizeMode: 'contain' },
                                 ]}></Image>
                             </View>
                             <View style={styles.innerText}>
@@ -1047,7 +1047,7 @@ const HomeNew = () => {
                           <TouchableOpacity
                             style={[
                               styles.ItemCont,
-                              {backgroundColor: '#D4CFC5'},
+                              { backgroundColor: '#D4CFC5' },
                             ]}
                             onPress={() =>
                               navigation.navigate('QuotationList')
@@ -1058,7 +1058,7 @@ const HomeNew = () => {
                                   source={require('../images/listDark.png')}
                                   style={[
                                     styles.optionIcon,
-                                    {resizeMode: 'contain'},
+                                    { resizeMode: 'contain' },
                                   ]}></Image>
                               </View>
                               <View style={styles.innerText}>
@@ -1073,7 +1073,7 @@ const HomeNew = () => {
                         <TouchableOpacity
                           style={[
                             styles.ItemCont,
-                            {backgroundColor: '#D4CFC5'},
+                            { backgroundColor: '#D4CFC5' },
                           ]}
                           onPress={() => navigation.navigate('QuotationList')}>
                           <View style={styles.innerItem}>
@@ -1082,7 +1082,7 @@ const HomeNew = () => {
                                 source={require('../images/listDark.png')}
                                 style={[
                                   styles.optionIcon,
-                                  {resizeMode: 'contain'},
+                                  { resizeMode: 'contain' },
                                 ]}></Image>
                             </View>
                             <View style={styles.innerText}>
@@ -1108,7 +1108,7 @@ const HomeNew = () => {
                           <TouchableOpacity
                             style={[
                               styles.ItemCont,
-                              {backgroundColor: '#D4CFC5'},
+                              { backgroundColor: '#D4CFC5' },
                             ]}
                             onPress={() => navigation.navigate('MakeOrder')}>
                             <View style={styles.innerItem}>
@@ -1117,7 +1117,7 @@ const HomeNew = () => {
                                   source={require('../images/listDark.png')}
                                   style={[
                                     styles.optionIcon,
-                                    {resizeMode: 'contain'},
+                                    { resizeMode: 'contain' },
                                   ]}></Image>
                               </View>
                               <View style={styles.innerText}>
@@ -1132,7 +1132,7 @@ const HomeNew = () => {
                         <TouchableOpacity
                           style={[
                             styles.ItemCont,
-                            {backgroundColor: '#D4CFC5'},
+                            { backgroundColor: '#D4CFC5' },
                           ]}
                           onPress={() => navigation.navigate('MakeOrder')}>
                           <View style={styles.innerItem}>
@@ -1141,7 +1141,7 @@ const HomeNew = () => {
                                 source={require('../images/listDark.png')}
                                 style={[
                                   styles.optionIcon,
-                                  {resizeMode: 'contain'},
+                                  { resizeMode: 'contain' },
                                 ]}></Image>
                             </View>
                             <View style={styles.innerText}>
@@ -1165,7 +1165,7 @@ const HomeNew = () => {
                           <TouchableOpacity
                             style={[
                               styles.ItemCont,
-                              {backgroundColor: '#D4CFC5'},
+                              { backgroundColor: '#D4CFC5' },
                             ]}
                             onPress={() =>
                               navigation.navigate('PreviousOrders')
@@ -1176,7 +1176,7 @@ const HomeNew = () => {
                                   source={require('../images/clockDark.png')}
                                   style={[
                                     styles.optionIcon,
-                                    {resizeMode: 'contain'},
+                                    { resizeMode: 'contain' },
                                   ]}></Image>
                               </View>
                               <View style={styles.innerText}>
@@ -1191,7 +1191,7 @@ const HomeNew = () => {
                         <TouchableOpacity
                           style={[
                             styles.ItemCont,
-                            {backgroundColor: '#D4CFC5'},
+                            { backgroundColor: '#D4CFC5' },
                           ]}
                           onPress={() => navigation.navigate('PreviousOrders')}>
                           <View style={styles.innerItem}>
@@ -1200,7 +1200,7 @@ const HomeNew = () => {
                                 source={require('../images/clockDark.png')}
                                 style={[
                                   styles.optionIcon,
-                                  {resizeMode: 'contain'},
+                                  { resizeMode: 'contain' },
                                 ]}></Image>
                             </View>
                             <View style={styles.innerText}>
@@ -1224,7 +1224,7 @@ const HomeNew = () => {
                           <TouchableOpacity
                             style={[
                               styles.ItemCont,
-                              {backgroundColor: '#D4CFC5'},
+                              { backgroundColor: '#D4CFC5' },
                             ]}
                             onPress={() =>
                               navigation.navigate('CustomerDetails')
@@ -1235,7 +1235,7 @@ const HomeNew = () => {
                                   source={require('../images/bagDark.png')}
                                   style={[
                                     styles.optionIcon,
-                                    {resizeMode: 'contain'},
+                                    { resizeMode: 'contain' },
                                   ]}></Image>
                               </View>
                               <View style={styles.innerText}>
@@ -1248,7 +1248,7 @@ const HomeNew = () => {
                         <TouchableOpacity
                           style={[
                             styles.ItemCont,
-                            {backgroundColor: '#D4CFC5'},
+                            { backgroundColor: '#D4CFC5' },
                           ]}
                           onPress={() =>
                             navigation.navigate('CustomerDetails')
@@ -1259,7 +1259,7 @@ const HomeNew = () => {
                                 source={require('../images/bagDark.png')}
                                 style={[
                                   styles.optionIcon,
-                                  {resizeMode: 'contain'},
+                                  { resizeMode: 'contain' },
                                 ]}></Image>
                             </View>
                             <View style={styles.innerText}>
@@ -1283,7 +1283,7 @@ const HomeNew = () => {
                           <TouchableOpacity
                             style={[
                               styles.ItemCont,
-                              {backgroundColor: '#D4CFC5'},
+                              { backgroundColor: '#D4CFC5' },
                             ]}
                             onPress={() => navigation.navigate('Receipt')}>
                             <View style={styles.innerItem}>
@@ -1292,7 +1292,7 @@ const HomeNew = () => {
                                   source={require('../images/cashDark.png')}
                                   style={[
                                     styles.optionIcon,
-                                    {resizeMode: 'contain'},
+                                    { resizeMode: 'contain' },
                                   ]}></Image>
                               </View>
                               <View style={styles.innerText}>
@@ -1305,7 +1305,7 @@ const HomeNew = () => {
                         <TouchableOpacity
                           style={[
                             styles.ItemCont,
-                            {backgroundColor: '#D4CFC5'},
+                            { backgroundColor: '#D4CFC5' },
                           ]}
                           onPress={() => navigation.navigate('Receipt')}>
                           <View style={styles.innerItem}>
@@ -1314,7 +1314,7 @@ const HomeNew = () => {
                                 source={require('../images/cashDark.png')}
                                 style={[
                                   styles.optionIcon,
-                                  {resizeMode: 'contain'},
+                                  { resizeMode: 'contain' },
                                 ]}></Image>
                             </View>
                             <View style={styles.innerText}>
@@ -1338,7 +1338,7 @@ const HomeNew = () => {
                           <TouchableOpacity
                             style={[
                               styles.ItemCont,
-                              {backgroundColor: '#D4CFC5'},
+                              { backgroundColor: '#D4CFC5' },
                             ]}
                             onPress={() =>
                               navigation.navigate('MaterialRequest')
@@ -1349,7 +1349,7 @@ const HomeNew = () => {
                                   source={require('../images/cashDark.png')}
                                   style={[
                                     styles.optionIcon,
-                                    {resizeMode: 'contain'},
+                                    { resizeMode: 'contain' },
                                   ]}></Image>
                               </View>
                               <View style={styles.innerText}>
@@ -1364,7 +1364,7 @@ const HomeNew = () => {
                         <TouchableOpacity
                           style={[
                             styles.ItemCont,
-                            {backgroundColor: '#D4CFC5'},
+                            { backgroundColor: '#D4CFC5' },
                           ]}
                           onPress={() =>
                             navigation.navigate('MaterialRequest')
@@ -1375,7 +1375,7 @@ const HomeNew = () => {
                                 source={require('../images/cashDark.png')}
                                 style={[
                                   styles.optionIcon,
-                                  {resizeMode: 'contain'},
+                                  { resizeMode: 'contain' },
                                 ]}></Image>
                             </View>
                             <View style={styles.innerText}>
@@ -1401,7 +1401,7 @@ const HomeNew = () => {
                           <TouchableOpacity
                             style={[
                               styles.ItemCont,
-                              {backgroundColor: '#D4CFC5'},
+                              { backgroundColor: '#D4CFC5' },
                             ]}
                             onPress={() =>
                               navigation.navigate('NewCollections')
@@ -1412,7 +1412,7 @@ const HomeNew = () => {
                                   source={require('../images/cashDark.png')}
                                   style={[
                                     styles.optionIcon,
-                                    {resizeMode: 'contain'},
+                                    { resizeMode: 'contain' },
                                   ]}></Image>
                               </View>
                               <View style={styles.innerText}>
@@ -1427,7 +1427,7 @@ const HomeNew = () => {
                         <TouchableOpacity
                           style={[
                             styles.ItemCont,
-                            {backgroundColor: '#D4CFC5'},
+                            { backgroundColor: '#D4CFC5' },
                           ]}
                           onPress={() => navigation.navigate('NewCollections')}>
                           <View style={styles.innerItem}>
@@ -1436,7 +1436,7 @@ const HomeNew = () => {
                                 source={require('../images/cashDark.png')}
                                 style={[
                                   styles.optionIcon,
-                                  {resizeMode: 'contain'},
+                                  { resizeMode: 'contain' },
                                 ]}></Image>
                             </View>
                             <View style={styles.innerText}>
@@ -1460,7 +1460,7 @@ const HomeNew = () => {
                           <TouchableOpacity
                             style={[
                               styles.ItemCont,
-                              {backgroundColor: '#D4CFC5'},
+                              { backgroundColor: '#D4CFC5' },
                             ]}
                             onPress={() => salesInvoiceButtonClick()}>
                             <View style={styles.innerItem}>
@@ -1469,7 +1469,7 @@ const HomeNew = () => {
                                   source={require('../images/listDark.png')}
                                   style={[
                                     styles.optionIcon,
-                                    {resizeMode: 'contain'},
+                                    { resizeMode: 'contain' },
                                   ]}></Image>
                               </View>
                               <View style={styles.innerText}>
@@ -1484,7 +1484,7 @@ const HomeNew = () => {
                         <TouchableOpacity
                           style={[
                             styles.ItemCont,
-                            {backgroundColor: '#D4CFC5'},
+                            { backgroundColor: '#D4CFC5' },
                           ]}
                           onPress={() => salesInvoiceButtonClick()}>
                           <View style={styles.innerItem}>
@@ -1493,7 +1493,7 @@ const HomeNew = () => {
                                 source={require('../images/listDark.png')}
                                 style={[
                                   styles.optionIcon,
-                                  {resizeMode: 'contain'},
+                                  { resizeMode: 'contain' },
                                 ]}></Image>
                             </View>
                             <View style={styles.innerText}>
@@ -1519,7 +1519,7 @@ const HomeNew = () => {
                           <TouchableOpacity
                             style={[
                               styles.ItemCont,
-                              {backgroundColor: '#D4CFC5'},
+                              { backgroundColor: '#D4CFC5' },
                             ]}
                             onPress={() =>
                               navigation.navigate('PreviousSalesInvoice')
@@ -1530,7 +1530,7 @@ const HomeNew = () => {
                                   source={require('../images/todoDark.png')}
                                   style={[
                                     styles.optionIcon,
-                                    {resizeMode: 'contain'},
+                                    { resizeMode: 'contain' },
                                   ]}></Image>
                               </View>
                               <View style={styles.innerText}>
@@ -1545,7 +1545,7 @@ const HomeNew = () => {
                         <TouchableOpacity
                           style={[
                             styles.ItemCont,
-                            {backgroundColor: '#D4CFC5'},
+                            { backgroundColor: '#D4CFC5' },
                           ]}
                           onPress={() =>
                             navigation.navigate('PreviousSalesInvoice')
@@ -1556,7 +1556,7 @@ const HomeNew = () => {
                                 source={require('../images/todoDark.png')}
                                 style={[
                                   styles.optionIcon,
-                                  {resizeMode: 'contain'},
+                                  { resizeMode: 'contain' },
                                 ]}></Image>
                             </View>
                             <View style={styles.innerText}>
@@ -1582,7 +1582,7 @@ const HomeNew = () => {
                           <TouchableOpacity
                             style={[
                               styles.ItemCont,
-                              {backgroundColor: '#D4CFC5'},
+                              { backgroundColor: '#D4CFC5' },
                             ]}
                             onPress={() => navigation.navigate('PickListNew')}>
                             <View style={styles.innerItem}>
@@ -1591,7 +1591,7 @@ const HomeNew = () => {
                                   source={require('../images/todoDark.png')}
                                   style={[
                                     styles.optionIcon,
-                                    {resizeMode: 'contain'},
+                                    { resizeMode: 'contain' },
                                   ]}></Image>
                               </View>
                               <View style={styles.innerText}>
@@ -1604,7 +1604,7 @@ const HomeNew = () => {
                         <TouchableOpacity
                           style={[
                             styles.ItemCont,
-                            {backgroundColor: '#D4CFC5'},
+                            { backgroundColor: '#D4CFC5' },
                           ]}
                           onPress={() => navigation.navigate('PickListNew')}>
                           <View style={styles.innerItem}>
@@ -1613,7 +1613,7 @@ const HomeNew = () => {
                                 source={require('../images/todoDark.png')}
                                 style={[
                                   styles.optionIcon,
-                                  {resizeMode: 'contain'},
+                                  { resizeMode: 'contain' },
                                 ]}></Image>
                             </View>
                             <View style={styles.innerText}>
@@ -1637,7 +1637,7 @@ const HomeNew = () => {
                           <TouchableOpacity
                             style={[
                               styles.ItemCont,
-                              {backgroundColor: '#D4CFC5'},
+                              { backgroundColor: '#D4CFC5' },
                             ]}
                             onPress={() =>
                               navigation.navigate('CheckingListNew')
@@ -1648,7 +1648,7 @@ const HomeNew = () => {
                                   source={require('../images/todoDark.png')}
                                   style={[
                                     styles.optionIcon,
-                                    {resizeMode: 'contain'},
+                                    { resizeMode: 'contain' },
                                   ]}></Image>
                               </View>
                               <View style={styles.innerText}>
@@ -1661,7 +1661,7 @@ const HomeNew = () => {
                         <TouchableOpacity
                           style={[
                             styles.ItemCont,
-                            {backgroundColor: '#D4CFC5'},
+                            { backgroundColor: '#D4CFC5' },
                           ]}
                           onPress={() =>
                             navigation.navigate('CheckingListNew')
@@ -1672,7 +1672,7 @@ const HomeNew = () => {
                                 source={require('../images/todoDark.png')}
                                 style={[
                                   styles.optionIcon,
-                                  {resizeMode: 'contain'},
+                                  { resizeMode: 'contain' },
                                 ]}></Image>
                             </View>
                             <View style={styles.innerText}>
@@ -1696,7 +1696,7 @@ const HomeNew = () => {
                           <TouchableOpacity
                             style={[
                               styles.ItemCont,
-                              {backgroundColor: '#D4CFC5'},
+                              { backgroundColor: '#D4CFC5' },
                             ]}
                             onPress={() => navigation.navigate('DriversApp')}>
                             <View style={styles.innerItem}>
@@ -1705,7 +1705,7 @@ const HomeNew = () => {
                                   source={require('../images/driver.png')}
                                   style={[
                                     styles.optionIcon,
-                                    {resizeMode: 'contain'},
+                                    { resizeMode: 'contain' },
                                   ]}></Image>
                               </View>
                               <View style={styles.innerText}>
@@ -1718,7 +1718,7 @@ const HomeNew = () => {
                         <TouchableOpacity
                           style={[
                             styles.ItemCont,
-                            {backgroundColor: '#D4CFC5'},
+                            { backgroundColor: '#D4CFC5' },
                           ]}
                           onPress={() => navigation.navigate('DriversApp')}>
                           <View style={styles.innerItem}>
@@ -1727,7 +1727,7 @@ const HomeNew = () => {
                                 source={require('../images/driver.png')}
                                 style={[
                                   styles.optionIcon,
-                                  {resizeMode: 'contain'},
+                                  { resizeMode: 'contain' },
                                 ]}></Image>
                             </View>
                             <View style={styles.innerText}>
@@ -1751,7 +1751,7 @@ const HomeNew = () => {
                           <TouchableOpacity
                             style={[
                               styles.ItemCont,
-                              {backgroundColor: '#D4CFC5'},
+                              { backgroundColor: '#D4CFC5' },
                             ]}
                             onPress={() =>
                               navigation.navigate('CollectionReport')
@@ -1762,7 +1762,7 @@ const HomeNew = () => {
                                   source={require('../images/todoDark.png')}
                                   style={[
                                     styles.optionIcon,
-                                    {resizeMode: 'contain'},
+                                    { resizeMode: 'contain' },
                                   ]}></Image>
                               </View>
                               <View style={styles.innerText}>
@@ -1777,7 +1777,7 @@ const HomeNew = () => {
                         <TouchableOpacity
                           style={[
                             styles.ItemCont,
-                            {backgroundColor: '#D4CFC5'},
+                            { backgroundColor: '#D4CFC5' },
                           ]}
                           onPress={() =>
                             navigation.navigate('CollectionReport')
@@ -1788,7 +1788,7 @@ const HomeNew = () => {
                                 source={require('../images/todoDark.png')}
                                 style={[
                                   styles.optionIcon,
-                                  {resizeMode: 'contain'},
+                                  { resizeMode: 'contain' },
                                 ]}></Image>
                             </View>
                             <View style={styles.innerText}>
@@ -1814,7 +1814,7 @@ const HomeNew = () => {
                           <TouchableOpacity
                             style={[
                               styles.ItemCont,
-                              {backgroundColor: '#D4CFC5'},
+                              { backgroundColor: '#D4CFC5' },
                             ]}
                             onPress={() => navigation.navigate('LeadEntry')}>
                             <View style={styles.innerItem}>
@@ -1823,7 +1823,7 @@ const HomeNew = () => {
                                   source={require('../images/todoDark.png')}
                                   style={[
                                     styles.optionIcon,
-                                    {resizeMode: 'contain'},
+                                    { resizeMode: 'contain' },
                                   ]}></Image>
                               </View>
                               <View style={styles.innerText}>
@@ -1838,7 +1838,7 @@ const HomeNew = () => {
                         <TouchableOpacity
                           style={[
                             styles.ItemCont,
-                            {backgroundColor: '#D4CFC5'},
+                            { backgroundColor: '#D4CFC5' },
                           ]}
                           onPress={() => navigation.navigate('LeadEntry')}>
                           <View style={styles.innerItem}>
@@ -1847,7 +1847,7 @@ const HomeNew = () => {
                                 source={require('../images/todoDark.png')}
                                 style={[
                                   styles.optionIcon,
-                                  {resizeMode: 'contain'},
+                                  { resizeMode: 'contain' },
                                 ]}></Image>
                             </View>
                             <View style={styles.innerText}>
@@ -1871,7 +1871,7 @@ const HomeNew = () => {
                           <TouchableOpacity
                             style={[
                               styles.ItemCont,
-                              {backgroundColor: '#D4CFC5'},
+                              { backgroundColor: '#D4CFC5' },
                             ]}
                             onPress={() => navigation.navigate('SiteSurvey')}>
                             <View style={styles.innerItem}>
@@ -1880,7 +1880,7 @@ const HomeNew = () => {
                                   source={require('../images/todoDark.png')}
                                   style={[
                                     styles.optionIcon,
-                                    {resizeMode: 'contain'},
+                                    { resizeMode: 'contain' },
                                   ]}></Image>
                               </View>
                               <View style={styles.innerText}>
@@ -1895,7 +1895,7 @@ const HomeNew = () => {
                         <TouchableOpacity
                           style={[
                             styles.ItemCont,
-                            {backgroundColor: '#D4CFC5'},
+                            { backgroundColor: '#D4CFC5' },
                           ]}
                           onPress={() => navigation.navigate('SiteSurvey')}>
                           <View style={styles.innerItem}>
@@ -1904,7 +1904,7 @@ const HomeNew = () => {
                                 source={require('../images/todoDark.png')}
                                 style={[
                                   styles.optionIcon,
-                                  {resizeMode: 'contain'},
+                                  { resizeMode: 'contain' },
                                 ]}></Image>
                             </View>
                             <View style={styles.innerText}>
@@ -1928,7 +1928,7 @@ const HomeNew = () => {
                           <TouchableOpacity
                             style={[
                               styles.ItemCont,
-                              {backgroundColor: '#D4CFC5'},
+                              { backgroundColor: '#D4CFC5' },
                             ]}
                             onPress={() =>
                               navigation.navigate('SelectLocation')
@@ -1939,7 +1939,7 @@ const HomeNew = () => {
                                   source={require('../images/todoDark.png')}
                                   style={[
                                     styles.optionIcon,
-                                    {resizeMode: 'contain'},
+                                    { resizeMode: 'contain' },
                                   ]}></Image>
                               </View>
                               <View style={styles.innerText}>
@@ -1952,7 +1952,7 @@ const HomeNew = () => {
                         <TouchableOpacity
                           style={[
                             styles.ItemCont,
-                            {backgroundColor: '#D4CFC5'},
+                            { backgroundColor: '#D4CFC5' },
                           ]}
                           onPress={() => navigation.navigate('SelectLocation')}>
                           <View style={styles.innerItem}>
@@ -1961,7 +1961,7 @@ const HomeNew = () => {
                                 source={require('../images/todoDark.png')}
                                 style={[
                                   styles.optionIcon,
-                                  {resizeMode: 'contain'},
+                                  { resizeMode: 'contain' },
                                 ]}></Image>
                             </View>
                             <View style={styles.innerText}>
@@ -1985,7 +1985,7 @@ const HomeNew = () => {
                           <TouchableOpacity
                             style={[
                               styles.ItemCont,
-                              {backgroundColor: '#D4CFC5'},
+                              { backgroundColor: '#D4CFC5' },
                             ]}
                             onPress={() =>
                               navigation.navigate('PhysicalStock')
@@ -1996,7 +1996,7 @@ const HomeNew = () => {
                                   source={require('../images/todoDark.png')}
                                   style={[
                                     styles.optionIcon,
-                                    {resizeMode: 'contain'},
+                                    { resizeMode: 'contain' },
                                   ]}></Image>
                               </View>
                               <View style={styles.innerText}>
@@ -2011,7 +2011,7 @@ const HomeNew = () => {
                         <TouchableOpacity
                           style={[
                             styles.ItemCont,
-                            {backgroundColor: '#D4CFC5'},
+                            { backgroundColor: '#D4CFC5' },
                           ]}
                           onPress={() => navigation.navigate('PhysicalStock')}>
                           <View style={styles.innerItem}>
@@ -2020,7 +2020,7 @@ const HomeNew = () => {
                                 source={require('../images/todoDark.png')}
                                 style={[
                                   styles.optionIcon,
-                                  {resizeMode: 'contain'},
+                                  { resizeMode: 'contain' },
                                 ]}></Image>
                             </View>
                             <View style={styles.innerText}>
@@ -2046,7 +2046,7 @@ const HomeNew = () => {
                           <TouchableOpacity
                             style={[
                               styles.ItemCont,
-                              {backgroundColor: '#D4CFC5'},
+                              { backgroundColor: '#D4CFC5' },
                             ]}
                             onPress={() =>
                               navigation.navigate('BarcodeLinking')
@@ -2057,7 +2057,7 @@ const HomeNew = () => {
                                   source={require('../images/todoDark.png')}
                                   style={[
                                     styles.optionIcon,
-                                    {resizeMode: 'contain'},
+                                    { resizeMode: 'contain' },
                                   ]}></Image>
                               </View>
                               <View style={styles.innerText}>
@@ -2072,7 +2072,7 @@ const HomeNew = () => {
                         <TouchableOpacity
                           style={[
                             styles.ItemCont,
-                            {backgroundColor: '#D4CFC5'},
+                            { backgroundColor: '#D4CFC5' },
                           ]}
                           onPress={() => navigation.navigate('BarcodeLinking')}>
                           <View style={styles.innerItem}>
@@ -2081,7 +2081,7 @@ const HomeNew = () => {
                                 source={require('../images/todoDark.png')}
                                 style={[
                                   styles.optionIcon,
-                                  {resizeMode: 'contain'},
+                                  { resizeMode: 'contain' },
                                 ]}></Image>
                             </View>
                             <View style={styles.innerText}>
@@ -2107,7 +2107,7 @@ const HomeNew = () => {
                           <TouchableOpacity
                             style={[
                               styles.ItemCont,
-                              {backgroundColor: '#D4CFC5'},
+                              { backgroundColor: '#D4CFC5' },
                             ]}
                             onPress={() =>
                               navigation.navigate('InvoiceVsReceipt')
@@ -2118,7 +2118,7 @@ const HomeNew = () => {
                                   source={require('../images/todoDark.png')}
                                   style={[
                                     styles.optionIcon,
-                                    {resizeMode: 'contain'},
+                                    { resizeMode: 'contain' },
                                   ]}></Image>
                               </View>
                               <View style={styles.innerText}>
@@ -2133,7 +2133,7 @@ const HomeNew = () => {
                         <TouchableOpacity
                           style={[
                             styles.ItemCont,
-                            {backgroundColor: '#D4CFC5'},
+                            { backgroundColor: '#D4CFC5' },
                           ]}
                           onPress={() =>
                             navigation.navigate('InvoiceVsReceipt')
@@ -2144,7 +2144,7 @@ const HomeNew = () => {
                                 source={require('../images/todoDark.png')}
                                 style={[
                                   styles.optionIcon,
-                                  {resizeMode: 'contain'},
+                                  { resizeMode: 'contain' },
                                 ]}></Image>
                             </View>
                             <View style={styles.innerText}>
@@ -2170,7 +2170,7 @@ const HomeNew = () => {
                           <TouchableOpacity
                             style={[
                               styles.ItemCont,
-                              {backgroundColor: '#D4CFC5'},
+                              { backgroundColor: '#D4CFC5' },
                             ]}
                             onPress={() => navigation.navigate('SalesReturn')}>
                             <View style={styles.innerItem}>
@@ -2179,7 +2179,7 @@ const HomeNew = () => {
                                   source={require('../images/todoDark.png')}
                                   style={[
                                     styles.optionIcon,
-                                    {resizeMode: 'contain'},
+                                    { resizeMode: 'contain' },
                                   ]}></Image>
                               </View>
                               <View style={styles.innerText}>
@@ -2194,7 +2194,7 @@ const HomeNew = () => {
                         <TouchableOpacity
                           style={[
                             styles.ItemCont,
-                            {backgroundColor: '#D4CFC5'},
+                            { backgroundColor: '#D4CFC5' },
                           ]}
                           onPress={() => navigation.navigate('SalesReturn')}>
                           <View style={styles.innerItem}>
@@ -2203,7 +2203,7 @@ const HomeNew = () => {
                                 source={require('../images/todoDark.png')}
                                 style={[
                                   styles.optionIcon,
-                                  {resizeMode: 'contain'},
+                                  { resizeMode: 'contain' },
                                 ]}></Image>
                             </View>
                             <View style={styles.innerText}>
@@ -2228,7 +2228,7 @@ const HomeNew = () => {
                           <TouchableOpacity
                             style={[
                               styles.ItemCont,
-                              {backgroundColor: '#D4CFC5'},
+                              { backgroundColor: '#D4CFC5' },
                             ]}
                             onPress={() =>
                               navigation.navigate('SalesReturnList')
@@ -2239,7 +2239,7 @@ const HomeNew = () => {
                                   source={require('../images/todoDark.png')}
                                   style={[
                                     styles.optionIcon,
-                                    {resizeMode: 'contain'},
+                                    { resizeMode: 'contain' },
                                   ]}></Image>
                               </View>
                               <View style={styles.innerText}>
@@ -2254,7 +2254,7 @@ const HomeNew = () => {
                         <TouchableOpacity
                           style={[
                             styles.ItemCont,
-                            {backgroundColor: '#D4CFC5'},
+                            { backgroundColor: '#D4CFC5' },
                           ]}
                           onPress={() =>
                             navigation.navigate('SalesReturnList')
@@ -2265,7 +2265,7 @@ const HomeNew = () => {
                                 source={require('../images/todoDark.png')}
                                 style={[
                                   styles.optionIcon,
-                                  {resizeMode: 'contain'},
+                                  { resizeMode: 'contain' },
                                 ]}></Image>
                             </View>
                             <View style={styles.innerText}>
@@ -2291,7 +2291,7 @@ const HomeNew = () => {
                           <TouchableOpacity
                             style={[
                               styles.ItemCont,
-                              {backgroundColor: '#D4CFC5'},
+                              { backgroundColor: '#D4CFC5' },
                             ]}
                             onPress={() =>
                               navigation.navigate('SplitItemScreen')
@@ -2302,7 +2302,7 @@ const HomeNew = () => {
                                   source={require('../images/todoDark.png')}
                                   style={[
                                     styles.optionIcon,
-                                    {resizeMode: 'contain'},
+                                    { resizeMode: 'contain' },
                                   ]}></Image>
                               </View>
                               <View style={styles.innerText}>
@@ -2317,7 +2317,7 @@ const HomeNew = () => {
                         <TouchableOpacity
                           style={[
                             styles.ItemCont,
-                            {backgroundColor: '#D4CFC5'},
+                            { backgroundColor: '#D4CFC5' },
                           ]}
                           onPress={() =>
                             navigation.navigate('SplitItemScreen')
@@ -2328,7 +2328,7 @@ const HomeNew = () => {
                                 source={require('../images/todoDark.png')}
                                 style={[
                                   styles.optionIcon,
-                                  {resizeMode: 'contain'},
+                                  { resizeMode: 'contain' },
                                 ]}></Image>
                             </View>
                             <View style={styles.innerText}>
@@ -2473,7 +2473,7 @@ const HomeNew = () => {
                           }}
                           horizontal={false}>
                           {userDataArray &&
-                          userDataArray[0].cmpcode.trim().toUpperCase() ==
+                            userDataArray[0].cmpcode.trim().toUpperCase() ==
                             'SUPERLAND' ? (
                             <View
                               style={{
@@ -2486,7 +2486,7 @@ const HomeNew = () => {
                               <TouchableOpacity
                                 style={[
                                   styles.ItemCont,
-                                  {backgroundColor: '#D4CFC5'},
+                                  { backgroundColor: '#D4CFC5' },
                                 ]}
                                 onPress={() =>
                                   navigation.navigate('MakeOrder')
@@ -2497,7 +2497,7 @@ const HomeNew = () => {
                                       source={require('../images/listDark.png')}
                                       style={[
                                         styles.optionIcon,
-                                        {resizeMode: 'contain'},
+                                        { resizeMode: 'contain' },
                                       ]}></Image>
                                   </View>
                                   <View style={styles.innerText}>
@@ -2510,7 +2510,7 @@ const HomeNew = () => {
                               <TouchableOpacity
                                 style={[
                                   styles.ItemCont,
-                                  {backgroundColor: '#D4CFC5'},
+                                  { backgroundColor: '#D4CFC5' },
                                 ]}
                                 onPress={() =>
                                   navigation.navigate('PreviousOrders')
@@ -2521,7 +2521,7 @@ const HomeNew = () => {
                                       source={require('../images/clockDark.png')}
                                       style={[
                                         styles.optionIcon,
-                                        {resizeMode: 'contain'},
+                                        { resizeMode: 'contain' },
                                       ]}></Image>
                                   </View>
                                   <View style={styles.innerText}>
@@ -2546,7 +2546,7 @@ const HomeNew = () => {
                               <TouchableOpacity
                                 style={[
                                   styles.ItemCont,
-                                  {backgroundColor: '#D4CFC5'},
+                                  { backgroundColor: '#D4CFC5' },
                                 ]}
                                 onPress={() =>
                                   navigation.navigate('CheckStock')
@@ -2557,7 +2557,7 @@ const HomeNew = () => {
                                       source={require('../images/srchDark.png')}
                                       style={[
                                         styles.optionIcon,
-                                        {resizeMode: 'contain'},
+                                        { resizeMode: 'contain' },
                                       ]}></Image>
                                   </View>
                                   <View style={styles.innerText}>
@@ -2578,85 +2578,85 @@ const HomeNew = () => {
                                         userDataArray[0].cmpcode
                                           .trim()
                                           .toUpperCase() == 'AUTOMAX')) && (
-                                      <>
-                                        {userDataArray &&
-                                        userDataArray[0].cmpcode
-                                          .trim()
-                                          .toUpperCase() == 'AUTOMAX' &&
-                                        (mobileUserType == 'Checking Staff' ||
-                                          mobileUserType ==
-                                            'Delivery Staff') ? (
-                                          <TouchableOpacity
-                                            style={[
-                                              styles.ItemContOverlay,
-                                              {backgroundColor: '#D4CFC5'},
-                                            ]}
-                                            onPress={() =>
-                                              Alert.alert(
-                                                "You don't have access",
-                                              )
-                                            }>
-                                            <View style={styles.innerItem}>
-                                              <View
-                                                style={
-                                                  styles.TouchablwWhiteBackg
-                                                }>
-                                                <Image
-                                                  source={require('../images/listDark.png')}
-                                                  style={[
-                                                    styles.optionIcon,
-                                                    {resizeMode: 'contain'},
-                                                  ]}></Image>
-                                              </View>
-                                              <View style={styles.innerText}>
-                                                <Text style={styles.optionText}>
-                                                  Sales Order
-                                                </Text>
-                                              </View>
-                                            </View>
-                                            <View
-                                              style={
-                                                styles.TouchableBlackOverlay
+                                        <>
+                                          {userDataArray &&
+                                            userDataArray[0].cmpcode
+                                              .trim()
+                                              .toUpperCase() == 'AUTOMAX' &&
+                                            (mobileUserType == 'Checking Staff' ||
+                                              mobileUserType ==
+                                              'Delivery Staff') ? (
+                                            <TouchableOpacity
+                                              style={[
+                                                styles.ItemContOverlay,
+                                                { backgroundColor: '#D4CFC5' },
+                                              ]}
+                                              onPress={() =>
+                                                Alert.alert(
+                                                  "You don't have access",
+                                                )
                                               }>
-                                              <Image
-                                                source={require('../images/ic_locked.png')}
-                                                style={[
-                                                  styles.optionIcon,
-                                                  {resizeMode: 'contain'},
-                                                ]}></Image>
-                                            </View>
-                                          </TouchableOpacity>
-                                        ) : (
-                                          <TouchableOpacity
-                                            style={[
-                                              styles.ItemCont,
-                                              {backgroundColor: '#D4CFC5'},
-                                            ]}
-                                            onPress={() =>
-                                              navigation.navigate('MakeOrder')
-                                            }>
-                                            <View style={styles.innerItem}>
+                                              <View style={styles.innerItem}>
+                                                <View
+                                                  style={
+                                                    styles.TouchablwWhiteBackg
+                                                  }>
+                                                  <Image
+                                                    source={require('../images/listDark.png')}
+                                                    style={[
+                                                      styles.optionIcon,
+                                                      { resizeMode: 'contain' },
+                                                    ]}></Image>
+                                                </View>
+                                                <View style={styles.innerText}>
+                                                  <Text style={styles.optionText}>
+                                                    Sales Order
+                                                  </Text>
+                                                </View>
+                                              </View>
                                               <View
                                                 style={
-                                                  styles.TouchablwWhiteBackg
+                                                  styles.TouchableBlackOverlay
                                                 }>
                                                 <Image
-                                                  source={require('../images/listDark.png')}
+                                                  source={require('../images/ic_locked.png')}
                                                   style={[
                                                     styles.optionIcon,
-                                                    {resizeMode: 'contain'},
+                                                    { resizeMode: 'contain' },
                                                   ]}></Image>
                                               </View>
-                                              <View style={styles.innerText}>
-                                                <Text style={styles.optionText}>
-                                                  Sales Order
-                                                </Text>
+                                            </TouchableOpacity>
+                                          ) : (
+                                            <TouchableOpacity
+                                              style={[
+                                                styles.ItemCont,
+                                                { backgroundColor: '#D4CFC5' },
+                                              ]}
+                                              onPress={() =>
+                                                navigation.navigate('MakeOrder')
+                                              }>
+                                              <View style={styles.innerItem}>
+                                                <View
+                                                  style={
+                                                    styles.TouchablwWhiteBackg
+                                                  }>
+                                                  <Image
+                                                    source={require('../images/listDark.png')}
+                                                    style={[
+                                                      styles.optionIcon,
+                                                      { resizeMode: 'contain' },
+                                                    ]}></Image>
+                                                </View>
+                                                <View style={styles.innerText}>
+                                                  <Text style={styles.optionText}>
+                                                    Sales Order
+                                                  </Text>
+                                                </View>
                                               </View>
-                                            </View>
-                                          </TouchableOpacity>
-                                        )}
-                                      </>
-                                    )}
+                                            </TouchableOpacity>
+                                          )}
+                                        </>
+                                      )}
                                   </>
                                 )}
 
@@ -2670,97 +2670,97 @@ const HomeNew = () => {
                                         userDataArray[0].cmpcode
                                           .trim()
                                           .toUpperCase() == 'AUTOMAX')) && (
-                                      <>
-                                        {userDataArray &&
-                                        userDataArray[0].cmpcode
-                                          .trim()
-                                          .toUpperCase() == 'AUTOMAX' &&
-                                        (mobileUserType == 'Checking Staff' ||
-                                          mobileUserType ==
-                                            'Delivery Staff') ? (
-                                          <TouchableOpacity
-                                            style={[
-                                              styles.ItemContOverlay,
-                                              {backgroundColor: '#D4CFC5'},
-                                            ]}
-                                            onPress={() =>
-                                              Alert.alert(
-                                                "You don't have access",
-                                              )
-                                            }>
-                                            <View style={styles.innerItem}>
-                                              <View
-                                                style={
-                                                  styles.TouchablwWhiteBackg
-                                                }>
-                                                <Image
-                                                  source={require('../images/clockDark.png')}
-                                                  style={[
-                                                    styles.optionIcon,
-                                                    {resizeMode: 'contain'},
-                                                  ]}></Image>
-                                              </View>
-                                              <View style={styles.innerText}>
-                                                <Text style={styles.optionText}>
-                                                  Order List
-                                                </Text>
-                                              </View>
-                                            </View>
-                                            <View
-                                              style={
-                                                styles.TouchableBlackOverlay
+                                        <>
+                                          {userDataArray &&
+                                            userDataArray[0].cmpcode
+                                              .trim()
+                                              .toUpperCase() == 'AUTOMAX' &&
+                                            (mobileUserType == 'Checking Staff' ||
+                                              mobileUserType ==
+                                              'Delivery Staff') ? (
+                                            <TouchableOpacity
+                                              style={[
+                                                styles.ItemContOverlay,
+                                                { backgroundColor: '#D4CFC5' },
+                                              ]}
+                                              onPress={() =>
+                                                Alert.alert(
+                                                  "You don't have access",
+                                                )
                                               }>
-                                              <Image
-                                                source={require('../images/ic_locked.png')}
-                                                style={[
-                                                  styles.optionIcon,
-                                                  {resizeMode: 'contain'},
-                                                ]}></Image>
-                                            </View>
-                                          </TouchableOpacity>
-                                        ) : (
-                                          <TouchableOpacity
-                                            style={[
-                                              styles.ItemCont,
-                                              {backgroundColor: '#D4CFC5'},
-                                            ]}
-                                            onPress={() =>
-                                              navigation.navigate(
-                                                'PreviousOrders',
-                                              )
-                                            }>
-                                            <View style={styles.innerItem}>
+                                              <View style={styles.innerItem}>
+                                                <View
+                                                  style={
+                                                    styles.TouchablwWhiteBackg
+                                                  }>
+                                                  <Image
+                                                    source={require('../images/clockDark.png')}
+                                                    style={[
+                                                      styles.optionIcon,
+                                                      { resizeMode: 'contain' },
+                                                    ]}></Image>
+                                                </View>
+                                                <View style={styles.innerText}>
+                                                  <Text style={styles.optionText}>
+                                                    Order List
+                                                  </Text>
+                                                </View>
+                                              </View>
                                               <View
                                                 style={
-                                                  styles.TouchablwWhiteBackg
+                                                  styles.TouchableBlackOverlay
                                                 }>
                                                 <Image
-                                                  source={require('../images/clockDark.png')}
+                                                  source={require('../images/ic_locked.png')}
                                                   style={[
                                                     styles.optionIcon,
-                                                    {resizeMode: 'contain'},
+                                                    { resizeMode: 'contain' },
                                                   ]}></Image>
                                               </View>
-                                              <View style={styles.innerText}>
-                                                <Text style={styles.optionText}>
-                                                  Order List
-                                                </Text>
+                                            </TouchableOpacity>
+                                          ) : (
+                                            <TouchableOpacity
+                                              style={[
+                                                styles.ItemCont,
+                                                { backgroundColor: '#D4CFC5' },
+                                              ]}
+                                              onPress={() =>
+                                                navigation.navigate(
+                                                  'PreviousOrders',
+                                                )
+                                              }>
+                                              <View style={styles.innerItem}>
+                                                <View
+                                                  style={
+                                                    styles.TouchablwWhiteBackg
+                                                  }>
+                                                  <Image
+                                                    source={require('../images/clockDark.png')}
+                                                    style={[
+                                                      styles.optionIcon,
+                                                      { resizeMode: 'contain' },
+                                                    ]}></Image>
+                                                </View>
+                                                <View style={styles.innerText}>
+                                                  <Text style={styles.optionText}>
+                                                    Order List
+                                                  </Text>
+                                                </View>
                                               </View>
-                                            </View>
-                                          </TouchableOpacity>
-                                        )}
-                                      </>
-                                    )}
+                                            </TouchableOpacity>
+                                          )}
+                                        </>
+                                      )}
                                   </>
                                 )}
 
                               {mobileUserType == 'Picking Staff' ||
-                              mobileUserType == 'Checking Staff' ||
-                              mobileUserType == 'Delivery Staff' ? (
+                                mobileUserType == 'Checking Staff' ||
+                                mobileUserType == 'Delivery Staff' ? (
                                 <TouchableOpacity
                                   style={[
                                     styles.ItemContOverlay,
-                                    {backgroundColor: '#D4CFC5'},
+                                    { backgroundColor: '#D4CFC5' },
                                   ]}
                                   onPress={() =>
                                     Alert.alert("You don't have access")
@@ -2771,7 +2771,7 @@ const HomeNew = () => {
                                         source={require('../images/bagDark.png')}
                                         style={[
                                           styles.optionIcon,
-                                          {resizeMode: 'contain'},
+                                          { resizeMode: 'contain' },
                                         ]}></Image>
                                     </View>
                                     <View style={styles.innerText}>
@@ -2785,7 +2785,7 @@ const HomeNew = () => {
                                       source={require('../images/ic_locked.png')}
                                       style={[
                                         styles.optionIcon,
-                                        {resizeMode: 'contain'},
+                                        { resizeMode: 'contain' },
                                       ]}></Image>
                                   </View>
                                 </TouchableOpacity>
@@ -2793,7 +2793,7 @@ const HomeNew = () => {
                                 <TouchableOpacity
                                   style={[
                                     styles.ItemCont,
-                                    {backgroundColor: '#D4CFC5'},
+                                    { backgroundColor: '#D4CFC5' },
                                   ]}
                                   onPress={() =>
                                     navigation.navigate('CustomerDetails')
@@ -2804,7 +2804,7 @@ const HomeNew = () => {
                                         source={require('../images/bagDark.png')}
                                         style={[
                                           styles.optionIcon,
-                                          {resizeMode: 'contain'},
+                                          { resizeMode: 'contain' },
                                         ]}></Image>
                                     </View>
                                     <View style={styles.innerText}>
@@ -2829,12 +2829,12 @@ const HomeNew = () => {
                                  */}
 
                               {mobileUserType == 'Picking Staff' ||
-                              mobileUserType == 'Checking Staff' ||
-                              mobileUserType == 'Delivery Staff' ? (
+                                mobileUserType == 'Checking Staff' ||
+                                mobileUserType == 'Delivery Staff' ? (
                                 <TouchableOpacity
                                   style={[
                                     styles.ItemContOverlay,
-                                    {backgroundColor: '#D4CFC5'},
+                                    { backgroundColor: '#D4CFC5' },
                                   ]}
                                   onPress={() =>
                                     Alert.alert("You don't have access")
@@ -2845,7 +2845,7 @@ const HomeNew = () => {
                                         source={require('../images/cashDark.png')}
                                         style={[
                                           styles.optionIcon,
-                                          {resizeMode: 'contain'},
+                                          { resizeMode: 'contain' },
                                         ]}></Image>
                                     </View>
                                     <View style={styles.innerText}>
@@ -2859,7 +2859,7 @@ const HomeNew = () => {
                                       source={require('../images/ic_locked.png')}
                                       style={[
                                         styles.optionIcon,
-                                        {resizeMode: 'contain'},
+                                        { resizeMode: 'contain' },
                                       ]}></Image>
                                   </View>
                                 </TouchableOpacity>
@@ -2867,7 +2867,7 @@ const HomeNew = () => {
                                 <TouchableOpacity
                                   style={[
                                     styles.ItemCont,
-                                    {backgroundColor: '#D4CFC5'},
+                                    { backgroundColor: '#D4CFC5' },
                                   ]}
                                   onPress={() =>
                                     navigation.navigate('NewCollections')
@@ -2878,7 +2878,7 @@ const HomeNew = () => {
                                         source={require('../images/cashDark.png')}
                                         style={[
                                           styles.optionIcon,
-                                          {resizeMode: 'contain'},
+                                          { resizeMode: 'contain' },
                                         ]}></Image>
                                     </View>
                                     <View style={styles.innerText}>
@@ -2900,66 +2900,66 @@ const HomeNew = () => {
                                         userDataArray[0].cmpcode
                                           .trim()
                                           .toUpperCase() == 'MALBAR')) && (
-                                      // <TouchableOpacity style={[styles.ItemCont, { backgroundColor: '#D4CFC5' }]} onPress={() => navigation.navigate('SalesInvoice')}>
-                                      <>
-                                        <TouchableOpacity
-                                          style={[
-                                            styles.ItemCont,
-                                            {backgroundColor: '#D4CFC5'},
-                                          ]}
-                                          onPress={() =>
-                                            salesInvoiceButtonClick()
-                                          }>
-                                          <View style={styles.innerItem}>
-                                            <View
-                                              style={
-                                                styles.TouchablwWhiteBackg
-                                              }>
-                                              <Image
-                                                source={require('../images/listDark.png')}
-                                                style={[
-                                                  styles.optionIcon,
-                                                  {resizeMode: 'contain'},
-                                                ]}></Image>
+                                        // <TouchableOpacity style={[styles.ItemCont, { backgroundColor: '#D4CFC5' }]} onPress={() => navigation.navigate('SalesInvoice')}>
+                                        <>
+                                          <TouchableOpacity
+                                            style={[
+                                              styles.ItemCont,
+                                              { backgroundColor: '#D4CFC5' },
+                                            ]}
+                                            onPress={() =>
+                                              salesInvoiceButtonClick()
+                                            }>
+                                            <View style={styles.innerItem}>
+                                              <View
+                                                style={
+                                                  styles.TouchablwWhiteBackg
+                                                }>
+                                                <Image
+                                                  source={require('../images/listDark.png')}
+                                                  style={[
+                                                    styles.optionIcon,
+                                                    { resizeMode: 'contain' },
+                                                  ]}></Image>
+                                              </View>
+                                              <View style={styles.innerText}>
+                                                <Text style={styles.optionText}>
+                                                  Sales Invoice
+                                                </Text>
+                                              </View>
                                             </View>
-                                            <View style={styles.innerText}>
-                                              <Text style={styles.optionText}>
-                                                Sales Invoice
-                                              </Text>
+                                          </TouchableOpacity>
+                                          <TouchableOpacity
+                                            style={[
+                                              styles.ItemCont,
+                                              { backgroundColor: '#D4CFC5' },
+                                            ]}
+                                            onPress={() =>
+                                              navigation.navigate(
+                                                'PreviousSalesInvoice',
+                                              )
+                                            }>
+                                            <View style={styles.innerItem}>
+                                              <View
+                                                style={
+                                                  styles.TouchablwWhiteBackg
+                                                }>
+                                                <Image
+                                                  source={require('../images/todoDark.png')}
+                                                  style={[
+                                                    styles.optionIcon,
+                                                    { resizeMode: 'contain' },
+                                                  ]}></Image>
+                                              </View>
+                                              <View style={styles.innerText}>
+                                                <Text style={styles.optionText}>
+                                                  Invoice List
+                                                </Text>
+                                              </View>
                                             </View>
-                                          </View>
-                                        </TouchableOpacity>
-                                        <TouchableOpacity
-                                          style={[
-                                            styles.ItemCont,
-                                            {backgroundColor: '#D4CFC5'},
-                                          ]}
-                                          onPress={() =>
-                                            navigation.navigate(
-                                              'PreviousSalesInvoice',
-                                            )
-                                          }>
-                                          <View style={styles.innerItem}>
-                                            <View
-                                              style={
-                                                styles.TouchablwWhiteBackg
-                                              }>
-                                              <Image
-                                                source={require('../images/todoDark.png')}
-                                                style={[
-                                                  styles.optionIcon,
-                                                  {resizeMode: 'contain'},
-                                                ]}></Image>
-                                            </View>
-                                            <View style={styles.innerText}>
-                                              <Text style={styles.optionText}>
-                                                Invoice List
-                                              </Text>
-                                            </View>
-                                          </View>
-                                        </TouchableOpacity>
-                                      </>
-                                    )}
+                                          </TouchableOpacity>
+                                        </>
+                                      )}
                                   </>
                                 )}
 
@@ -2974,7 +2974,7 @@ const HomeNew = () => {
                                           <TouchableOpacity
                                             style={[
                                               styles.ItemContOverlay,
-                                              {backgroundColor: '#D4CFC5'},
+                                              { backgroundColor: '#D4CFC5' },
                                             ]}
                                             onPress={() =>
                                               Alert.alert(
@@ -2990,7 +2990,7 @@ const HomeNew = () => {
                                                   source={require('../images/todoDark.png')}
                                                   style={[
                                                     styles.optionIcon,
-                                                    {resizeMode: 'contain'},
+                                                    { resizeMode: 'contain' },
                                                   ]}></Image>
                                               </View>
                                               <View style={styles.innerText}>
@@ -3007,7 +3007,7 @@ const HomeNew = () => {
                                                 source={require('../images/ic_locked.png')}
                                                 style={[
                                                   styles.optionIcon,
-                                                  {resizeMode: 'contain'},
+                                                  { resizeMode: 'contain' },
                                                 ]}></Image>
                                             </View>
                                           </TouchableOpacity>
@@ -3015,7 +3015,7 @@ const HomeNew = () => {
                                           <TouchableOpacity
                                             style={[
                                               styles.ItemCont,
-                                              {backgroundColor: '#D4CFC5'},
+                                              { backgroundColor: '#D4CFC5' },
                                             ]}
                                             onPress={() =>
                                               navigation.navigate('PickListNew')
@@ -3029,7 +3029,7 @@ const HomeNew = () => {
                                                   source={require('../images/todoDark.png')}
                                                   style={[
                                                     styles.optionIcon,
-                                                    {resizeMode: 'contain'},
+                                                    { resizeMode: 'contain' },
                                                   ]}></Image>
                                               </View>
                                               <View style={styles.innerText}>
@@ -3042,12 +3042,12 @@ const HomeNew = () => {
                                         )}
 
                                         {mobileUserType == 'Picking Staff' ||
-                                        mobileUserType == 'Sales Staff' ||
-                                        mobileUserType == 'Delivery Staff' ? (
+                                          mobileUserType == 'Sales Staff' ||
+                                          mobileUserType == 'Delivery Staff' ? (
                                           <TouchableOpacity
                                             style={[
                                               styles.ItemContOverlay,
-                                              {backgroundColor: '#D4CFC5'},
+                                              { backgroundColor: '#D4CFC5' },
                                             ]}
                                             onPress={() =>
                                               Alert.alert(
@@ -3063,7 +3063,7 @@ const HomeNew = () => {
                                                   source={require('../images/todoDark.png')}
                                                   style={[
                                                     styles.optionIcon,
-                                                    {resizeMode: 'contain'},
+                                                    { resizeMode: 'contain' },
                                                   ]}></Image>
                                               </View>
                                               <View style={styles.innerText}>
@@ -3080,7 +3080,7 @@ const HomeNew = () => {
                                                 source={require('../images/ic_locked.png')}
                                                 style={[
                                                   styles.optionIcon,
-                                                  {resizeMode: 'contain'},
+                                                  { resizeMode: 'contain' },
                                                 ]}></Image>
                                             </View>
                                           </TouchableOpacity>
@@ -3088,7 +3088,7 @@ const HomeNew = () => {
                                           <TouchableOpacity
                                             style={[
                                               styles.ItemCont,
-                                              {backgroundColor: '#D4CFC5'},
+                                              { backgroundColor: '#D4CFC5' },
                                             ]}
                                             onPress={() =>
                                               navigation.navigate(
@@ -3104,7 +3104,7 @@ const HomeNew = () => {
                                                   source={require('../images/todoDark.png')}
                                                   style={[
                                                     styles.optionIcon,
-                                                    {resizeMode: 'contain'},
+                                                    { resizeMode: 'contain' },
                                                   ]}></Image>
                                               </View>
                                               <View style={styles.innerText}>
@@ -3128,14 +3128,14 @@ const HomeNew = () => {
                                       .toUpperCase() !== 'MALBAR' && (
                                       <>
                                         {userDataArray &&
-                                        userDataArray[0].cmpcode
-                                          .trim()
-                                          .toUpperCase() !== 'MALBAR' &&
-                                        mobileUserType == 'Picking Staff' ? (
+                                          userDataArray[0].cmpcode
+                                            .trim()
+                                            .toUpperCase() !== 'MALBAR' &&
+                                          mobileUserType == 'Picking Staff' ? (
                                           <TouchableOpacity
                                             style={[
                                               styles.ItemContOverlay,
-                                              {backgroundColor: '#D4CFC5'},
+                                              { backgroundColor: '#D4CFC5' },
                                             ]}
                                             onPress={() =>
                                               Alert.alert(
@@ -3151,7 +3151,7 @@ const HomeNew = () => {
                                                   source={require('../images/driver.png')}
                                                   style={[
                                                     styles.optionIcon,
-                                                    {resizeMode: 'contain'},
+                                                    { resizeMode: 'contain' },
                                                   ]}></Image>
                                               </View>
                                               <View style={styles.innerText}>
@@ -3168,7 +3168,7 @@ const HomeNew = () => {
                                                 source={require('../images/ic_locked.png')}
                                                 style={[
                                                   styles.optionIcon,
-                                                  {resizeMode: 'contain'},
+                                                  { resizeMode: 'contain' },
                                                 ]}></Image>
                                             </View>
                                           </TouchableOpacity>
@@ -3176,7 +3176,7 @@ const HomeNew = () => {
                                           <TouchableOpacity
                                             style={[
                                               styles.ItemCont,
-                                              {backgroundColor: '#D4CFC5'},
+                                              { backgroundColor: '#D4CFC5' },
                                             ]}
                                             onPress={() =>
                                               navigation.navigate('DriversApp')
@@ -3190,7 +3190,7 @@ const HomeNew = () => {
                                                   source={require('../images/driver.png')}
                                                   style={[
                                                     styles.optionIcon,
-                                                    {resizeMode: 'contain'},
+                                                    { resizeMode: 'contain' },
                                                   ]}></Image>
                                               </View>
                                               <View style={styles.innerText}>
@@ -3207,12 +3207,12 @@ const HomeNew = () => {
                               }
 
                               {mobileUserType == 'Picking Staff' ||
-                              mobileUserType == 'Checking Staff' ||
-                              mobileUserType == 'Delivery Staff' ? (
+                                mobileUserType == 'Checking Staff' ||
+                                mobileUserType == 'Delivery Staff' ? (
                                 <TouchableOpacity
                                   style={[
                                     styles.ItemContOverlay,
-                                    {backgroundColor: '#D4CFC5'},
+                                    { backgroundColor: '#D4CFC5' },
                                   ]}
                                   onPress={() =>
                                     Alert.alert("You don't have access")
@@ -3223,7 +3223,7 @@ const HomeNew = () => {
                                         source={require('../images/todoDark.png')}
                                         style={[
                                           styles.optionIcon,
-                                          {resizeMode: 'contain'},
+                                          { resizeMode: 'contain' },
                                         ]}></Image>
                                     </View>
                                     <View style={styles.innerText}>
@@ -3237,7 +3237,7 @@ const HomeNew = () => {
                                       source={require('../images/ic_locked.png')}
                                       style={[
                                         styles.optionIcon,
-                                        {resizeMode: 'contain'},
+                                        { resizeMode: 'contain' },
                                       ]}></Image>
                                   </View>
                                 </TouchableOpacity>
@@ -3245,7 +3245,7 @@ const HomeNew = () => {
                                 <TouchableOpacity
                                   style={[
                                     styles.ItemCont,
-                                    {backgroundColor: '#D4CFC5'},
+                                    { backgroundColor: '#D4CFC5' },
                                   ]}
                                   onPress={() =>
                                     navigation.navigate('CollectionReport')
@@ -3256,7 +3256,7 @@ const HomeNew = () => {
                                         source={require('../images/todoDark.png')}
                                         style={[
                                           styles.optionIcon,
-                                          {resizeMode: 'contain'},
+                                          { resizeMode: 'contain' },
                                         ]}></Image>
                                     </View>
                                     <View style={styles.innerText}>
@@ -3383,7 +3383,7 @@ const HomeNew = () => {
                     }}>
                     <Image source={require('../images/userAvatar.png')} />
                   </View>
-                  <View style={{padding: 8}}>
+                  <View style={{ padding: 8 }}>
                     <Text
                       style={{
                         fontSize: 16,
@@ -3446,7 +3446,7 @@ const HomeNew = () => {
                       marginRight: 6,
                       fontFamily: 'Lexend-Regular',
                     }}>
-                    version 6.6.0
+                    version 6.8.0
                   </Text>
                 </View>
               </View>
@@ -3535,7 +3535,7 @@ const HomeNew = () => {
               style={styles.mapmodalContainer}>
               {/* <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}> */}
               <View style={styles.mapmodalContent}>
-                <Text style={{fontWeight: 'bold', fontSize: 16}}>
+                <Text style={{ fontWeight: 'bold', fontSize: 16 }}>
                   New Item Added to Delivery !
                 </Text>
 
@@ -3726,7 +3726,7 @@ const styles = StyleSheet.create({
     height: 120,
 
     shadowColor: '#000', // Shadow color for iOS
-    shadowOffset: {width: 0, height: 2}, // Shadow offset for iOS
+    shadowOffset: { width: 0, height: 2 }, // Shadow offset for iOS
     shadowOpacity: 0.25, // Shadow opacity for iOS
     shadowRadius: 3.84, // Shadow radius for iOS
     elevation: 3, // Elevation for Android
@@ -3745,7 +3745,7 @@ const styles = StyleSheet.create({
     height: 110,
 
     shadowColor: '#000', // Shadow color for iOS
-    shadowOffset: {width: 0, height: 2}, // Shadow offset for iOS
+    shadowOffset: { width: 0, height: 2 }, // Shadow offset for iOS
     shadowOpacity: 0.25, // Shadow opacity for iOS
     shadowRadius: 3.84, // Shadow radius for iOS
     elevation: 3, // Elevation for Android
@@ -3958,7 +3958,7 @@ const styles = StyleSheet.create({
     borderLeftWidth: 4,
     // Modern soft shadow
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 4},
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.05,
     shadowRadius: 10,
     elevation: 3,

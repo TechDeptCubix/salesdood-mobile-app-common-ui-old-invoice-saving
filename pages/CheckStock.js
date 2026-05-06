@@ -11,8 +11,10 @@ import {
   KeyboardAvoidingView,
   Keyboard,
   Platform,
+  Modal,
+  Alert,
 } from 'react-native';
-import React, {useEffect, useState, useCallback, useRef} from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import HeaderUiNew from './HeaderUiNew';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
@@ -52,13 +54,14 @@ const StockItem = React.memo(
           <View style={styles.cardHeaderLeft}>
             <Text style={styles.cardCode}>{code}</Text>
             <Text style={styles.cardUnit}>Unit: {item.unit || '—'}</Text>
+            <Text style={styles.cardUnit}>Brand: {item.Category || '—'}</Text>
           </View>
           <View style={styles.cardHeaderRight}>
-            <View style={[styles.qtyBadge, {backgroundColor: stockBg}]}>
-              <Text style={[styles.qtyBadgeLabel, {color: stockColor}]}>
+            <View style={[styles.qtyBadge, { backgroundColor: stockBg }]}>
+              <Text style={[styles.qtyBadgeLabel, { color: stockColor }]}>
                 Qty
               </Text>
-              <Text style={[styles.qtyBadgeValue, {color: stockColor}]}>
+              <Text style={[styles.qtyBadgeValue, { color: stockColor }]}>
                 {item.Stock ?? '—'}
               </Text>
             </View>
@@ -135,12 +138,12 @@ const StockItem = React.memo(
             </View>
 
             {/* Add to Cart */}
-            {/* <TouchableOpacity
-            style={styles.cartBtn}
-            onPress={() => onAddToCart(item)}
-            activeOpacity={0.8}>
-            <Text style={styles.cartBtnText}>Add to Cart</Text>
-          </TouchableOpacity> */}
+            <TouchableOpacity
+              style={styles.cartBtn}
+              onPress={() => onAddToCart(item)}
+              activeOpacity={0.8}>
+              <Text style={styles.cartBtnText}>Add to Cart</Text>
+            </TouchableOpacity>
 
             {/* Sub / Model Tabs */}
             <View style={styles.tabRow}>
@@ -182,16 +185,16 @@ const StockItem = React.memo(
       prevProps.item === nextProps.item &&
       (nextProps.isExpanded
         ? prevProps.selectedButton === nextProps.selectedButton &&
-          prevProps.substituteData === nextProps.substituteData &&
-          prevProps.modalNumberData === nextProps.modalNumberData &&
-          prevProps.subLoader === nextProps.subLoader &&
-          prevProps.modalLoader === nextProps.modalLoader
+        prevProps.substituteData === nextProps.substituteData &&
+        prevProps.modalNumberData === nextProps.modalNumberData &&
+        prevProps.subLoader === nextProps.subLoader &&
+        prevProps.modalLoader === nextProps.modalLoader
         : true)
     );
   },
 );
 
-const StockLocation = ({label, value}) => {
+const StockLocation = ({ label, value }) => {
   const val = Number(value) || 0;
   let color = '#F59E0B'; // zero (orange)
   if (val > 0) color = '#10B981'; // greater than zero (green)
@@ -200,19 +203,19 @@ const StockLocation = ({label, value}) => {
   return (
     <View style={styles.stockItem}>
       <Text style={styles.stockLabel}>{label}</Text>
-      <Text style={[styles.stockValue, {color: color}]}>{value ?? 0}</Text>
+      <Text style={[styles.stockValue, { color: color }]}>{value ?? 0}</Text>
     </View>
   );
 };
-const PriceCard = ({label, value}) => (
+const PriceCard = ({ label, value }) => (
   <View style={styles.priceCard}>
     <Text style={styles.priceCardLabel}>{label}</Text>
     <Text style={styles.priceCardValue}>{value}</Text>
   </View>
 );
 
-const SubstituteTable = ({data, loading}) => {
-  if (loading) return <ActivityIndicator style={{marginVertical: 8}} />;
+const SubstituteTable = ({ data, loading }) => {
+  if (loading) return <ActivityIndicator style={{ marginVertical: 8 }} />;
   if (!data) return null;
   if (data.length === 0)
     return <Text style={styles.noData}>No substitutes available</Text>;
@@ -223,19 +226,19 @@ const SubstituteTable = ({data, loading}) => {
         {['Part No', 'Qty', 'Price'].map(h => (
           <Text
             key={h}
-            style={[styles.tableHeaderCell, {flex: h === 'Part No' ? 2 : 1}]}>
+            style={[styles.tableHeaderCell, { flex: h === 'Part No' ? 2 : 1 }]}>
             {h}
           </Text>
         ))}
       </View>
-      <ScrollView style={{maxHeight: 180}} nestedScrollEnabled>
+      <ScrollView style={{ maxHeight: 180 }} nestedScrollEnabled>
         {data.map((row, i) => (
           <View
             key={i}
             style={[styles.tableDataRow, i % 2 === 0 && styles.tableRowEven]}>
-            <Text style={[styles.tableDataCell, {flex: 2}]}>{row.Part_No}</Text>
-            <Text style={[styles.tableDataCell, {flex: 1}]}>{row.Balance}</Text>
-            <Text style={[styles.tableDataCell, {flex: 1}]}>
+            <Text style={[styles.tableDataCell, { flex: 2 }]}>{row.Part_No}</Text>
+            <Text style={[styles.tableDataCell, { flex: 1 }]}>{row.Balance}</Text>
+            <Text style={[styles.tableDataCell, { flex: 1 }]}>
               {formatPrice3Decimal(row['Sales price'])}
             </Text>
           </View>
@@ -247,8 +250,8 @@ const SubstituteTable = ({data, loading}) => {
 
 // ─── Model Number Table ───────────────────────────────────────────────────────
 
-const ModelTable = ({data, loading}) => {
-  if (loading) return <ActivityIndicator style={{marginVertical: 8}} />;
+const ModelTable = ({ data, loading }) => {
+  if (loading) return <ActivityIndicator style={{ marginVertical: 8 }} />;
   if (!data) return null;
   if (data.length === 0)
     return <Text style={styles.noData}>No model numbers available</Text>;
@@ -256,14 +259,14 @@ const ModelTable = ({data, loading}) => {
   return (
     <View style={styles.tableWrap}>
       <View style={styles.tableHeaderRow}>
-        <Text style={[styles.tableHeaderCell, {flex: 1}]}>Model Number</Text>
+        <Text style={[styles.tableHeaderCell, { flex: 1 }]}>Model Number</Text>
       </View>
-      <ScrollView style={{maxHeight: 180}} nestedScrollEnabled>
+      <ScrollView style={{ maxHeight: 180 }} nestedScrollEnabled>
         {data.map((row, i) => (
           <View
             key={i}
             style={[styles.tableDataRow, i % 2 === 0 && styles.tableRowEven]}>
-            <Text style={[styles.tableDataCell, {flex: 1}]}>
+            <Text style={[styles.tableDataCell, { flex: 1 }]}>
               {row.Model_Number}
             </Text>
           </View>
@@ -292,6 +295,13 @@ const CheckStock = () => {
   const [substituteData, setSubstituteData] = useState(null);
   const [modalLoader, setModalLoader] = useState(false);
   const [subLoader, setSubLoader] = useState(false);
+
+  // Cart popup state
+  const [cartModalVisible, setCartModalVisible] = useState(false);
+  const [cartItem, setCartItem] = useState(null);
+  const [cartQty, setCartQty] = useState('');
+  const [cartPrice, setCartPrice] = useState('');
+  const [cartType, setCartType] = useState('order'); // 'order' | 'invoice'
 
   // Debounce ref
   const debounceTimer = useRef(null);
@@ -425,8 +435,78 @@ const CheckStock = () => {
   );
 
   const handleAddToCart = item => {
-    // Wire up your cart logic here
-    console.log('Add to cart:', item);
+    setCartItem(item);
+    setCartQty('');
+    setCartPrice(item.price ? String(item.price) : '');
+    setCartModalVisible(true);
+  };
+
+  const handleCartConfirm = async () => {
+    const parsedQty = parseFloat(cartQty);
+    const parsedPrice = parseFloat(cartPrice);
+
+    if (!cartQty || isNaN(parsedQty) || parsedQty <= 0) {
+      Alert.alert('Please enter a valid Quantity');
+      return;
+    }
+    if (!cartPrice || isNaN(parsedPrice) || parsedPrice <= 0) {
+      Alert.alert('Please enter a valid Price');
+      return;
+    }
+
+    // Block Price validation
+    const blockPrice = cartItem?.['Block Price'];
+    if (blockPrice && Number(blockPrice) > 0) {
+      if (Number(blockPrice) >= parsedPrice) {
+        Alert.alert(
+          'Invalid Price',
+          `Entered price must be more than the block price (${blockPrice}).`,
+        );
+        return;
+      }
+    }
+
+    // Determine the correct AsyncStorage key based on selected cart type
+    const storageKey =
+      cartType === 'invoice' ? 'savedItemDataInv' : 'savedItemData';
+
+    try {
+      const savedString = await AsyncStorage.getItem(storageKey);
+      const savedArray = savedString ? JSON.parse(savedString) : [];
+
+      // Duplicate check
+      const alreadyExists = savedArray.some(
+        i => i.Code === (cartItem.Code || cartItem.code),
+      );
+      if (alreadyExists) {
+        Alert.alert(
+          'Item Already in Cart',
+          'This item is already added to the selected cart.',
+        );
+        return;
+      }
+
+      const newItem = {
+        ...cartItem,
+        quantity: parsedQty.toFixed(2),
+        unitPrice: parsedPrice.toFixed(2),
+        unitPriceToShowUser: parsedPrice.toFixed(2),
+        total: parsedQty * parsedPrice,
+      };
+
+      const updated = [...savedArray, newItem];
+      await AsyncStorage.setItem(storageKey, JSON.stringify(updated));
+
+      setCartModalVisible(false);
+      Alert.alert(
+        'Added to Cart',
+        `${cartItem.Description || cartItem.Code} added to ${cartType === 'invoice' ? 'Sales Invoice' : 'Sales Order'
+        } cart.`,
+      );
+    } catch (e) {
+      console.log('handleCartConfirm error', e);
+      Alert.alert('Error', 'Could not save item to cart. Please try again.');
+    }
   };
 
   // ── Render List ───────────────────────────────────────────────────────────
@@ -460,6 +540,113 @@ const CheckStock = () => {
     <View style={styles.root}>
       <HeaderUiNew name={'Check Stock'} />
 
+      {/* ── Add to Cart Bottom Sheet ── */}
+      <Modal
+        visible={cartModalVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setCartModalVisible(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalBox}>
+            {/* Drag Handle */}
+            <View style={styles.sheetHandle} />
+
+            <Text style={styles.modalTitle}>Add to Cart</Text>
+            {cartItem && (
+              <Text style={styles.modalDesc} numberOfLines={2}>
+                {cartItem.Description || cartItem.Code || cartItem.code}
+              </Text>
+            )}
+
+            {/* Cart Type Radio */}
+            <Text style={styles.modalLabel}>Save to</Text>
+            <View style={styles.radioRow}>
+              <TouchableOpacity
+                style={[
+                  styles.radioBtn,
+                  cartType === 'order' && styles.radioBtnActive,
+                ]}
+                onPress={() => setCartType('order')}
+                activeOpacity={0.8}>
+                <View style={styles.radioCircle}>
+                  {cartType === 'order' && <View style={styles.radioDot} />}
+                </View>
+                <Text
+                  style={[
+                    styles.radioLabel,
+                    cartType === 'order' && styles.radioLabelActive,
+                  ]}>
+                  Sales Order
+                </Text>
+              </TouchableOpacity>
+
+              {/* <TouchableOpacity
+                style={[
+                  styles.radioBtn,
+                  cartType === 'invoice' && styles.radioBtnActive,
+                ]}
+                onPress={() => setCartType('invoice')}
+                activeOpacity={0.8}>
+                <View style={styles.radioCircle}>
+                  {cartType === 'invoice' && <View style={styles.radioDot} />}
+                </View>
+                <Text
+                  style={[
+                    styles.radioLabel,
+                    cartType === 'invoice' && styles.radioLabelActive,
+                  ]}>
+                  Sales Invoice
+                </Text>
+              </TouchableOpacity> */}
+            </View>
+
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+              {/* Qty */}
+              <View style={{ width: '48%', flexDirection: 'column' }}>
+                <Text style={styles.modalLabel}>Quantity</Text>
+                <TextInput
+                  style={styles.modalInput}
+                  placeholder="Enter quantity"
+                  placeholderTextColor="#9AA3B0"
+                  keyboardType="numeric"
+                  value={cartQty}
+                  onChangeText={setCartQty}
+                />
+              </View>
+              <View style={{ width: '48%', flexDirection: 'column' }}>
+                {/* Price */}
+                <Text style={styles.modalLabel}>Price</Text>
+                <TextInput
+                  style={styles.modalInput}
+                  placeholder="Enter price"
+                  placeholderTextColor="#9AA3B0"
+                  keyboardType="decimal-pad"
+                  value={cartPrice}
+                  onChangeText={setCartPrice}
+                />
+
+              </View>
+
+            </View>
+            {/* Buttons */}
+            <View style={styles.modalBtnRow}>
+              <TouchableOpacity
+                style={[styles.modalBtn, styles.modalBtnCancel]}
+                onPress={() => setCartModalVisible(false)}
+                activeOpacity={0.8}>
+                <Text style={styles.modalBtnCancelText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalBtn, styles.modalBtnConfirm]}
+                onPress={handleCartConfirm}
+                activeOpacity={0.8}>
+                <Text style={styles.modalBtnConfirmText}>Add</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal >
+
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 120 : 0}
@@ -479,7 +666,7 @@ const CheckStock = () => {
             <ActivityIndicator
               size="small"
               color="#3A80EA"
-              style={{marginRight: 8}}
+              style={{ marginRight: 8 }}
             />
           )}
         </View>
@@ -488,9 +675,8 @@ const CheckStock = () => {
         {!loading && displayData && (
           <Text style={styles.sectionLabel}>
             {searchItem.trim()
-              ? `${displayData.length} result${
-                  displayData.length !== 1 ? 's' : ''
-                }`
+              ? `${displayData.length} result${displayData.length !== 1 ? 's' : ''
+              }`
               : 'Top Items'}
           </Text>
         )}
@@ -508,7 +694,7 @@ const CheckStock = () => {
           <FlatList
             data={displayData}
             keyExtractor={(item, i) => (item.Code || item.code || i).toString()}
-            renderItem={({item}) => renderItem(item)}
+            renderItem={({ item }) => renderItem(item)}
             contentContainerStyle={styles.list}
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
@@ -523,13 +709,13 @@ const CheckStock = () => {
           </View>
         )}
       </KeyboardAvoidingView>
-    </View>
+    </View >
   );
 };
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
-const {height} = Dimensions.get('window');
+const { height } = Dimensions.get('window');
 
 const styles = StyleSheet.create({
   root: {
@@ -551,7 +737,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 10,
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.07,
     shadowRadius: 6,
     elevation: 3,
@@ -589,7 +775,7 @@ const styles = StyleSheet.create({
     padding: 14,
     marginBottom: 10,
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 1},
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.06,
     shadowRadius: 4,
     elevation: 2,
@@ -736,7 +922,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 14,
     shadowColor: '#3A80EA',
-    shadowOffset: {width: 0, height: 4},
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,
     shadowRadius: 8,
     elevation: 4,
@@ -765,7 +951,7 @@ const styles = StyleSheet.create({
   tabBtnActive: {
     backgroundColor: '#FFFFFF',
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 1},
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.08,
     shadowRadius: 3,
     elevation: 2,
@@ -847,6 +1033,146 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#9AA3B0',
     marginTop: 10,
+  },
+
+  // ── Cart Bottom Sheet ─────────────────────────────────────────────────────
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    justifyContent: 'flex-end',
+  },
+  modalBox: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
+    paddingHorizontal: 24,
+    paddingBottom: 32,
+    paddingTop: 12,
+    width: '100%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    elevation: 10,
+  },
+  sheetHandle: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#D1D5DB',
+    alignSelf: 'center',
+    marginBottom: 20,
+  },
+
+  // Radio toggle
+  radioRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 20,
+  },
+  radioBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#F7F9FF',
+    borderRadius: 10,
+    borderWidth: 1.5,
+    borderColor: '#E8EDFB',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+  },
+  radioBtnActive: {
+    borderColor: '#3A80EA',
+    backgroundColor: '#EEF4FF',
+  },
+  radioCircle: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    borderWidth: 2,
+    borderColor: '#3A80EA',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  radioDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#3A80EA',
+  },
+  radioLabel: {
+    fontFamily: 'Lexend-Regular',
+    fontSize: 13,
+    color: '#7A8499',
+  },
+  radioLabelActive: {
+    fontFamily: 'Lexend-Bold',
+    color: '#3A80EA',
+  },
+  modalTitle: {
+    fontFamily: 'Lexend-Bold',
+    fontSize: 18,
+    color: '#1A1A2E',
+    marginBottom: 4,
+  },
+  modalDesc: {
+    fontFamily: 'Lexend-Light',
+    fontSize: 13,
+    color: '#7A8499',
+    marginBottom: 20,
+  },
+  modalLabel: {
+    fontFamily: 'Lexend-Regular',
+    fontSize: 13,
+    color: '#3A80EA',
+    marginBottom: 6,
+  },
+  modalInput: {
+    backgroundColor: '#F7F9FF',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#E8EDFB',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    fontFamily: 'Lexend-Regular',
+    fontSize: 15,
+    color: '#1A1A2E',
+    marginBottom: 16,
+  },
+  modalBtnRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 4,
+  },
+  modalBtn: {
+    flex: 1,
+    borderRadius: 10,
+    paddingVertical: 13,
+    alignItems: 'center',
+  },
+  modalBtnCancel: {
+    backgroundColor: '#F2F4F8',
+  },
+  modalBtnCancelText: {
+    fontFamily: 'Lexend-Bold',
+    fontSize: 15,
+    color: '#7A8499',
+  },
+  modalBtnConfirm: {
+    backgroundColor: '#3A80EA',
+    shadowColor: '#3A80EA',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  modalBtnConfirmText: {
+    fontFamily: 'Lexend-Bold',
+    fontSize: 15,
+    color: '#FFFFFF',
   },
 });
 
