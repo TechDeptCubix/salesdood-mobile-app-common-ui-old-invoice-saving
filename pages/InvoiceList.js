@@ -1178,56 +1178,7 @@ const InvoiceList = () => {
   console.log('subTotal', subTotal);
 
   console.log('discount', discount);
-  const handleDirectPrint = async (items, header) => {
-    try {
-      const receiptLines = items
-        .map(
-          item =>
-            `${item.QTY} x ${item.DESCRIPTION.slice(0, 15).padEnd(15)} ${
-              item.LINE_TOTAL
-            }\n`,
-        )
-        .join('');
 
-      // Use [C] for Center or [L] for Left if your library supports ESC/POS tags
-      const receiptText = `
-INVOICE: ${header.inv_no}
-DATE: ${header.inv_date}
---------------------------------
-${receiptLines}
---------------------------------
-TOTAL: ${header.inv_total}
---------------------------------
-Thank you!
-\n\n\n\n`;
-
-      const devices = await ThermalPrinterModule.getBluetoothDeviceList();
-
-      if (devices && devices.length > 0) {
-        const targetDevice = devices[0];
-
-        // LOGS for debugging
-        console.log('Target MAC:', targetDevice.macAddress);
-
-        await ThermalPrinterModule.printBluetooth({
-          payload: receiptText,
-          macAddress: targetDevice.macAddress, // Based on your log
-          printerAddress: targetDevice.macAddress, // Fallback for some library versions
-          autoCut: true,
-          printerWidth: 384,
-        });
-
-        // Fixed the log: use deviceName as per your console output
-        console.log('Print command sent to:', targetDevice.deviceName);
-        alert('Print command sent!');
-      } else {
-        alert('No printer found.');
-      }
-    } catch (error) {
-      console.error('Native Print Error:', error);
-      alert('Printing failed: ' + error.message);
-    }
-  };
   return (
     <View style={styles.HomeWrap}>
       {/* <Header /> */}
@@ -1370,19 +1321,19 @@ Thank you!
                     )}
                   </TouchableOpacity>
 
-                  {cmpcode?.toUpperCase().trim() == 'ICELAB' ||
-                    (cmpcode?.toUpperCase().trim() == 'ICELAB_TEST' && (
-                      <TouchableOpacity
-                        style={[styles.PrintAcceptButtonBT]}
-                        onPress={() => fetchItemListBLuetooth(item)}>
-                        {showPrintButtonLoaderBluetooth &&
-                        item.INVNO === selectedInvoiceNo ? (
-                          <ActivityIndicator color={'white'} />
-                        ) : (
-                          <Text style={styles.PrintAcceptText}>Print BT </Text>
-                        )}
-                      </TouchableOpacity>
-                    ))}
+                  {(cmpcode?.toUpperCase().trim() === 'ICELAB' ||
+                    cmpcode?.toUpperCase().trim() === 'ICELAB_TEST') && (
+                    <TouchableOpacity
+                      style={[styles.PrintAcceptButtonBT]}
+                      onPress={() => fetchItemListBLuetooth(item)}>
+                      {showPrintButtonLoaderBluetooth &&
+                      item.INVNO === selectedInvoiceNo ? (
+                        <ActivityIndicator color={'white'} />
+                      ) : (
+                        <Text style={styles.PrintAcceptText}>Print BT </Text>
+                      )}
+                    </TouchableOpacity>
+                  )}
                   {cmpcode?.toUpperCase().trim() === 'ICUP' ||
                   cmpcode?.toUpperCase().trim() === 'ICELAB_TEST' ? (
                     <TouchableOpacity
