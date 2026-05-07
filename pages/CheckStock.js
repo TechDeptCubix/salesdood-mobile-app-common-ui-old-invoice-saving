@@ -580,7 +580,7 @@ const CheckStock = () => {
                 </Text>
               </TouchableOpacity>
 
-              {/* <TouchableOpacity
+              <TouchableOpacity
                 style={[
                   styles.radioBtn,
                   cartType === 'invoice' && styles.radioBtnActive,
@@ -597,7 +597,7 @@ const CheckStock = () => {
                   ]}>
                   Sales Invoice
                 </Text>
-              </TouchableOpacity> */}
+              </TouchableOpacity>
             </View>
 
             <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>

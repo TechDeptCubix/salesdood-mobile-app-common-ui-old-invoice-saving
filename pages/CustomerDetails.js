@@ -11,10 +11,10 @@ import {
   Keyboard,
   Button,
 } from 'react-native';
-import React, {useEffect, useState} from 'react';
+import React, { useEffect, useState } from 'react';
 import Header from './Header';
 import axios from 'axios';
-import {useNavigation} from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 import HeaderUiNew from './HeaderUiNew';
 import StatementPop from '../popups/StatementPop';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -136,7 +136,7 @@ const CustomerDetails = () => {
 
             console.log(
               'filteredArrayBasedOnSalesman>>',
-              filteredArrayBasedOnSalesman,
+              filteredArrayBasedOnSalesman, userAccess,
               salesName.trim().toUpperCase(),
             );
 
@@ -265,7 +265,7 @@ const CustomerDetails = () => {
               marginBottom: 12,
             }}>
             {/* Search Input */}
-            <View style={[styles.TANDCInpCont, {flex: 1, marginTop: 0}]}>
+            <View style={[styles.TANDCInpCont, { flex: 1, marginTop: 0 }]}>
               <TextInput
                 style={styles.PlaceHolderInput}
                 placeholder="Type name or account no"
@@ -314,7 +314,7 @@ const CustomerDetails = () => {
                               <Text
                                 style={[
                                   styles.StockListDescText,
-                                  {width: '75%'},
+                                  { width: '75%' },
                                 ]}>
                                 {item.Custname}
                               </Text>
@@ -372,7 +372,7 @@ const CustomerDetails = () => {
                               <TouchableOpacity
                                 style={[
                                   styles.PlusMinusCont,
-                                  {marginLeft: 'auto'},
+                                  { marginLeft: 'auto' },
                                 ]}
                                 onPress={() => toggleExpand(item.account)}>
                                 {expandedItems.includes(item.account) ? (
@@ -396,7 +396,7 @@ const CustomerDetails = () => {
                             <TouchableOpacity
                               style={[
                                 styles.QtyCont,
-                                {backgroundColor: '#D8D8DA', marginRight: 16},
+                                { backgroundColor: '#D8D8DA', marginRight: 16 },
                               ]}
                               onPress={() => statementClick(item)}>
                               <Text style={styles.QtyText}>Statement</Text>
@@ -404,7 +404,7 @@ const CustomerDetails = () => {
                             <TouchableOpacity
                               style={[
                                 styles.QtyCont,
-                                {backgroundColor: '#D8D8DA'},
+                                { backgroundColor: '#D8D8DA' },
                               ]}
                               onPress={() => outStandingClick(item)}>
                               <Text style={styles.AvlText}>Outstanding</Text>
@@ -430,7 +430,7 @@ const CustomerDetails = () => {
                 </ScrollView>
               ) : (
                 <View>
-                  <Text style={{marginTop: 10, fontSize: 20}}>
+                  <Text style={{ marginTop: 10, fontSize: 20 }}>
                     No Data found
                   </Text>
                 </View>
@@ -516,7 +516,7 @@ const CustomerDetails = () => {
                               <Text
                                 style={[
                                   styles.StockListDescText,
-                                  {width: '75%'},
+                                  { width: '75%' },
                                 ]}>
                                 {item.Custname}
                               </Text>
@@ -571,7 +571,7 @@ const CustomerDetails = () => {
                               <TouchableOpacity
                                 style={[
                                   styles.PlusMinusCont,
-                                  {marginLeft: 'auto'},
+                                  { marginLeft: 'auto' },
                                 ]}
                                 onPress={() => toggleExpand(item.account)}>
                                 {expandedItems.includes(item.account) ? (
@@ -622,7 +622,7 @@ const CustomerDetails = () => {
                             <TouchableOpacity
                               style={[
                                 styles.QtyCont,
-                                {backgroundColor: '#D8D8DA', marginRight: 16},
+                                { backgroundColor: '#D8D8DA', marginRight: 16 },
                               ]}
                               onPress={() => statementClick(item)}>
                               <Text style={styles.QtyText}>Statement</Text>
@@ -630,7 +630,7 @@ const CustomerDetails = () => {
                             <TouchableOpacity
                               style={[
                                 styles.QtyCont,
-                                {backgroundColor: '#D8D8DA'},
+                                { backgroundColor: '#D8D8DA' },
                               ]}
                               onPress={() => outStandingClick(item)}>
                               <Text style={styles.AvlText}>Outstanding</Text>
@@ -656,7 +656,7 @@ const CustomerDetails = () => {
                 </ScrollView>
               ) : (
                 <View>
-                  <Text style={{marginTop: 10, fontSize: 18}}>
+                  <Text style={{ marginTop: 10, fontSize: 18 }}>
                     No top customers found, please search
                   </Text>
                 </View>
@@ -1195,7 +1195,7 @@ const styles = StyleSheet.create({
     marginLeft: 12,
 
     shadowColor: '#000', // Shadow color for iOS
-    shadowOffset: {width: 0, height: 2}, // Shadow offset for iOS
+    shadowOffset: { width: 0, height: 2 }, // Shadow offset for iOS
     shadowOpacity: 0.25, // Shadow opacity for iOS
     shadowRadius: 3.84, // Shadow radius for iOS
     elevation: 1.5, // Elevation for Android
