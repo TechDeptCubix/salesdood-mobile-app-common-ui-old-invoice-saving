@@ -696,16 +696,33 @@ const CollectionReport = () => {
     }
   };
   const pad = count => ' '.repeat(count);
-
-  // Header Paddings (as you provided)
   const COMP_PAD = pad(18);
   const CITY_PAD = pad(27);
   const TEL_PAD = pad(26);
   const ADD_PAD = pad(24);
   const TRN_PAD = pad(22);
   const INV_PAD = pad(27);
-  const BODY_PAD = pad(10);
+  const BODY_PAD = pad(5);
+  const PAGE_WIDTH = 32;
+  const LEFT_SHIFT = 6;
+  const BODY_WIDTH = 32;
+  const BLOCK_PAD = Math.max(0, Math.floor((PAGE_WIDTH - BODY_WIDTH) / 2));
+  const GLOBAL_BODY_PAD = ' '.repeat(LEFT_SHIFT);
+  const INTERNAL_WIDTH = PAGE_WIDTH - BLOCK_PAD * 2;
+  const LABEL_WIDTH = 16; // adjust for your printer
 
+  const formatAlignedRow = (label, value) => {
+    const left = (label || '').padEnd(LABEL_WIDTH, ' ');
+    return `[L]${GLOBAL_BODY_PAD}${left}${value || ''}\n`;
+  };
+
+  const formatVoucherRow = (label, value) => {
+    const left = (label || '').padEnd(LABEL_WIDTH + 4, ' '); // 👈 extra gap
+    return `[L]${GLOBAL_BODY_PAD}${left}${value || ''}\n`;
+  };
+  const formatInlineRow = (label, value) => {
+    return `[L]${GLOBAL_BODY_PAD}${label} ${value || ''}\n`;
+  };
   const setFormatTextForBluetooth = item => {
     const details = getCompanyDetails(cmpCode);
 
@@ -718,53 +735,45 @@ const CollectionReport = () => {
 
     return {
       text:
-        // --- Header Section ---
-        COMP_PAD +
-        `[C]<b><font size='tall'>${details.name}</font></b>\n` +
-        ADD_PAD +
-        `[C]${details.address}\n` +
-        CITY_PAD +
-        `[C]${details.city}\n` +
-        TEL_PAD +
-        `[C]Tel: ${details.tel}\n` +
-        TRN_PAD +
-        `[C]TRN : ${details.trn}\n` +
+        // --- Header (Center Tags - These handle themselves) ---
+        `${COMP_PAD}<b><font size='tall'>${details.name}</font></b>\n` +
+        `${ADD_PAD}${details.address}\n` +
+        `${CITY_PAD}${details.city}\n` +
+        `${TEL_PAD}Tel: ${details.tel}\n` +
+        `${TRN_PAD}TRN: ${details.trn}\n` +
         '[L]\n' +
         // --- Title ---
-        INV_PAD +
-        "[C]<b><font size='tall'>Collection Voucher</font></b>\n" +
+        `${ADD_PAD}[C]<b><font size='tall'>Collection Voucher</font></b>\n` +
+        `[L]\n` +
+        // `[C]${'-'.repeat(INTERNAL_WIDTH)}\n` +
+        // --- Body Section ---
+        formatVoucherRow('Voucher No:', item?.rv_no || '') +
+        formatVoucherRow('Inv Ref:', item?.Inv_ref || '') +
+        formatVoucherRow('Date:', item?.Rv_date?.slice(0, 10) || '') +
         '[L]\n' +
-        // --- Body Section (Centered as a block) ---
-        BODY_PAD +
-        `[L]Voucher number     : ${item?.rv_no || ''}\n` +
-        BODY_PAD +
-        `[L]Invoice References : ${item?.Inv_ref || ''}\n` +
-        BODY_PAD +
-        `[L]Received with thanks from :\n` +
-        BODY_PAD +
-        `[L]<b>${item['Customer Name'] || ''}</b>\n` +
-        BODY_PAD +
-        `[L]Collection Type    : ${collType}\n` +
-        BODY_PAD +
-        `[L]<b>Amount             : ${parseFloat(item?.Amount || 0).toFixed(
-          2,
-        )}</b>\n` +
-        BODY_PAD +
-        `[L]Remarks            : ${item?.Remarks ?? ''}\n` +
+        `[L]${GLOBAL_BODY_PAD}Received from:\n` +
+        `[L]${GLOBAL_BODY_PAD}<b>${item['Customer Name'] || ''}</b>\n` +
         '[L]\n' +
-        // --- Footer Section ---
-        '[C]============================================================\n' +
-        '[C]Signature\n' +
-        `[C]${item?.Salesman || ''}\n` +
-        '[C]============================================================\n' +
-        '[L]\n[L]\n[L]\n',
+        formatInlineRow('Type:', collType?.trim()) +
+        formatAlignedRow(
+          'Total Amount:',
+          `<b>${parseFloat(item?.Amount || 0).toFixed(2)}</b>`,
+        ) +
+        (item?.Remarks
+          ? '[L]\n' + formatAlignedRow('Remarks:', item.Remarks)
+          : '') +
+        '[L]\n' +
+        `[L]${GLOBAL_BODY_PAD}Received by:\n` +
+        `[L]${GLOBAL_BODY_PAD}<b>${item?.Salesman || ''}</b>\n` +
+        '[L]\n' +
+        `[C]${'-'.repeat(INTERNAL_WIDTH)}\n` +
+        '[L]\n[L]\n[L]\n', // 👈 bottom spacing
     };
   };
-
   const printBluetooth = async item => {
     try {
       const formattedData = setFormatTextForBluetooth(item);
-
+      console.log('Print Data', formattedData);
       await ThermalPrinterModule.printBluetooth({
         payload: formattedData.text,
       });
