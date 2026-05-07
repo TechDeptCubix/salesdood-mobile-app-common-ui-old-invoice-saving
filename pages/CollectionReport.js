@@ -704,7 +704,7 @@ const CollectionReport = () => {
   const INV_PAD = pad(27);
   const BODY_PAD = pad(5);
   const PAGE_WIDTH = 32;
-  const LEFT_SHIFT = 6;
+  const LEFT_SHIFT = 12;
   const BODY_WIDTH = 32;
   const BLOCK_PAD = Math.max(0, Math.floor((PAGE_WIDTH - BODY_WIDTH) / 2));
   const GLOBAL_BODY_PAD = ' '.repeat(LEFT_SHIFT);
@@ -717,7 +717,7 @@ const CollectionReport = () => {
   };
 
   const formatVoucherRow = (label, value) => {
-    const left = (label || '').padEnd(LABEL_WIDTH + 4, ' '); // 👈 extra gap
+    const left = (label || '').padEnd(LABEL_WIDTH + 10, ' ');
     return `[L]${GLOBAL_BODY_PAD}${left}${value || ''}\n`;
   };
   const formatInlineRow = (label, value) => {

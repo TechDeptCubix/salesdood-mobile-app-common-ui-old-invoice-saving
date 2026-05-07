@@ -7,6 +7,8 @@ import {
   FlatList,
   ActivityIndicator,
   Image,
+  PermissionsAndroid,
+  Platform,
 } from 'react-native';
 import React, {useEffect, useState} from 'react';
 import {useNavigation} from '@react-navigation/native';
@@ -17,6 +19,7 @@ import {format} from 'date-fns';
 import SunmiPrinter, {AlignValue} from '@heasy/react-native-sunmi-printer';
 import {ICUP_LOGO_BASE64} from '../images/icup_logo';
 import {generateSalesReturnPDF} from './SalesReturnPdf';
+import ThermalPrinterModule from 'react-native-thermal-printer';
 
 const ITEMS_PER_PAGE = 20;
 
@@ -36,6 +39,7 @@ const SalesReturnList = () => {
   const [selectedReturnNo, setSelectedReturnNo] = useState('');
   const [showPrintButtonLoader, setShowPrintButtonLoader] = useState(false);
   const [showSunmiLoader, setShowSunmiLoader] = useState(false);
+  const [showBtLoader, setShowBtLoader] = useState(false);
 
   // ─── Helpers ──────────────────────────────────────────────────────────────
   const COMPANY_CONFIG = {
@@ -396,6 +400,227 @@ const SalesReturnList = () => {
     }
   };
 
+  // ─── Bluetooth Printer ────────────────────────────────────────────────────
+  const requestBluetoothPermissions = async () => {
+    if (Platform.OS === 'android') {
+      let permissionsToRequest = [];
+      if (Platform.Version >= 31) {
+        permissionsToRequest.push(
+          PermissionsAndroid.PERMISSIONS.BLUETOOTH_CONNECT,
+        );
+        permissionsToRequest.push(
+          PermissionsAndroid.PERMISSIONS.BLUETOOTH_SCAN,
+        );
+      } else {
+        permissionsToRequest.push(
+          PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+        );
+      }
+
+      if (permissionsToRequest.length > 0) {
+        try {
+          const results = await PermissionsAndroid.requestMultiple(
+            permissionsToRequest,
+          );
+          return permissionsToRequest.every(
+            p => results[p] === PermissionsAndroid.RESULTS.GRANTED,
+          );
+        } catch (err) {
+          console.warn('Bluetooth permissions error:', err);
+          return false;
+        }
+      }
+    }
+    return true;
+  };
+
+  const setFormatTextForBluetoothReturn = (header, items, totals) => {
+    const DESC_MAX_LEN = 20;
+    const QTY_END = 32;
+    const RATE_END = 42;
+    const VAT_END = 52;
+    const AMOUNT_END = 62;
+
+    const pad = count => ' '.repeat(Math.max(0, count));
+    const COMP_PAD = pad(18);
+    const ADD_PAD = pad(24);
+    const CITY_PAD = pad(27);
+    const TEL_PAD = pad(26);
+    const TRN_PAD = pad(22);
+    const INV_PAD = pad(27);
+
+    const generateTableHeader = () => {
+      const desc = 'Description'.padEnd(DESC_MAX_LEN, ' ');
+      const qtySpaces = QTY_END - DESC_MAX_LEN - 'Qty'.length;
+      const rateSpaces = RATE_END - QTY_END - 'Rate'.length;
+      const vatSpaces = VAT_END - RATE_END - 'VAT'.length;
+      const amountSpaces = AMOUNT_END - VAT_END - 'Amount'.length;
+
+      return `[L]<b>${desc}${pad(qtySpaces)}Qty${pad(rateSpaces)}Rate${pad(
+        vatSpaces,
+      )}VAT${pad(amountSpaces)}Amount</b>\n`;
+    };
+
+    const generateItemLines = () => {
+      return items
+        .map(item => {
+          const fullDesc = `${item.DESC}`;
+          let itemLine = '';
+          let remainingDesc = fullDesc;
+          let isFirstLine = true;
+
+          while (remainingDesc.length > 0) {
+            const currentChunk = remainingDesc.substring(0, DESC_MAX_LEN);
+            remainingDesc = remainingDesc.substring(DESC_MAX_LEN).trimStart();
+
+            if (isFirstLine) {
+              const descriptionPadded = currentChunk.padEnd(DESC_MAX_LEN, ' ');
+              const qtyStr = item.QTY.toString();
+              const rateStr = item.PRICE.toFixed(2);
+              const vatStr = item.LINE_VAT.toFixed(2);
+              const amountStr = item.LINE_TOTAL_INCL.toFixed(2);
+
+              const qtySpaces = QTY_END - DESC_MAX_LEN - qtyStr.length;
+              const rateSpaces = RATE_END - QTY_END - rateStr.length;
+              const vatSpaces = VAT_END - RATE_END - vatStr.length;
+              const amountSpaces = AMOUNT_END - VAT_END - amountStr.length;
+
+              itemLine += `[L]${descriptionPadded}${pad(
+                qtySpaces,
+              )}${qtyStr}${pad(rateSpaces)}${rateStr}${pad(
+                vatSpaces,
+              )}${vatStr}${pad(amountSpaces)}${amountStr}\n`;
+              isFirstLine = false;
+            } else {
+              itemLine += `[L]${currentChunk}\n`;
+            }
+          }
+          return itemLine;
+        })
+        .join('');
+    };
+
+    const formatTotalLine = (label, value) => {
+      const valueStr =
+        typeof value === 'number' ? value.toFixed(2) : value.toString();
+      const labelStart = 28;
+      const valueEnd = 62;
+      const labelWithPadding = ' '.repeat(labelStart) + label;
+      const totalSpaceForValue =
+        valueEnd - labelWithPadding.length - valueStr.length;
+      return `[L]${labelWithPadding}${pad(totalSpaceForValue)}${valueStr}\n`;
+    };
+
+    const companyDetails = company || {
+      name: cmpcode,
+      address: '',
+      phone: '',
+      trn: '',
+    };
+
+    return {
+      text:
+        COMP_PAD +
+        `[C]<b><font size='tall'>${companyDetails.name}</font></b>\n` +
+        ADD_PAD +
+        `[C]${companyDetails.address || ''}\n` +
+        TEL_PAD +
+        `[C]Tel:${companyDetails.phone || ''}\n` +
+        TRN_PAD +
+        `[C]TRN : ${companyDetails.trn || ''}\n` +
+        '[L]\n' +
+        INV_PAD +
+        "[L]<font size='tall'>Sales Return</font>\n \n" +
+        `[L]RETURN NO        :  ${header.sr_no}\n` +
+        `[L]RETURN DATE      :  ${formattedDate(header.sr_date)}\n` +
+        `[L]INVOICE NO       :  ${header.sr_inv_no || '-'}\n` +
+        `[L]SALESMAN NAME    :  ${header.sale_man || '-'}\n` +
+        `[L]CUSTOMER NAME    :  ${header.tr_desc || '-'}\n` +
+        `[L]REASON           :  ${header.comments || '-'}\n` +
+        '[L]\n' +
+        '[C]============================================================\n' +
+        generateTableHeader() +
+        '[C]============================================================\n' +
+        generateItemLines() +
+        '[L]\n' +
+        formatTotalLine('Total (Ex VAT)', totals.totalExcl) +
+        formatTotalLine('VAT amount', totals.totalVat) +
+        formatTotalLine('Grand Total', totals.grandTotal) +
+        '[L]\n' +
+        '[C]============================================================\n' +
+        '[L]\n' +
+        '[C]*** Sales Return Receipt ***\n' +
+        '[L]\n' +
+        '[L]\n' +
+        '[L]\n',
+    };
+  };
+
+  const printBtReturn = async item => {
+    const hasPermission = await requestBluetoothPermissions();
+    if (!hasPermission) {
+      alert('Bluetooth permission denied');
+      return;
+    }
+
+    try {
+      setShowBtLoader(true);
+      setSelectedReturnNo(item.SR_NO);
+
+      const cleanCmp = cmpcode.toLowerCase().trim();
+      const url = `${appUrl}CRMDocListView/${cleanCmp}/SRET_PRINT/-/-/-/${item.SR_NO}/-/${deptNo}/1/100`;
+
+      const response = await axios.get(url);
+      const lineItemsRaw = response.data || [];
+
+      if (lineItemsRaw.length === 0) {
+        alert('No data found for this return.');
+        setShowBtLoader(false);
+        return;
+      }
+
+      const mappedItems = lineItemsRaw.map(i => ({
+        DESC: i.idesc,
+        QTY: parseFloat(i.tr_qty2) || 0,
+        PRICE: parseFloat(i.unit_price) || 0,
+        LINE_TOTAL: parseFloat(i.line_total) || 0,
+        LINE_VAT: (parseFloat(i.line_total) || 0) * 0.05,
+        LINE_TOTAL_INCL: (parseFloat(i.line_total) || 0) * 1.05,
+      }));
+
+      const header = lineItemsRaw[0];
+      const totals = {
+        totalExcl: mappedItems.reduce((sum, i) => sum + i.LINE_TOTAL, 0),
+        totalVat: mappedItems.reduce((sum, i) => sum + i.LINE_VAT, 0),
+        grandTotal: mappedItems.reduce((sum, i) => sum + i.LINE_TOTAL_INCL, 0),
+      };
+
+      const bluetoothDeviceList =
+        await ThermalPrinterModule.getBluetoothDeviceList();
+      if (!bluetoothDeviceList || bluetoothDeviceList.length === 0) {
+        alert('No Bluetooth printers found.');
+        setShowBtLoader(false);
+        return;
+      }
+
+      const formattedData = setFormatTextForBluetoothReturn(
+        header,
+        mappedItems,
+        totals,
+      );
+
+      await ThermalPrinterModule.printBluetooth({
+        payload: formattedData.text,
+      });
+    } catch (error) {
+      console.log('printBtReturn error', error);
+      alert('Print failed: ' + error.message);
+    } finally {
+      setShowBtLoader(false);
+      setSelectedReturnNo('');
+    }
+  };
+
   // ─── Render ───────────────────────────────────────────────────────────────
   return (
     <View style={styles.HomeWrap}>
@@ -464,6 +689,16 @@ const SalesReturnList = () => {
                       )}
                     </TouchableOpacity>
                   )}
+
+                  <TouchableOpacity
+                    style={styles.BtnBt}
+                    onPress={() => printBtReturn(item)}>
+                    {showBtLoader && item.SR_NO === selectedReturnNo ? (
+                      <ActivityIndicator color="white" size="small" />
+                    ) : (
+                      <Text style={styles.BtnText}>BT</Text>
+                    )}
+                  </TouchableOpacity>
                 </View>
               </View>
             )}
@@ -559,6 +794,13 @@ const styles = StyleSheet.create({
   },
   BtnSunmi: {
     backgroundColor: '#FF6B00',
+    paddingHorizontal: 15,
+    paddingVertical: 6,
+    borderRadius: 6,
+    marginLeft: 8,
+  },
+  BtnBt: {
+    backgroundColor: '#5A55CA',
     paddingHorizontal: 15,
     paddingVertical: 6,
     borderRadius: 6,
