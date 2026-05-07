@@ -708,6 +708,7 @@ const InvoiceList = () => {
             const proportionalDiscount = lineWeight * overallDiscount;
             const netLineAmount = lineTotal - proportionalDiscount;
             const lineVatAmount = netLineAmount * 0.05;
+            const lineTotalInclVat = netLineAmount + lineVatAmount;
 
             return `
           <tr>
@@ -717,6 +718,7 @@ const InvoiceList = () => {
             <td style="text-align: right;">${lineTotal.toFixed(2)}</td>
             <td style="text-align: center;">5%</td>
             <td style="text-align: right;">${lineVatAmount.toFixed(2)}</td>
+            <td style="text-align: right;">${lineTotalInclVat.toFixed(2)}</td>
           </tr>`;
           })
           .join('');
@@ -792,9 +794,10 @@ const InvoiceList = () => {
                   <th style="width: 35%;">Description</th>
                   <th>Qty/Unit</th>
                   <th>Price</th>
-                  <th>Gross Amt</th>
+                  <th>Amount</th>
                   <th>VAT %</th>
                   <th>VAT Amt</th>
+                  <th>Total</th>
                 </tr>
               </thead>
               <tbody>

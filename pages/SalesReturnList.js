@@ -53,13 +53,15 @@ const SalesReturnList = () => {
     ICELAB: {
       name: 'THE ICE LAB MANUFACTURING LLC',
       trn: '104112430400003',
-      address: 'Dubai Industrial City, Dubai.',
-      phone: 'Tel: +971 XXXXXXXX',
+      address: 'Central Plaza 2, Al Jurf,',
+      city: 'Ajman, UAE.',
+      phone: '+971 65617700',
     },
     ICELAB_TEST: {
       name: 'THE ICE LAB MANUFACTURING LLC',
       trn: '104112430400003',
-      address: 'Dubai Industrial City, Dubai.',
+      address: 'Dubai Industrial City,',
+      city: 'Dubai.',
       phone: 'Tel: +971 XXXXXXXX',
     },
     PREMIER: {
@@ -524,6 +526,8 @@ const SalesReturnList = () => {
         `[C]<b><font size='tall'>${companyDetails.name}</font></b>\n` +
         ADD_PAD +
         `[C]${companyDetails.address || ''}\n` +
+        CITY_PAD +
+        (companyDetails.city ? `[C]${companyDetails.city}\n` : '') +
         TEL_PAD +
         `[C]Tel:${companyDetails.phone || ''}\n` +
         TRN_PAD +
