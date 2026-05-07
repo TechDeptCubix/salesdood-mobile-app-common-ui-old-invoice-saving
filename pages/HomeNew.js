@@ -203,6 +203,7 @@ const HomeNew = () => {
       await AsyncStorage.removeItem('salesman_name');
       await AsyncStorage.removeItem('sales_man_drop');
       await AsyncStorage.removeItem('salesman_name_drop');
+      await AsyncStorage.removeItem('useraccess');
 
       let smankey = await AsyncStorage.getItem('Smankey');
 
@@ -912,12 +913,12 @@ const HomeNew = () => {
                         flexWrap: 'wrap',
                         paddingHorizontal: 18,
                       }}>
-                      <Text>
+                      {/* <Text>
                         {console.log(
                           'refreshed menu list menuNotAllowedToThisCompany ',
                           menuNotAllowedToThisCompany,
                         )}
-                      </Text>
+                      </Text> */}
 
                       {menuNotAllowedToThisCompany ? (
                         menuNotAllowedToThisCompany.some(

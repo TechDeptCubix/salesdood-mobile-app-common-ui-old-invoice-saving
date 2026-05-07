@@ -132,7 +132,7 @@ const SalesReturnList = () => {
         setApiError(false);
         try {
           const cleanCmp = cmpcode.toLowerCase().trim();
-          const url = `${appUrl}CRMDocListView/${cleanCmp}/SRET/ALL/-/-/-/-/${deptNo}/1/100`;
+          const url = `${appUrl}CRMDocListView/${cleanCmp}/SRET/ALL/-/-/-/${salesMan}/${deptNo}/1/100`;
           console.log('url sret', url);
           const response = await axios.get(url);
           if (response.status === 200) {

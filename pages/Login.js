@@ -480,6 +480,10 @@ const Login = () => {
 
           if (result.useraccess) {
             await AsyncStorage.setItem('useraccess', result.useraccess?.trim());
+          } else {
+            console.log('else of useraccess', await AsyncStorage.getItem('useraccess'));
+
+
           }
           setLoading(false);
 

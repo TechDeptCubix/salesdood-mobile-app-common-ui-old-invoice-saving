@@ -829,7 +829,7 @@ const InvoiceList = () => {
                   )}</td>
                 </tr>
                 <tr class="total-row">
-                  <td>Grand Total (OMR)</td>
+                  <td>Grand Total (AED)</td>
                   <td style="text-align: right;">${grandTotal.toFixed(2)}</td>
                 </tr>
               </table>

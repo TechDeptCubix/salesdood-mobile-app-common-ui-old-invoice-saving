@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -15,7 +15,7 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 
-export default function SalesReturnEntry({route, navigation}) {
+export default function SalesReturnEntry({ route, navigation }) {
   const {
     selectedItems,
     customer,
@@ -67,7 +67,7 @@ export default function SalesReturnEntry({route, navigation}) {
     const availableToReturn = originalQty - alreadyReturned;
 
     if (value === '') {
-      setQtys(prev => ({...prev, [id]: ''}));
+      setQtys(prev => ({ ...prev, [id]: '' }));
       return;
     }
 
@@ -85,7 +85,7 @@ export default function SalesReturnEntry({route, navigation}) {
 
     if (numValue < 0) return;
 
-    setQtys(prev => ({...prev, [id]: value}));
+    setQtys(prev => ({ ...prev, [id]: value }));
   };
   const getLineDiscount = (item, returnQty) => {
     const originalLineSubtotal = item.qty * item.price;
@@ -101,7 +101,7 @@ export default function SalesReturnEntry({route, navigation}) {
     )?.ACCOUNT;
 
     if (!SR_VT_D_Account) {
-      Alert.alert('Cannot find accounts, please contact admin');
+      Alert.alert('Cannot find accounts, please contact admin...');
       return;
     }
     const SR_CR_D_Account = glSettings?.find(
@@ -158,7 +158,7 @@ export default function SalesReturnEntry({route, navigation}) {
       const payload = {
         modeOp: 'SAVE',
         srNo: 0,
-        srDate: now,
+        srDate: now.slice(0, 10),
         custAcc: invoiceDetailObject.custAcc,
         srTotal: parseFloat(finalReturnTotal.toFixed(2)),
         srCost: 0,
@@ -171,7 +171,7 @@ export default function SalesReturnEntry({route, navigation}) {
         nextSrNo: 0,
         lpoNo: '',
         doNo: 0,
-        dueDate: now,
+        dueDate: now.slice(0, 10),
         fDiscAmt: 0,
         srFcTotal: 0,
         rate: 1,
@@ -202,7 +202,7 @@ export default function SalesReturnEntry({route, navigation}) {
         ccAcc: '',
         status: 'N',
         approvedBy: '',
-        approvedDt: now,
+        approvedDt: now.slice(0, 10),
         commExpAc: '',
         commCrAc: '',
         comAmt: 0,
@@ -334,7 +334,7 @@ export default function SalesReturnEntry({route, navigation}) {
 
   return (
     <KeyboardAvoidingView
-      style={{flex: 1}}
+      style={{ flex: 1 }}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}>
       {/* Header */}
@@ -357,7 +357,7 @@ export default function SalesReturnEntry({route, navigation}) {
 
       <ScrollView
         style={styles.container}
-        contentContainerStyle={{paddingBottom: 20}}>
+        contentContainerStyle={{ paddingBottom: 20 }}>
         {/* Customer Card */}
         <View style={styles.customerCard}>
           <View style={styles.customerLeft}>
@@ -474,7 +474,7 @@ export default function SalesReturnEntry({route, navigation}) {
               const currentNet = currentGross - currentDiscount + currentVAT;
 
               return (
-                <View style={{paddingHorizontal: 14, paddingVertical: 5}}>
+                <View style={{ paddingHorizontal: 14, paddingVertical: 5 }}>
                   {/* 1. Gross Amount */}
                   <View style={styles.summaryRowLine}>
                     <Text style={styles.detailLabel}>Gross Amount</Text>
@@ -487,10 +487,10 @@ export default function SalesReturnEntry({route, navigation}) {
                   {discountRatio > 0 ? (
                     currentDiscount > 0 && (
                       <View style={styles.summaryRowLine}>
-                        <Text style={[styles.detailLabel, {color: '#e74c3c'}]}>
+                        <Text style={[styles.detailLabel, { color: '#e74c3c' }]}>
                           Total Discount ({(discountRatio * 100).toFixed(1)}%)
                         </Text>
-                        <Text style={[styles.detailValue, {color: '#e74c3c'}]}>
+                        <Text style={[styles.detailValue, { color: '#e74c3c' }]}>
                           -AED {currentDiscount.toFixed(2)}
                         </Text>
                       </View>
@@ -500,7 +500,7 @@ export default function SalesReturnEntry({route, navigation}) {
                       <Text
                         style={[
                           styles.detailLabel,
-                          {color: '#64748b', fontStyle: 'italic'},
+                          { color: '#64748b', fontStyle: 'italic' },
                         ]}>
                         No discount applied on this invoice.
                       </Text>
@@ -518,13 +518,13 @@ export default function SalesReturnEntry({route, navigation}) {
                   <View
                     style={[
                       styles.summaryDivider,
-                      {marginHorizontal: 0, marginTop: 10},
+                      { marginHorizontal: 0, marginTop: 10 },
                     ]}
                   />
 
                   {/* 4. Final Net Amount */}
                   <View
-                    style={[styles.summaryTotalRow, {paddingHorizontal: 0}]}>
+                    style={[styles.summaryTotalRow, { paddingHorizontal: 0 }]}>
                     <Text style={styles.summaryTotalLabel}>Net Amount</Text>
                     <Text style={styles.summaryTotalValue}>
                       AED {currentNet.toFixed(2)}
@@ -577,7 +577,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  HeadIcon: {width: 25, height: 25},
+  HeadIcon: { width: 25, height: 25 },
   title: {
     fontSize: 16,
     fontWeight: '600',
@@ -597,7 +597,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  customerLeft: {flexDirection: 'row', alignItems: 'center', gap: 12},
+  customerLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   avatar: {
     width: 40,
     height: 40,
@@ -606,9 +606,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  avatarText: {fontSize: 14, fontWeight: '600', color: '#0369a1'},
-  customerName: {fontSize: 14, fontWeight: '600', color: '#0f172a'},
-  invoiceId: {fontSize: 12, color: '#94a3b8', marginTop: 2},
+  avatarText: { fontSize: 14, fontWeight: '600', color: '#0369a1' },
+  customerName: { fontSize: 14, fontWeight: '600', color: '#0f172a' },
+  invoiceId: { fontSize: 12, color: '#94a3b8', marginTop: 2 },
   card: {
     backgroundColor: '#fff',
     borderRadius: 12,
@@ -617,14 +617,14 @@ const styles = StyleSheet.create({
     borderColor: '#e2e8f0',
     overflow: 'hidden',
   },
-  cardHeader: {paddingHorizontal: 14, paddingVertical: 11, gap: 6},
+  cardHeader: { paddingHorizontal: 14, paddingVertical: 11, gap: 6 },
   cardRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingVertical: 2,
   },
-  cardLabel: {fontSize: 12, color: '#64748b', fontWeight: '500'},
+  cardLabel: { fontSize: 12, color: '#64748b', fontWeight: '500' },
   cardValue: {
     fontSize: 13,
     fontWeight: '600',
@@ -669,7 +669,7 @@ const styles = StyleSheet.create({
     color: '#b45309',
     fontStyle: 'italic',
   },
-  divider: {height: 0.5, backgroundColor: '#e2e8f0'},
+  divider: { height: 0.5, backgroundColor: '#e2e8f0' },
   fieldRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -741,8 +741,8 @@ const styles = StyleSheet.create({
     paddingVertical: 7,
     gap: 8,
   },
-  summaryItemName: {flex: 1, fontSize: 12, color: '#334155'},
-  summaryItemQty: {fontSize: 11, color: '#94a3b8'},
+  summaryItemName: { flex: 1, fontSize: 12, color: '#334155' },
+  summaryItemQty: { fontSize: 11, color: '#94a3b8' },
   summaryItemTotal: {
     fontSize: 12,
     fontWeight: '600',
@@ -764,8 +764,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 10,
   },
-  summaryTotalLabel: {fontSize: 13, fontWeight: '600', color: '#0f172a'},
-  summaryTotalValue: {fontSize: 15, fontWeight: '700', color: '#0369a1'},
+  summaryTotalLabel: { fontSize: 13, fontWeight: '600', color: '#0f172a' },
+  summaryTotalValue: { fontSize: 15, fontWeight: '700', color: '#0369a1' },
   submitBtn: {
     backgroundColor: '#0369a1',
     borderRadius: 12,
@@ -775,8 +775,8 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     marginHorizontal: 12,
   },
-  submitBtnDisabled: {backgroundColor: '#94a3b8'},
-  submitText: {color: '#fff', fontSize: 15, fontWeight: '600'},
+  submitBtnDisabled: { backgroundColor: '#94a3b8' },
+  submitText: { color: '#fff', fontSize: 15, fontWeight: '600' },
   summaryRowLine: {
     flexDirection: 'row',
     justifyContent: 'space-between',
