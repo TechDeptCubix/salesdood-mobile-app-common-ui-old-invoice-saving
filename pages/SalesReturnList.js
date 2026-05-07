@@ -8,15 +8,15 @@ import {
   ActivityIndicator,
   Image,
 } from 'react-native';
-import React, {useEffect, useState} from 'react';
-import {useNavigation} from '@react-navigation/native';
+import React, { useEffect, useState } from 'react';
+import { useNavigation } from '@react-navigation/native';
 import axios from 'axios';
 import HeaderUiNew from './HeaderUiNew';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {format} from 'date-fns';
-import SunmiPrinter, {AlignValue} from '@heasy/react-native-sunmi-printer';
-import {ICUP_LOGO_BASE64} from '../images/icup_logo';
-import {generateSalesReturnPDF} from './SalesReturnPdf';
+import { format } from 'date-fns';
+import SunmiPrinter, { AlignValue } from '@heasy/react-native-sunmi-printer';
+import { ICUP_LOGO_BASE64 } from '../images/icup_logo';
+import { generateSalesReturnPDF } from './SalesReturnPdf';
 
 const ITEMS_PER_PAGE = 20;
 
@@ -128,7 +128,7 @@ const SalesReturnList = () => {
         setApiError(false);
         try {
           const cleanCmp = cmpcode.toLowerCase().trim();
-          const url = `${appUrl}CRMDocListView/${cleanCmp}/SRET/ALL/-/-/-/-/${deptNo}/1/100`;
+          const url = `${appUrl}CRMDocListView/${cleanCmp}/SRET/ALL/-/-/-/${salesMan}/${deptNo}/1/100`;
           console.log('url sret', url);
           const response = await axios.get(url);
           if (response.status === 200) {
@@ -189,7 +189,7 @@ const SalesReturnList = () => {
       setSelectedReturnNo(item.SR_NO);
 
       const lineItemsRaw = data.filter(i => i.SR_NO === item.SR_NO);
-      const {processedItems, totalExcl, totalVat, grandTotal} =
+      const { processedItems, totalExcl, totalVat, grandTotal } =
         calculateTotals(lineItemsRaw);
 
       if (!processedItems || processedItems.length === 0) return;
@@ -409,8 +409,8 @@ const SalesReturnList = () => {
           <FlatList
             data={getPaginatedData()}
             keyExtractor={(item, index) => item.SR_NO + index}
-            style={{width: '94%'}}
-            renderItem={({item}) => (
+            style={{ width: '94%' }}
+            renderItem={({ item }) => (
               <View style={styles.StockListItem}>
                 <View style={styles.CustomerListCont}>
                   <View style={styles.CustomerImgWrap}>
@@ -435,7 +435,7 @@ const SalesReturnList = () => {
                       </Text>
                       <Text style={styles.SubText}>Inv: {item.INV_NO}</Text>
                     </View>
-                    <Text style={[styles.SubText, {marginTop: 4}]}>
+                    <Text style={[styles.SubText, { marginTop: 4 }]}>
                       Salesman: {item.SALES_MAN}
                     </Text>
                   </View>
@@ -446,7 +446,7 @@ const SalesReturnList = () => {
                     style={styles.BtnPdf}
                     onPress={() => printPdfReturn(item)}>
                     {showPrintButtonLoader &&
-                    item.SR_NO === selectedReturnNo ? (
+                      item.SR_NO === selectedReturnNo ? (
                       <ActivityIndicator color="white" size="small" />
                     ) : (
                       <Text style={styles.BtnText}>PDF</Text>
@@ -476,7 +476,7 @@ const SalesReturnList = () => {
               onPress={() => currentPage > 1 && setCurrentPage(currentPage - 1)}
               style={[
                 styles.pageButton,
-                {opacity: currentPage === 1 ? 0.5 : 1},
+                { opacity: currentPage === 1 ? 0.5 : 1 },
               ]}>
               <Text style={styles.pageButtonText}>Prev</Text>
             </TouchableOpacity>
@@ -489,7 +489,7 @@ const SalesReturnList = () => {
               }
               style={[
                 styles.pageButton,
-                {opacity: currentPage === totalPages ? 0.5 : 1},
+                { opacity: currentPage === totalPages ? 0.5 : 1 },
               ]}>
               <Text style={styles.pageButtonText}>Next</Text>
             </TouchableOpacity>
@@ -501,8 +501,8 @@ const SalesReturnList = () => {
 };
 
 const styles = StyleSheet.create({
-  HomeWrap: {flex: 1, backgroundColor: '#EFEFEF'},
-  HomeCont: {flex: 1, alignItems: 'center', paddingVertical: 12},
+  HomeWrap: { flex: 1, backgroundColor: '#EFEFEF' },
+  HomeCont: { flex: 1, alignItems: 'center', paddingVertical: 12 },
   rowBetween: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -523,17 +523,17 @@ const styles = StyleSheet.create({
     borderWidth: 0.5,
     borderColor: '#DDD',
   },
-  CustomerListCont: {flexDirection: 'row', alignItems: 'center'},
-  CustomerImgWrap: {backgroundColor: 'grey', borderRadius: 50, padding: 8},
-  CustomerImage: {width: 25, height: 25},
-  CustomerListMid: {flex: 1, marginLeft: 12},
+  CustomerListCont: { flexDirection: 'row', alignItems: 'center' },
+  CustomerImgWrap: { backgroundColor: 'grey', borderRadius: 50, padding: 8 },
+  CustomerImage: { width: 25, height: 25 },
+  CustomerListMid: { flex: 1, marginLeft: 12 },
   CustomerTitle: {
     fontSize: 14,
     fontFamily: 'Lexend-Bold',
     color: '#222',
     flex: 1,
   },
-  AmountText: {fontSize: 14, fontFamily: 'Lexend-Bold', color: '#30B3A4'},
+  AmountText: { fontSize: 14, fontFamily: 'Lexend-Bold', color: '#30B3A4' },
   ReturnBadge: {
     backgroundColor: '#F0F0FF',
     color: '#4B5290',
@@ -541,7 +541,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     fontSize: 12,
   },
-  SubText: {fontSize: 12, color: '#666', marginLeft: 8},
+  SubText: { fontSize: 12, color: '#666', marginLeft: 8 },
   ActionRow: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
@@ -564,8 +564,8 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     marginLeft: 8,
   },
-  BtnText: {color: '#FFF', fontSize: 13, fontFamily: 'Lexend-Medium'},
-  ErrorText: {color: 'red', marginTop: 20},
+  BtnText: { color: '#FFF', fontSize: 13, fontFamily: 'Lexend-Medium' },
+  ErrorText: { color: 'red', marginTop: 20 },
   pagination: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -573,9 +573,9 @@ const styles = StyleSheet.create({
     width: '80%',
     paddingVertical: 10,
   },
-  pageButton: {padding: 8, backgroundColor: '#5A55CA', borderRadius: 5},
-  pageButtonText: {color: '#FFF'},
-  pageInfo: {color: '#333', fontFamily: 'Lexend-Regular'},
+  pageButton: { padding: 8, backgroundColor: '#5A55CA', borderRadius: 5 },
+  pageButtonText: { color: '#FFF' },
+  pageInfo: { color: '#333', fontFamily: 'Lexend-Regular' },
 });
 
 export default SalesReturnList;
