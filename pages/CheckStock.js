@@ -359,6 +359,7 @@ const CheckStock = () => {
     try {
       const encoded = encodeURIComponent(value);
       const url = `${appUrl}Search_Items/InventoryList?cmpcode=${cmpcode}&guid=F4369B5E-8E23-4BCF-AC82-76C977991728&mod=${modeParam}&Loc=${locationParam}&searchKey=${encoded}`;
+      console.log('searchStock url', url);
       const res = await axios.get(url);
       setStockData(res.data);
     } catch (e) {
@@ -383,7 +384,7 @@ const CheckStock = () => {
     }
   };
 
-  const fetchModalNumberData = async oem => {
+  const fetchModalNumberData = useCallback(async oem => {
     setModalLoader(true);
     setModalNumberData(null);
     try {
@@ -398,9 +399,9 @@ const CheckStock = () => {
     } finally {
       setModalLoader(false);
     }
-  };
+  }, [appUrl, cmpcode]);
 
-  const fetchSubstituteData = async code => {
+  const fetchSubstituteData = useCallback(async code => {
     setSubLoader(true);
     setSubstituteData(null);
     try {
@@ -415,7 +416,7 @@ const CheckStock = () => {
     } finally {
       setSubLoader(false);
     }
-  };
+  }, [appUrl, cmpcode]);
 
   // ── Interactions ──────────────────────────────────────────────────────────
 
@@ -431,7 +432,7 @@ const CheckStock = () => {
       fetchSubstituteData(code);
       fetchModalNumberData(oem);
     },
-    [expandedCode],
+    [expandedCode, fetchSubstituteData, fetchModalNumberData],
   );
 
   const handleAddToCart = item => {
@@ -580,7 +581,7 @@ const CheckStock = () => {
                 </Text>
               </TouchableOpacity>
 
-              <TouchableOpacity
+              {/* <TouchableOpacity
                 style={[
                   styles.radioBtn,
                   cartType === 'invoice' && styles.radioBtnActive,
@@ -597,7 +598,7 @@ const CheckStock = () => {
                   ]}>
                   Sales Invoice
                 </Text>
-              </TouchableOpacity>
+              </TouchableOpacity> */}
             </View>
 
             <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>

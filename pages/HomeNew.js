@@ -3447,7 +3447,7 @@ const HomeNew = () => {
                       marginRight: 6,
                       fontFamily: 'Lexend-Regular',
                     }}>
-                    version 6.8.0
+                    version 6.10.0
                   </Text>
                 </View>
               </View>
