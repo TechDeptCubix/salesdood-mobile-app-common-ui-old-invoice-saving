@@ -2341,6 +2341,69 @@ const HomeNew = () => {
                         </TouchableOpacity>
                       )}
 
+{menuNotAllowedToThisCompany ? (
+                        menuNotAllowedToThisCompany.some(
+                          itemSommy =>
+                            itemSommy.MENUID.trim().toUpperCase() ==
+                            'View Cart'.trim().toUpperCase(),
+                        ) ? null : menuAllowedToThisRole?.length == 0 ||
+                          menuAllowedToThisRole?.some(
+                            itemSommy =>
+                              itemSommy.MENUID.trim().toUpperCase() ==
+                              'View Cart'.trim().toUpperCase(),
+                          ) ? (
+                          <TouchableOpacity
+                            style={[
+                              styles.ItemCont,
+                              { backgroundColor: '#D4CFC5' },
+                            ]}
+                            onPress={() =>
+                              navigation.navigate('ViewCart')
+                            }>
+                            <View style={styles.innerItem}>
+                              <View style={styles.TouchablwWhiteBackg}>
+                                <Image
+                                  source={require('../images/todoDark.png')}
+                                  style={[
+                                    styles.optionIcon,
+                                    { resizeMode: 'contain' },
+                                  ]}></Image>
+                              </View>
+                              <View style={styles.innerText}>
+                                <Text style={styles.optionText}>
+                                  View Cart
+                                </Text>
+                              </View>
+                            </View>
+                          </TouchableOpacity>
+                        ) : null
+                      ) : (
+                        <TouchableOpacity
+                          style={[
+                            styles.ItemCont,
+                            { backgroundColor: '#D4CFC5' },
+                          ]}
+                          onPress={() =>
+                            navigation.navigate('ViewCart')
+                          }>
+                          <View style={styles.innerItem}>
+                            <View style={styles.TouchablwWhiteBackg}>
+                              <Image
+                                source={require('../images/todoDark.png')}
+                                style={[
+                                  styles.optionIcon,
+                                  { resizeMode: 'contain' },
+                                ]}></Image>
+                            </View>
+                            <View style={styles.innerText}>
+                              <Text style={styles.optionText}>
+                                View Cart
+                              </Text>
+                            </View>
+                          </View>
+                        </TouchableOpacity>
+                      )}
+
                       {/* {menuNotAllowedToThisCompany ? (
                         menuNotAllowedToThisCompany.some(
                           itemSommy =>

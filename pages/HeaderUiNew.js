@@ -41,6 +41,7 @@ const HeaderUiNew = ({ name,
             await AsyncStorage.removeItem('salesman_name');
             await AsyncStorage.removeItem('sales_man_drop');
             await AsyncStorage.removeItem('salesman_name_drop');
+            await AsyncStorage.removeItem('useraccess');
 
             // Navigate to the MachineValidation page
             navigation.navigate('MachineValidation');

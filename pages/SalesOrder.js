@@ -1070,6 +1070,7 @@ const SalesOrder = ({ route }) => {
         'selectedCustomer',
       );
       const storedSavedItemData = await AsyncStorage.getItem('savedItemData');
+      console.log("storedSavedItemData", storedSavedItemData)
       const storedOrderRemark = await AsyncStorage.getItem('orderRemark');
       const storedtrn = await AsyncStorage.getItem('trn');
       const storedPayment = await AsyncStorage.getItem('payment');

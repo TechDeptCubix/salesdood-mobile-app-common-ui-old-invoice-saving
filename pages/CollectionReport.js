@@ -10,19 +10,19 @@ import {
   PermissionsAndroid,
   Platform,
 } from 'react-native';
-import React, {useEffect, useState} from 'react';
+import React, { useEffect, useState } from 'react';
 import HeaderUiNew from './HeaderUiNew';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
-import {format} from 'date-fns';
+import { format } from 'date-fns';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import RNHTMLtoPDF from 'react-native-html-to-pdf';
 import Share from 'react-native-share';
 import RNFS from 'react-native-fs';
 import ThermalPrinterModule from 'react-native-thermal-printer';
-import SunmiPrinter, {AlignValue} from '@heasy/react-native-sunmi-printer';
+import SunmiPrinter, { AlignValue } from '@heasy/react-native-sunmi-printer';
 
-const {width: SCREEN_W, height: SCREEN_H} = Dimensions.get('window');
+const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
 
 // ─── Shared helper: request Android storage permission ─────────────────────
 const requestStoragePermission = async () => {
@@ -65,12 +65,11 @@ const buildPdfItemRows = (items, typeFilter) =>
   <tr>
     <td style="padding:6px 8px;">${item.rv_no || '-'}</td>
     <td style="padding:6px 8px;">${item.Inv_ref || '-'}</td>
-    <td style="padding:6px 8px; width:200px;">${
-      item['Customer Name'] || '-'
-    }</td>
+    <td style="padding:6px 8px; width:200px;">${item['Customer Name'] || '-'
+        }</td>
     <td style="padding:6px 8px; text-align:right;">${parseFloat(
-      item.Amount || 0,
-    ).toFixed(2)}</td>
+          item.Amount || 0,
+        ).toFixed(2)}</td>
     <td style="padding:6px 8px;">${item.Salesman || ''}</td>
     <td style="padding:6px 8px;">${item.Remarks || ''}</td>
   </tr>`,
@@ -87,26 +86,25 @@ const buildPdfAdminRows = (groupedData, typeFilter) =>
   <tr style="background:#f0f0ff;">
     <td colspan="5" style="padding:4px 8px; font-weight:bold;">${name}</td>
     <td style="padding:4px 8px; text-align:right; font-weight:bold;">${subTotal.toFixed(
-      3,
-    )}</td>
+        3,
+      )}</td>
   </tr>
   ${filtered
-    .map(
-      item => `
+          .map(
+            item => `
   <tr>
     <td style="padding:6px 8px;">${item.rv_no || '-'}</td>
     <td style="padding:6px 8px;">${item.Inv_ref || '-'}</td>
-    <td style="padding:6px 8px; width:200px;">${
-      item['Customer Name'] || '-'
-    }</td>
+    <td style="padding:6px 8px; width:200px;">${item['Customer Name'] || '-'
+              }</td>
     <td style="padding:6px 8px; text-align:right;">${parseFloat(
-      item.Amount || 0,
-    ).toFixed(2)}</td>
+                item.Amount || 0,
+              ).toFixed(2)}</td>
     <td style="padding:6px 8px;">${item.Salesman || ''}</td>
     <td style="padding:6px 8px;">${item.Remarks || ''}</td>
   </tr>`,
-    )
-    .join('')}`;
+          )
+          .join('')}`;
     })
     .join('');
 
@@ -303,6 +301,8 @@ const CollectionReport = () => {
     }
     try {
       const response = await axios.get(apiUrl);
+
+      console.log("response.data collection", response.data)
       if (response.status === 200) {
         setApiResponse(response.data);
         if (isAdmin) {
@@ -347,6 +347,7 @@ const CollectionReport = () => {
   };
 
   useEffect(() => {
+    console.log("apiData collection ", apiData)
     if (apiData && Array.isArray(apiData)) processSums(apiData);
   }, [apiData]);
 
@@ -376,10 +377,10 @@ const CollectionReport = () => {
       item.Type === 'CASH-SALES'
         ? 'CASH'
         : item.Type === 'cash-collection'
-        ? 'CASH'
-        : item.Type === 'cheque-collection'
-        ? 'CHEQUE'
-        : item.Type;
+          ? 'CASH'
+          : item.Type === 'cheque-collection'
+            ? 'CHEQUE'
+            : item.Type;
 
     const html = `<!DOCTYPE html><html><head><meta charset="UTF-8">
     <style>
@@ -393,40 +394,34 @@ const CollectionReport = () => {
       .sig{margin-top:80px;text-align:right;}
       .footer{margin-top:24px;font-size:11px;color:#555;text-align:center;}
     </style></head><body>
-    ${
-      cmpCode?.toLowerCase().trim() === 'soca'
+    ${cmpCode?.toLowerCase().trim() === 'soca'
         ? `<img src="${logoUri}" style="width:100%;" />`
         : ''
-    }
+      }
     <div class="company">${cmpLabel}</div>
     <div class="title">Collection Voucher</div>
     <div class="divider">
       <div class="row"><span class="label">Date:</span><span>${formattedDateTime}</span></div>
-      <div class="row"><span class="label">Voucher No:</span><span>${
-        item?.rv_no || '-'
+      <div class="row"><span class="label">Voucher No:</span><span>${item?.rv_no || '-'
       }</span></div>
-      ${
-        item?.Inv_ref
-          ? `<div class="row"><span class="label">Invoice Ref:</span><span>${item.Inv_ref}</span></div>`
-          : ''
+      ${item?.Inv_ref
+        ? `<div class="row"><span class="label">Invoice Ref:</span><span>${item.Inv_ref}</span></div>`
+        : ''
       }
-      <div class="row"><span class="label">Received with thanks from:</span><span>${
-        item['Customer Name'] || '-'
+      <div class="row"><span class="label">Received with thanks from:</span><span>${item['Customer Name'] || '-'
       }</span></div>
       <div class="row">
         <span class="label">Collection Type: ${collType}</span>
         <span>Amount: <span class="amount-box">${parseFloat(
-          item?.Amount || 0,
-        ).toFixed(2)}</span></span>
+        item?.Amount || 0,
+      ).toFixed(2)}</span></span>
       </div>
-      <div class="row"><span class="label">Remarks:</span><span>${
-        item?.Remarks || '-'
+      <div class="row"><span class="label">Remarks:</span><span>${item?.Remarks || '-'
       }</span></div>
     </div>
     <div class="sig"><div>Signature</div><div>${salesManName}</div></div>
-    <div class="footer">${getCompanyDetails(cmpCode).name} | ${
-      getCompanyDetails(cmpCode).address
-    } | ${getCompanyDetails(cmpCode).tel}</div>
+    <div class="footer">${getCompanyDetails(cmpCode).name} | ${getCompanyDetails(cmpCode).address
+      } | ${getCompanyDetails(cmpCode).tel}</div>
     </body></html>`;
 
     try {
@@ -450,14 +445,12 @@ const CollectionReport = () => {
     const infoSection = `
       <div style="text-align:center; margin-bottom:16px;">
         <h2 style="margin:0; color:#1a1a2e;">${details.name}</h2>
-        <div style="font-size:12px; color:#666;">${details.address} | Tel: ${
-      details.tel
-    }</div>
-        ${
-          details.trn !== '-'
-            ? `<div style="font-size:12px; color:#666; font-weight:bold;">TRN: ${details.trn}</div>`
-            : ''
-        }
+        <div style="font-size:12px; color:#666;">${details.address} | Tel: ${details.tel
+      }</div>
+        ${details.trn !== '-'
+        ? `<div style="font-size:12px; color:#666; font-weight:bold;">TRN: ${details.trn}</div>`
+        : ''
+      }
         <h3 style="margin:10px 0 0; color:#5A55CA; text-transform:uppercase; letter-spacing:1px;">Collection Report</h3>
       </div>
       <div style="margin-bottom:12px; padding:10px; background:#f8f8ff; border-radius:6px; border:1px solid #ddd;">
@@ -482,8 +475,8 @@ const CollectionReport = () => {
       const rows = grouped
         ? buildPdfAdminRows(grouped, typeFilter)
         : data
-        ? buildPdfItemRows(data, typeFilter)
-        : '';
+          ? buildPdfItemRows(data, typeFilter)
+          : '';
       if (!rows) return '';
       return `
         <div style="${PDF_SECTION_LABEL_STYLE}">${label}</div>
@@ -494,8 +487,8 @@ const CollectionReport = () => {
             <tr style="background:#eef; font-weight:bold;">
               <td colspan="3" style="padding:6px 8px;">Total</td>
               <td style="padding:6px 8px; text-align:right;">${parseFloat(
-                total || 0,
-              ).toFixed(2)}</td>
+        total || 0,
+      ).toFixed(2)}</td>
               <td colspan="2"></td>
             </tr>
           </tfoot>
@@ -560,11 +553,11 @@ const CollectionReport = () => {
     setPdfLoadingDaily(true);
     await requestStoragePermission();
     const rows = [
-      {label: 'Cash Collection', value: cashSalesSum},
-      {label: 'Cash Sales', value: cashSum},
-      {label: 'Credit Sales', value: creditSalesSum},
-      {label: 'Cash Sales Return', value: cashSalesReturnSum},
-      {label: 'Credit Sales Return', value: creditSalesReturnSum},
+      { label: 'Cash Collection', value: cashSalesSum },
+      { label: 'Cash Sales', value: cashSum },
+      { label: 'Credit Sales', value: creditSalesSum },
+      { label: 'Cash Sales Return', value: cashSalesReturnSum },
+      { label: 'Credit Sales Return', value: creditSalesReturnSum },
     ];
 
     const details = getCompanyDetails(cmpCode);
@@ -589,15 +582,14 @@ const CollectionReport = () => {
       <span><b>Salesperson:</b> ${salesName}</span>
     </div>
     ${rows
-      .map(
-        r =>
-          `<div class="row"><span class="label">${
-            r.label
-          }</span><span class="value">${parseFloat(r.value || 0).toFixed(
-            3,
-          )}</span></div>`,
-      )
-      .join('')}
+        .map(
+          r =>
+            `<div class="row"><span class="label">${r.label
+            }</span><span class="value">${parseFloat(r.value || 0).toFixed(
+              3,
+            )}</span></div>`,
+        )
+        .join('')}
     <div class="total-row">
       <span>Cash In Hand</span>
       <span>${cashInHand.toFixed(2)} AED</span>
@@ -663,11 +655,11 @@ const CollectionReport = () => {
 
       const dataWeights = [340, 220];
       [
-        {label: 'Cash Collection', value: cashSalesSum},
-        {label: 'Cash Sales', value: cashSum},
-        {label: 'Credit Sales', value: creditSalesSum},
-        {label: 'Cash Sales Return', value: cashSalesReturnSum},
-        {label: 'Credit Sales Return', value: creditSalesReturnSum},
+        { label: 'Cash Collection', value: cashSalesSum },
+        { label: 'Cash Sales', value: cashSum },
+        { label: 'Credit Sales', value: creditSalesSum },
+        { label: 'Cash Sales Return', value: cashSalesReturnSum },
+        { label: 'Credit Sales Return', value: creditSalesReturnSum },
       ].forEach(item =>
         SunmiPrinter.printColumnsString(
           [item.label + ':', parseFloat(item.value || 0).toFixed(2)],
@@ -730,8 +722,8 @@ const CollectionReport = () => {
       item?.Type === 'CASH-SALES' || item?.Type === 'cash-collection'
         ? 'CASH'
         : item?.Type === 'cheque-collection'
-        ? 'CHEQUE'
-        : item?.Type || '';
+          ? 'CHEQUE'
+          : item?.Type || '';
 
     return {
       text:
@@ -834,15 +826,15 @@ const CollectionReport = () => {
           </TouchableOpacity>
           {(cmpCode?.toUpperCase().trim() === 'ICELAB' ||
             cmpCode?.toUpperCase().trim() === 'ICELAB_TEST') && (
-            <TouchableOpacity
-              style={[
-                styles.ActionBtn,
-                {backgroundColor: '#444', marginTop: 4},
-              ]}
-              onPress={() => printBluetooth(item)}>
-              <Text style={styles.ActionBtnText}>BT</Text>
-            </TouchableOpacity>
-          )}
+              <TouchableOpacity
+                style={[
+                  styles.ActionBtn,
+                  { backgroundColor: '#444', marginTop: 4 },
+                ]}
+                onPress={() => printBluetooth(item)}>
+                <Text style={styles.ActionBtnText}>BT</Text>
+              </TouchableOpacity>
+            )}
         </View>
       </View>
     </View>
@@ -877,8 +869,8 @@ const CollectionReport = () => {
         {isAdmin && apiDataGroupedBySalesman
           ? renderGroupedByType(apiDataGroupedBySalesman, typeFilter)
           : apiData
-          ? renderItemsByType(apiData, typeFilter)
-          : null}
+            ? renderItemsByType(apiData, typeFilter)
+            : null}
         {renderTotalRow(`${label} Total`, sectionTotal)}
       </>
     );
@@ -965,7 +957,7 @@ const CollectionReport = () => {
             <ActivityIndicator
               size="large"
               color="#5A55CA"
-              style={{marginTop: 24}}
+              style={{ marginTop: 24 }}
             />
           )}
 
@@ -978,7 +970,7 @@ const CollectionReport = () => {
           {!showLoader && (
             <ScrollView
               style={styles.CollList}
-              contentContainerStyle={{paddingBottom: 120}}>
+              contentContainerStyle={{ paddingBottom: 120 }}>
               {renderSection('Cash Sales', 'CASH-SALES', cashSum)}
               {renderSection(
                 'Cash Collection',
@@ -1005,23 +997,23 @@ const CollectionReport = () => {
       {activeTab === 'daily' && (
         <ScrollView
           style={styles.DailyScroll}
-          contentContainerStyle={{paddingBottom: 40}}>
+          contentContainerStyle={{ paddingBottom: 40 }}>
           {/* ── Info Card ── */}
           <View style={styles.DailyInfoCard}>
             <InfoStrip />
           </View>
 
           {showLoader && (
-            <ActivityIndicator color="#5A55CA" style={{marginTop: 16}} />
+            <ActivityIndicator color="#5A55CA" style={{ marginTop: 16 }} />
           )}
 
           {/* ── Financial Summary Card ── */}
           <View style={styles.SummaryCard}>
             <Text style={styles.SummaryTitle}>Financial Summary</Text>
             {[
-              {label: 'Cash Collection', value: cashSalesSum, color: '#30B3A4'},
-              {label: 'Cash Sales', value: cashSum, color: '#5A55CA'},
-              {label: 'Credit Sales', value: creditSalesSum, color: '#0084B4'},
+              { label: 'Cash Collection', value: cashSalesSum, color: '#30B3A4' },
+              { label: 'Cash Sales', value: cashSum, color: '#5A55CA' },
+              { label: 'Credit Sales', value: creditSalesSum, color: '#0084B4' },
               {
                 label: 'Cash Sales Return',
                 value: cashSalesReturnSum,
@@ -1035,10 +1027,10 @@ const CollectionReport = () => {
             ].map((item, idx) => (
               <View key={idx} style={styles.SummaryRow}>
                 <View style={styles.SummaryDot}>
-                  <View style={[styles.Dot, {backgroundColor: item.color}]} />
+                  <View style={[styles.Dot, { backgroundColor: item.color }]} />
                   <Text style={styles.SummaryLabel}>{item.label}</Text>
                 </View>
-                <Text style={[styles.SummaryValue, {color: item.color}]}>
+                <Text style={[styles.SummaryValue, { color: item.color }]}>
                   {parseFloat(item.value || 0).toFixed(2)}
                 </Text>
               </View>
@@ -1056,10 +1048,10 @@ const CollectionReport = () => {
 
           {/* ── Cheque Card ─ */}
           {chequeSum !== 0 && (
-            <View style={[styles.SummaryCard, {marginTop: 8}]}>
+            <View style={[styles.SummaryCard, { marginTop: 8 }]}>
               <View style={styles.SummaryRow}>
                 <Text style={styles.SummaryLabel}>Cheque Collection</Text>
-                <Text style={[styles.SummaryValue, {color: '#7D3C98'}]}>
+                <Text style={[styles.SummaryValue, { color: '#7D3C98' }]}>
                   {parseFloat(chequeSum).toFixed(2)}
                 </Text>
               </View>
@@ -1177,7 +1169,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#eee',
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 1},
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.06,
     shadowRadius: 3,
     elevation: 2,
@@ -1231,7 +1223,7 @@ const styles = StyleSheet.create({
     borderWidth: 0.5,
     borderColor: '#E0E0E0',
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 1},
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.04,
     shadowRadius: 2,
     elevation: 1,
@@ -1373,7 +1365,7 @@ const styles = StyleSheet.create({
     padding: 14,
     marginTop: 12,
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 1},
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.06,
     shadowRadius: 4,
     elevation: 2,
@@ -1384,7 +1376,7 @@ const styles = StyleSheet.create({
     padding: 16,
     marginTop: 10,
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 6,
     elevation: 3,
@@ -1462,7 +1454,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.12,
     shadowRadius: 4,
     elevation: 3,

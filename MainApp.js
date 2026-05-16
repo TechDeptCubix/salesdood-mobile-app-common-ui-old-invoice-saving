@@ -66,6 +66,7 @@ import BusinessPartners from './pages/BusinessPartners';
 import PriceUpdater from './pages/PriceUpdater';
 
 import EditSalesInvoice from './pages/EditSalesInvoice';
+import ViewCart from './pages/ViewCart';
 
 const Stack = createNativeStackNavigator();
 
@@ -505,6 +506,12 @@ const MainApp = () => {
         <Stack.Screen
           name="EditSalesInvoice"
           component={EditSalesInvoice}
+          options={{headerShown: false}}
+        />
+
+        <Stack.Screen
+          name="ViewCart"
+          component={ViewCart}
           options={{headerShown: false}}
         />
       </Stack.Navigator>
