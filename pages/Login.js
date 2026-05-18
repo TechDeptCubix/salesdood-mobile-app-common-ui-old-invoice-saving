@@ -640,7 +640,7 @@ const Login = () => {
                 marginRight: 6,
                 fontFamily: 'Lexend-Regular',
               }}>
-              version number 6.10.0
+              version number 6.11.0
             </Text>
 
             <View style={styles.CBXImgWrap}>

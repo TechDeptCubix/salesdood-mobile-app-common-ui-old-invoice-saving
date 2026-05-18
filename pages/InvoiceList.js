@@ -36,6 +36,12 @@ const InvoiceList = () => {
     const VAT_END = 52;
     const AMOUNT_END = 62;
 
+    const totalGrossAmount = itemListBluetooth?.reduce(
+      (sum, p) => sum + (p.LINE_TOTAL || 0),
+      0,
+    );
+    const overallDiscount = itemListBluetooth?.[0]?.disc_amt || 0;
+
     return itemListBluetooth
       ?.map((item, index) => {
         const fullDesc = `${item.DESCRIPTION}`;
@@ -53,14 +59,20 @@ const InvoiceList = () => {
             // FIRST LINE: Contains Description + all values right-aligned in columns
             const descriptionPadded = currentChunk.padEnd(DESC_MAX_LEN, ' ');
 
+            // Calculate proportional discount and VAT for this line
+            const lineTotal = item.LINE_TOTAL || 0;
+            const lineWeight =
+              totalGrossAmount > 0 ? lineTotal / totalGrossAmount : 0;
+            const proportionalDiscount = lineWeight * overallDiscount;
+            const netLineAmount = lineTotal - proportionalDiscount;
+            const lineVatAmount = netLineAmount * 0.05;
+            const lineTotalInclVat = netLineAmount + lineVatAmount;
+
             // Format values as strings
             const qtyStr = item.QTY.toString();
             const rateStr = item.PRICE.toFixed(2);
-            const vatStr = (item.LINE_TOTAL * 0.05).toFixed(2);
-            const amountStr = (
-              item.LINE_TOTAL +
-              item.LINE_TOTAL * 0.05
-            ).toFixed(2);
+            const vatStr = lineVatAmount.toFixed(2);
+            const amountStr = lineTotalInclVat.toFixed(2);
 
             // Calculate spacing for right-alignment in each column
             const qtySpaces = QTY_END - DESC_MAX_LEN - qtyStr.length;
@@ -209,6 +221,15 @@ const InvoiceList = () => {
   // this one based on the reference syed icelab given
   const setFormatTextForBluetooth = () => {
     const details = getCompanyDetails(cmpcode?.toUpperCase());
+
+    const totalGrossAmount = itemListBluetooth?.reduce(
+      (sum, p) => sum + (p.LINE_TOTAL || 0),
+      0,
+    );
+    const overallDiscount = itemListBluetooth?.[0]?.disc_amt || 0;
+    const amountAfterDiscount = totalGrossAmount - overallDiscount;
+    const totalVatAmount = amountAfterDiscount * 0.05;
+    const grandTotal = amountAfterDiscount + totalVatAmount;
     return {
       text:
         COMP_PAD +
@@ -244,20 +265,23 @@ const InvoiceList = () => {
         '[L]\n' +
         // Totals Summary
 
-        formatTotalLine(
-          'Total (Ex VAT)',
-          (itemListBluetooth[0]?.inv_total - itemListBluetooth[0]?.w)?.toFixed(
-            2,
-          ),
-        ) +
-        formatTotalLine('VAT amount', itemListBluetooth[0]?.w) +
-        formatTotalLine('Grand Total', itemListBluetooth[0]?.inv_total) +
+        formatTotalLine('Gross Total', totalGrossAmount) +
+        formatTotalLine('Discount', overallDiscount) +
+        formatTotalLine('Total (Ex VAT)', amountAfterDiscount) +
+        formatTotalLine('VAT amount (5%)', totalVatAmount) +
+        formatTotalLine('Grand Total', grandTotal) +
         '[L]\n' +
         '[C]============================================================\n' +
         `[L]OPENING BALANCE  :  ${itemListBluetooth[0]?.Opening_Balance}\n` +
         `[L]CUR TRANSACTION  :  ${itemListBluetooth[0]?.Transaction_Balance}\n` +
         `[L]CLOSING BALANCE  :  ${itemListBluetooth[0]?.Closing_Balance}\n` +
         '[C]============================================================\n' +
+        (cmpcode?.toUpperCase()?.trim() === 'POPULAR'
+          ? '[L]Note: This invoice is generated through the mobile app for\n' +
+            '[L]entry purposes only. Please collect the original invoice\n' +
+            '[L]from the salesman for filing and taxation purposes.\n' +
+            '[C]============================================================\n'
+          : '') +
         // Footer
         '[L]\n' +
         FOOT_PAD +
@@ -500,6 +524,17 @@ const InvoiceList = () => {
 
       SunmiPrinter.setFontWeight(false);
 
+      if (cmpcode?.toUpperCase()?.trim() === 'POPULAR') {
+        SunmiPrinter.setAlignment(AlignValue.LEFT);
+        SunmiPrinter.setFontSize(20);
+        SunmiPrinter.printerText(
+          'Note: This invoice is generated through the mobile app for entry purposes only. Please collect the original invoice from the salesman for filing and taxation purposes.\n',
+        );
+        SunmiPrinter.printerText(
+          '---------------------------------------------------------------\n',
+        );
+      }
+
       SunmiPrinter.setAlignment(AlignValue.CENTER);
       SunmiPrinter.printerText('\n*** Thank You ***\n');
 
@@ -686,6 +721,10 @@ const InvoiceList = () => {
         console.log('Image conversion failed, using fallback text logo', error);
       }
 
+      console.log(
+        'invoice details api ',
+        `${appUrl}SalesInvoiceDetail/${cmpcode}/${item.INVNO}/${deptNo}`,
+      );
       const response = await axios.get(
         `${appUrl}SalesInvoiceDetail/${cmpcode}/${item.INVNO}/${deptNo}`,
       );
@@ -837,6 +876,15 @@ const InvoiceList = () => {
                 </tr>
               </table>
             </div>
+
+            ${
+              cmpcode?.toUpperCase()?.trim() === 'POPULAR'
+                ? `<div style="margin-top: 20px; padding: 10px; border: 1px dashed #666; font-size: 10px; color: #444; line-height: 1.4;">
+                    <strong>Note:</strong> This invoice is generated through the mobile app for entry purposes only. 
+                    Please collect the original invoice from the salesman for filing and taxation purposes.
+                   </div>`
+                : ''
+            }
 
             <div class="footer">
               <p>User ID: ${firstItem.user_id} | Time: ${firstItem.time}</p>
@@ -1405,45 +1453,7 @@ const InvoiceList = () => {
                     <Text style={styles.PrintAcceptText}>Edit</Text>
                   </TouchableOpacity> */}
                 </View>
-
-                {/* {
-                                    expandedItems.includes(item.so_no) && (
-
-                                        <View style={styles.QtyAvlQtyCont}>
-
-                                            <TouchableOpacity style={[styles.QtyCont, { backgroundColor: '#D8D8DA', marginRight: 16 }]} onPress={() => navigation.navigate('MakeOrder', { orderId: item.so_no, type: 'edit' })}>
-                                                <Text style={styles.QtyText}>Edit Sales Order</Text>
-                                            </TouchableOpacity>
-                                            <TouchableOpacity style={[styles.QtyCont, { backgroundColor: '#D8D8DA', }]} onPress={() => navigation.navigate('MakeOrder', { orderId: item.so_no, type: 'pull' })}>
-                                                <Text style={styles.AvlText}>Pull Sales Order</Text>
-                                            </TouchableOpacity>
-                                        </View>
-
-                                    )
-                                } */}
               </View>
-              {/*  */}
-              {/* 
-                            <View style={styles.PreviousOrderCard}>
-                                <TouchableOpacity onPress={() => navigation.navigate('OrderDetails', { orderId: item.so_no })}>
-                                    <Text style={styles.OrderNoText}>{item.so_no}</Text>
-                                    <Text style={styles.CustomerNameText}>{item.accdesc}</Text>
-
-                                </TouchableOpacity>
-
-                                <View style={styles.OrderUpdatesWrap}>
-
-
-                                    <View style={styles.EditPullWrap}>
-                                        <TouchableOpacity style={styles.EditPullButton} onPress={() => navigation.navigate('MakeOrder', { orderId: item.so_no, type: 'edit' })}>
-                                            <Text style={styles.EditPullText}>Edit Sales Order</Text>
-                                        </TouchableOpacity>
-                                        <TouchableOpacity style={styles.EditPullButton} onPress={() => navigation.navigate('MakeOrder', { orderId: item.so_no, type: 'pull' })}>
-                                            <Text style={styles.EditPullText}>Pull Sales Order</Text>
-                                        </TouchableOpacity>
-                                    </View>
-                                </View>
-                            </View> */}
             </ScrollView>
           )}
         />
