@@ -615,16 +615,16 @@ const QuotationPop = ({
                       selectedCustomer
                         ? selectedCustomer.Custname
                         : cashCustomerName
-                        ? cashCustomerName
-                        : ''
+                          ? cashCustomerName
+                          : ''
                     }
                     </div>
                     <div class="labelValue">${
                       selectedCustomer
                         ? selectedCustomer.address1
                         : cashCustomerAddress
-                        ? cashCustomerAddress
-                        : ''
+                          ? cashCustomerAddress
+                          : ''
                     }
                     </div>
                     <div class="labelValue">${
@@ -644,8 +644,8 @@ const QuotationPop = ({
                           selectedRadio === 'CREDIT'
                             ? `Payment Terms`
                             : selectedRadio === 'CASH'
-                            ? `CASH`
-                            : ''
+                              ? `CASH`
+                              : ''
                         }</div>
                     </div>
                     <div style="margin-left: 8px; margin-right: 8px;">
@@ -768,11 +768,11 @@ const QuotationPop = ({
                                         ).toFixed(2)
                                       : ''
                                     : totalUnitPrice
-                                    ? (
-                                        totalUnitPrice *
-                                        (VAT_RATE / 100)
-                                      ).toFixed(2)
-                                    : ''
+                                      ? (
+                                          totalUnitPrice *
+                                          (VAT_RATE / 100)
+                                        ).toFixed(2)
+                                      : ''
                                 }</td>
                         </tr>
                         <tr style="border:none; font-weight: bold;">
@@ -793,14 +793,14 @@ const QuotationPop = ({
                                         )
                                       : ''
                                     : totalUnitPrice
-                                    ? new Intl.NumberFormat('en-US', {
-                                        minimumFractionDigits: 2,
-                                        maximumFractionDigits: 2,
-                                      }).format(
-                                        totalUnitPrice +
-                                          totalUnitPrice * (VAT_RATE / 100),
-                                      )
-                                    : ''
+                                      ? new Intl.NumberFormat('en-US', {
+                                          minimumFractionDigits: 2,
+                                          maximumFractionDigits: 2,
+                                        }).format(
+                                          totalUnitPrice +
+                                            totalUnitPrice * (VAT_RATE / 100),
+                                        )
+                                      : ''
                                 }</td>
                         </tr>
 
@@ -822,8 +822,8 @@ const QuotationPop = ({
                           selectedCustomer
                             ? selectedCustomer.Custname
                             : cashCustomerName
-                            ? cashCustomerName
-                            : ''
+                              ? cashCustomerName
+                              : ''
                         }</div>
                         <div>Received By,</div>
                     </label>
@@ -1179,16 +1179,16 @@ const QuotationPop = ({
                               selectedCustomer
                                 ? selectedCustomer.Custname
                                 : cashCustomerName
-                                ? cashCustomerName
-                                : ''
+                                  ? cashCustomerName
+                                  : ''
                             }
                             </div>
                             <div class="labelValue">${
                               selectedCustomer
                                 ? selectedCustomer.address1
                                 : cashCustomerAddress
-                                ? cashCustomerAddress
-                                : ''
+                                  ? cashCustomerAddress
+                                  : ''
                             }
                             </div>
                             <div class="labelValue">${
@@ -1208,8 +1208,8 @@ const QuotationPop = ({
                                   selectedRadio === 'CREDIT'
                                     ? `Payment Terms`
                                     : selectedRadio === 'CASH'
-                                    ? `CASH`
-                                    : ''
+                                      ? `CASH`
+                                      : ''
                                 }</div>
                             </div>
                             <div style="margin-left: 8px; margin-right: 8px;">
@@ -1334,11 +1334,11 @@ const QuotationPop = ({
                                                 ).toFixed(2)
                                               : ''
                                             : totalUnitPrice
-                                            ? (
-                                                totalUnitPrice *
-                                                (VAT_RATE / 100)
-                                              ).toFixed(2)
-                                            : ''
+                                              ? (
+                                                  totalUnitPrice *
+                                                  (VAT_RATE / 100)
+                                                ).toFixed(2)
+                                              : ''
                                         }</td>
                                 </tr>
                                 <tr style="border:none; font-weight: bold;">
@@ -1361,15 +1361,15 @@ const QuotationPop = ({
                                                 )
                                               : ''
                                             : totalUnitPrice
-                                            ? new Intl.NumberFormat('en-US', {
-                                                minimumFractionDigits: 2,
-                                                maximumFractionDigits: 2,
-                                              }).format(
-                                                totalUnitPrice +
-                                                  totalUnitPrice *
-                                                    (VAT_RATE / 100),
-                                              )
-                                            : ''
+                                              ? new Intl.NumberFormat('en-US', {
+                                                  minimumFractionDigits: 2,
+                                                  maximumFractionDigits: 2,
+                                                }).format(
+                                                  totalUnitPrice +
+                                                    totalUnitPrice *
+                                                      (VAT_RATE / 100),
+                                                )
+                                              : ''
                                         }</td>
                                 </tr>
         
@@ -1389,8 +1389,8 @@ const QuotationPop = ({
                                   selectedCustomer
                                     ? selectedCustomer.Custname
                                     : cashCustomerName
-                                    ? cashCustomerName
-                                    : ''
+                                      ? cashCustomerName
+                                      : ''
                                 }</div>
                                 <div>Received By,</div>
                             </label>
@@ -1844,6 +1844,15 @@ const QuotationPop = ({
     cashCustomerPhone,
     trn,
   ) => {
+    const VAT_RATE = 5;
+    const totalVat = data.reduce(
+      (sum, item) =>
+        sum +
+        Number(item.unitPrice || 0) *
+          Number(item.quantity || 0) *
+          (VAT_RATE / 100),
+      0,
+    );
     return data.map((item, index) => ({
       cmpcode: cmpcode,
       modeop: 'SAVE',
@@ -1851,8 +1860,8 @@ const QuotationPop = ({
         selectedUserType === 'unreg'
           ? 'yes'
           : selectedRadio == 'CASH'
-          ? 'yes'
-          : 'no',
+            ? 'yes'
+            : 'no',
       inv_no: '68435', // this is dummy but no problem
       cust_acc:
         selectedUserType === 'reg' && customer
@@ -1916,8 +1925,8 @@ const QuotationPop = ({
       custref: customer
         ? customer.Custname
         : cashCustomerName
-        ? cashCustomerName
-        : '',
+          ? cashCustomerName
+          : '',
       terms: payment,
       deptno: deptNo ? deptNo : '',
       // deptno: 'HO',
@@ -1936,8 +1945,8 @@ const QuotationPop = ({
       starter: customer
         ? customer.phone.trim()
         : cashCustomerPhone
-        ? cashCustomerPhone
-        : '',
+          ? cashCustomerPhone
+          : '',
       enginetype: selectedRadio,
       date_prom: formatDate(date),
       date_delvd: formatDate(date),
@@ -1950,7 +1959,7 @@ const QuotationPop = ({
       m: '0',
       d: '0',
       e: '0',
-      w: (item.unitPrice * item.quantity * (VAT_RATE / 100)).toFixed(2),
+      w: totalVat,
       wa: '0',
       // wa: '0',
       pgroup: '',
