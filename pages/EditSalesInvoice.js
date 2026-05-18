@@ -395,8 +395,8 @@ const EditSalesInvoice = () => {
           selectedUserType === 'unreg'
             ? 'yes'
             : selectedRadio === 'CASH'
-            ? 'yes'
-            : 'no',
+              ? 'yes'
+              : 'no',
         inv_no: id,
         cust_acc:
           selectedUserType === 'reg' && selectedRadio === 'CREDIT' && customer
@@ -489,7 +489,7 @@ const EditSalesInvoice = () => {
         m: '0',
         d: '0',
         e: '0',
-        w: (item.unitPrice * item.quantity * (VAT_RATE / 100)).toFixed(2),
+        w: totalVat.toFixed(2),
         wa: '0',
         pgroup: '',
         upd: '',
